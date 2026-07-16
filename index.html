@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7b3f00">
+  <title>Recipe Engine</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button id="menuBtn" class="icon-btn mobile-only" aria-label="Open navigation">☰</button>
+      <div class="brand">
+        <strong>Recipe Engine</strong>
+        <span id="moduleCount">0 modules</span>
+      </div>
+      <div class="top-actions">
+        <button id="importBtn" class="button">Import module</button>
+        <input id="moduleFile" type="file" accept=".json,.recipepack,application/json" hidden multiple>
+        <button id="settingsBtn" class="icon-btn" aria-label="Settings">⚙</button>
+      </div>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-search">
+        <label for="searchInput">Search recipes</label>
+        <input id="searchInput" type="search" placeholder="Name, ingredient, tag…" autocomplete="off">
+      </div>
+
+      <nav class="nav-section" aria-label="Library navigation">
+        <button class="nav-item active" data-view="all">All recipes <span id="allCount">0</span></button>
+        <button class="nav-item" data-view="favorites">Favorites <span id="favoriteCount">0</span></button>
+        <button class="nav-item" data-view="modules">Modules <span id="navModuleCount">0</span></button>
+      </nav>
+
+      <div class="sidebar-heading">Categories</div>
+      <div id="categoryList" class="category-list"></div>
+    </aside>
+
+    <div id="scrim" class="scrim"></div>
+
+    <main class="main">
+      <section id="listPane" class="list-pane">
+        <div class="list-header">
+          <div>
+            <h1 id="viewTitle">All recipes</h1>
+            <p id="viewSubtitle">Browse every enabled module.</p>
+          </div>
+          <select id="moduleFilter" aria-label="Filter by module">
+            <option value="all">All modules</option>
+          </select>
+        </div>
+        <div id="recipeGrid" class="recipe-grid"></div>
+        <div id="emptyState" class="empty-state" hidden>
+          <h2>No recipes found</h2>
+          <p>Try a different search, category, or module.</p>
+        </div>
+      </section>
+
+      <section id="detailPane" class="detail-pane" hidden>
+        <button id="backBtn" class="back-btn">← Back to recipes</button>
+        <article id="recipeDetail"></article>
+      </section>
+
+      <section id="modulesPane" class="modules-pane" hidden>
+        <div class="list-header">
+          <div>
+            <h1>Recipe modules</h1>
+            <p>Import, enable, disable, export, or uninstall recipe collections.</p>
+          </div>
+          <button id="moduleImportBtn" class="button">Import module</button>
+        </div>
+        <div id="moduleCards" class="module-cards"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Settings</h2>
+      <label class="setting-row">
+        <span>Dark mode</span>
+        <input id="darkModeToggle" type="checkbox">
+      </label>
+      <label class="setting-row">
+        <span>Show metric helper amounts</span>
+        <input id="metricToggle" type="checkbox">
+      </label>
+      <div class="dialog-actions">
+        <button class="button secondary" value="cancel">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="recipeCardTemplate">
+    <button class="recipe-card">
+      <div class="recipe-card-topline">
+        <span class="recipe-category"></span>
+        <span class="recipe-favorite" aria-hidden="true">☆</span>
+      </div>
+      <h2 class="recipe-name"></h2>
+      <p class="recipe-description"></p>
+      <div class="recipe-meta"></div>
+      <small class="recipe-source"></small>
+    </button>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

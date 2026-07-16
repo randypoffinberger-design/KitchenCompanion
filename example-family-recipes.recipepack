@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "example-family-recipes",
+  "name": "Example Family Recipes",
+  "publisher": "Your Family",
+  "version": "1.0.0",
+  "description": "A sample importable recipe module.",
+  "license": "Private family use",
+  "recipes": [
+    {
+      "id": "example-pancakes",
+      "name": "Example Pancakes",
+      "category": "Breakfast",
+      "description": "A sample recipe used to test module importing and recipe scaling.",
+      "yield": { "amount": 8, "unit": "pancakes" },
+      "prepTime": "10 minutes",
+      "cookTime": "15 minutes",
+      "tags": ["Breakfast", "Griddle"],
+      "ingredientGroups": [
+        {
+          "name": "Batter",
+          "ingredients": [
+            { "quantity": 1.5, "unit": "cups", "item": "all-purpose flour" },
+            { "quantity": 3.5, "unit": "teaspoons", "item": "baking powder" },
+            { "quantity": 1, "unit": "tablespoon", "item": "sugar" },
+            { "quantity": 1.25, "unit": "cups", "item": "milk" },
+            { "quantity": 1, "unit": "", "item": "egg" },
+            { "quantity": 3, "unit": "tablespoons", "item": "melted butter" }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk the dry ingredients together.",
+        "Add the milk, egg, and melted butter; mix just until combined.",
+        "Cook on a lightly greased griddle until bubbles form, then flip and finish cooking."
+      ]
+    }
+  ]
+}
