@@ -205,3 +205,22 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .catalog-section{margin-bottom:2rem}.catalog-section>h2{margin-bottom:1rem}
 #ingredientShoppingChoices{max-height:50vh;overflow:auto;margin:1rem 0}
 @media(max-width:720px){.topbar .brand span{display:none}.top-actions{margin-left:auto}.shopping-toolbar>*{flex:1 1 45%}.section-title-row{align-items:flex-start}.section-title-row .button{width:100%}.module-header-actions{width:100%}.module-header-actions .button{flex:1}.shopping-row{align-items:flex-start}}
+
+/* v0.5.1 reliability and mobile fixes */
+body.menu-open { overflow: hidden; touch-action: none; }
+.import-choice-grid { display:grid; gap:.75rem; margin-top:1rem; }
+.version-card .button { margin-top:.5rem; }
+.ingredient-store-sticky { position:sticky; top:0; z-index:2; display:grid; gap:.45rem; padding:.85rem; margin:.5rem 0; border:1px solid var(--border); border-radius:12px; background:var(--panel); }
+.ingredient-store-sticky select,.row-store { width:100%; padding:.55rem .65rem; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text); }
+.shopping-row-actions { display:grid; gap:.35rem; min-width:130px; }
+.shopping-check span small { display:block; color:var(--text); font-size:.9rem; }
+@media (max-width:860px) {
+  .sidebar { top:62px; bottom:0; height:auto; max-height:calc(100dvh - 62px); overflow-y:scroll; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y; padding-bottom:calc(5rem + env(safe-area-inset-bottom)); }
+  .nav-section { padding-bottom:1rem; }
+  .category-list { padding-bottom:3rem; }
+}
+@media (max-width:600px) {
+  .shopping-row { display:grid; grid-template-columns:1fr; }
+  .shopping-row-actions { grid-template-columns:1fr auto; align-items:center; width:100%; }
+  .shopping-row-actions .text-button { margin:0; text-align:right; }
+}

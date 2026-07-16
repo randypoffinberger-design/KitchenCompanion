@@ -8,7 +8,7 @@
       "version": "1.0.2",
       "recipeCount": 105,
       "description": "Family recipes and recipes developed together.",
-      "url": "./modules/recipes-to-fill-the-stomach-and-heart.recipepack"
+      "url": "./recipes-to-fill-the-stomach-and-heart.recipepack"
     },
     {
       "moduleId": "starter-kitchen",
@@ -17,7 +17,7 @@
       "version": "1.0.0",
       "recipeCount": 2,
       "description": "Small demonstration collection.",
-      "url": "./modules/example-family-recipes.recipepack"
+      "url": "./example-family-recipes.recipepack"
     }
   ]
 }

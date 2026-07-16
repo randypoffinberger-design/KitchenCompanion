@@ -4,8 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" id="themeColorMeta" content="#7b3f00">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <link rel="manifest" href="app.webmanifest?v=0.5.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.5.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=0.5.1">
 </head>
 <body>
   <div class="app-shell">
@@ -82,6 +88,7 @@
         <div class="shopping-toolbar">
           <select id="shoppingStoreFilter"><option value="all">All stores</option></select>
           <button id="regularItemsBtn" class="button secondary">Regular items</button>
+          <button id="manageStoresBtn" class="button secondary">Manage stores</button>
           <button id="shareShoppingBtn" class="button secondary">Share</button>
           <button id="clearCheckedBtn" class="button secondary">Clear checked</button>
         </div>
@@ -92,7 +99,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.5.0</b></span><span>Module format 1.x</span></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.5.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -149,6 +156,18 @@
   </dialog>
 
 
+  <dialog id="importOptionsDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Add a recipe module</h2>
+      <p>Install directly from the Kitchen Companion GitHub catalog, or choose a file already on this device.</p>
+      <div class="import-choice-grid">
+        <button type="button" id="browseGithubBtn" class="button">Browse GitHub modules</button>
+        <button type="button" id="importFileBtn" class="button secondary">Import a file</button>
+      </div>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button></div>
+    </form>
+  </dialog>
+
   <dialog id="ingredientShoppingDialog">
     <form method="dialog" class="dialog-card shopping-selector">
       <h2>Add ingredients</h2><p>Select only what you need. Quantities use the current recipe scale.</p>
@@ -189,6 +208,6 @@
     </button>
   </template>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=0.5.1"></script>
 </body>
 </html>

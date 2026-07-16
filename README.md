@@ -1,13 +1,17 @@
-# Kitchen Companion v0.5
+# Kitchen Companion v0.5.1
 
-Responsive recipe and kitchen app for phone and desktop.
+Bug-fix release for mobile updates, shopping-list ingredient formatting, store assignment, sidebar scrolling, and direct GitHub module installation.
 
-## New in v0.5
-- Shopping lists grouped by store
-- Add selected recipe ingredients
-- Regular weekly items
-- Manual items and sharing
-- Direct GitHub module catalog install/update
-- Engine and module version display
-- Mobile toolbar cleanup
-- Existing local data preserved under the same storage key
+## Important repository layout
+Upload the files from this folder directly to the root of the GitHub repository. In particular, keep these together at the root:
+
+- `index.html`
+- `app.js`
+- `styles.css`
+- `service-worker.js`
+- `app.webmanifest`
+- `catalog.json`
+- the `.recipepack` files
+
+## One-time iPhone update step
+Older home-screen shortcuts were created before Kitchen Companion had a service worker. After uploading v0.5.1, open the GitHub Pages link in Safari, refresh it, then remove and re-add the Home Screen shortcut once. Future releases will use the new network-first service worker and the in-app **Check for app update** button.

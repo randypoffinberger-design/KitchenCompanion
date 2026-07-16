@@ -2,8 +2,8 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.5.0';
-  const MODULE_CATALOG_URL = './modules/catalog.json';
+  const ENGINE_VERSION = '0.5.1';
+  const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
     schemaVersion: 1,
     moduleId: 'starter-kitchen',
@@ -97,18 +97,21 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn')
   };
 
   init();
 
   function init() {
     if (!state.modules.length) state.modules.push(builtInModule);
+    migrateState();
     ensurePersonalModule();
     applySettings();
+    const versionLabel=document.querySelector('#engineVersionLabel'); if(versionLabel) versionLabel.textContent=ENGINE_VERSION;
     bindEvents();
     refreshAll();
     startTimerTicker();
+    registerServiceWorker();
   }
 
   function loadState() {
@@ -128,8 +131,10 @@
     els.moduleFilter.addEventListener('change', renderRecipeList);
     els.backBtn.addEventListener('click', showList);
     
-    els.moduleImportBtn.addEventListener('click', () => els.moduleFile.click());
-    els.menuImportModule.addEventListener('click', () => { toggleSidebar(false); els.moduleFile.click(); });
+    els.moduleImportBtn.addEventListener('click', openImportOptions);
+    els.menuImportModule.addEventListener('click', () => { toggleSidebar(false); openImportOptions(); });
+    els.browseGithubBtn.addEventListener('click', () => { els.importOptionsDialog.close(); currentView='modules'; showModules(); loadModuleCatalog(); });
+    els.importFileBtn.addEventListener('click', () => { els.importOptionsDialog.close(); els.moduleFile.click(); });
     els.moduleFile.addEventListener('change', importModules);
     els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); els.settingsDialog.showModal(); });
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
@@ -152,6 +157,8 @@
     els.clearCheckedBtn.addEventListener('click', () => { state.shoppingList = state.shoppingList.filter(x => !x.checked); saveState(); renderShoppingList(); renderCounts(); });
     els.confirmIngredientAdd.addEventListener('click', confirmAddIngredients);
     els.catalogRefreshBtn.addEventListener('click', loadModuleCatalog);
+    els.manageStoresBtn.addEventListener('click', manageStores);
+    els.forceUpdateBtn?.addEventListener('click', forceAppUpdate);
 
 
     document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => {
@@ -165,7 +172,47 @@
     }));
   }
 
-  function toggleSidebar(open) { els.sidebar.classList.toggle('open', open); els.scrim.classList.toggle('show', open); }
+  function toggleSidebar(open) { els.sidebar.classList.toggle('open', open); els.scrim.classList.toggle('show', open); document.body.classList.toggle('menu-open', open); }
+
+  function migrateState() {
+    let changed = false;
+    state.shoppingList = (state.shoppingList || []).map(item => {
+      const next = { ...item, store: normalizeStore(item.store) };
+      const cleanName = String(next.name || '').replace(/^of\s+/i, '').trim();
+      if (cleanName !== next.name) { next.name = cleanName; changed = true; }
+      if (next.quantity && next.name) {
+        const escaped = next.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const rx = new RegExp(`\\s+(?:of\\s+)?${escaped}(?:[, ].*)?$`, 'i');
+        const shortened = String(next.quantity).replace(rx, '').trim();
+        if (shortened && shortened !== next.quantity) { next.quantity = shortened; changed = true; }
+      }
+      return next;
+    });
+    if (changed) saveState();
+  }
+
+  function openImportOptions() { els.importOptionsDialog.showModal(); }
+
+  async function forceAppUpdate() {
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.update()));
+      }
+      location.href = `${location.pathname}?app=${Date.now()}`;
+    } catch { location.reload(); }
+  }
+
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('./service-worker.js?v=0.5.1').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!sessionStorage.getItem('kc-reloaded')) {
+        sessionStorage.setItem('kc-reloaded','1');
+        location.reload();
+      }
+    });
+  }
 
   function applySettings() {
     document.documentElement.dataset.theme = state.settings.darkMode ? 'dark' : 'light';
@@ -642,7 +689,17 @@
       const section=document.createElement('section');section.className='shopping-store-card';
       section.innerHTML=`<h2>${escapeHtml(store)}</h2><div class="shopping-items"></div>`;
       const box=section.querySelector('.shopping-items');
-      list.forEach(item=>{const row=document.createElement('div');row.className=`shopping-row ${item.checked?'checked':''}`;row.innerHTML=`<label><input type="checkbox" ${item.checked?'checked':''}><span><strong>${escapeHtml(item.name)}</strong>${item.quantity?` <small>${escapeHtml(item.quantity)}</small>`:''}${item.source?`<em>${escapeHtml(item.source)}</em>`:''}</span></label><button class="text-button remove-shopping">Remove</button>`;row.querySelector('input').addEventListener('change',e=>{item.checked=e.target.checked;saveState();renderShoppingList();renderCounts()});row.querySelector('.remove-shopping').addEventListener('click',()=>{state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});box.append(row)});
+      list.forEach(item=>{
+        const row=document.createElement('div');row.className=`shopping-row ${item.checked?'checked':''}`;
+        row.innerHTML=`<label class="shopping-check"><input type="checkbox" ${item.checked?'checked':''}><span><strong>${escapeHtml(item.name)}</strong>${item.quantity?`<small>${escapeHtml(item.quantity)}</small>`:''}${item.source?`<em>${escapeHtml(item.source)}</em>`:''}</span></label><div class="shopping-row-actions"><select class="row-store" aria-label="Store for ${escapeHtml(item.name)}"></select><button class="text-button remove-shopping">Remove</button></div>`;
+        const storeSelect=row.querySelector('.row-store');
+        (state.stores||[]).forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;storeSelect.append(o)});
+        storeSelect.value=normalizeStore(item.store);
+        storeSelect.addEventListener('change',()=>{item.store=normalizeStore(storeSelect.value);saveState();renderShoppingList();});
+        row.querySelector('input').addEventListener('change',e=>{item.checked=e.target.checked;saveState();renderShoppingList();renderCounts()});
+        row.querySelector('.remove-shopping').addEventListener('click',()=>{state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});
+        box.append(row)
+      });
       els.shoppingGroups.append(section);
     });
   }
@@ -652,19 +709,65 @@
 
   function showRegularItems(){populateStoreSelects();els.regularItemsList.innerHTML='';if(!state.regularItems.length){els.regularItemsList.innerHTML='<p>No regular items yet. Add a manual item and choose “Save as regular item.”</p>';}state.regularItems.forEach(item=>{const row=document.createElement('div');row.className='regular-item-row';row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'')} · ${escapeHtml(item.store||'Unassigned')}</small></span><button type="button" class="button secondary">Add</button>`;row.querySelector('button').addEventListener('click',()=>{state.shoppingList.push({id:String(Date.now()+Math.random()),name:item.name,quantity:item.quantity,store:item.store,checked:false,source:'Regular item'});saveState();renderCounts();});els.regularItemsList.append(row)});els.regularItemsDialog.showModal()}
 
-  function openIngredientShopping(recipe){populateStoreSelects();els.ingredientShoppingChoices.innerHTML='';(recipe.ingredientGroups||[]).forEach(group=>{if(group.name&&group.name!=='Main'){const h=document.createElement('h3');h.textContent=group.name;els.ingredientShoppingChoices.append(h)};(group.ingredients||[]).forEach((ing,i)=>{const id=`shop-${Math.random().toString(36).slice(2)}`;const label=document.createElement('label');label.className='ingredient-choice';label.innerHTML=`<input type="checkbox" data-item="${escapeHtml(ing.item)}" data-quantity="${escapeHtml(formatIngredient(ing))}" checked><span>${formatIngredient(ing)}</span>`;els.ingredientShoppingChoices.append(label)})});els.confirmIngredientAdd.dataset.recipeName=recipe.name;els.ingredientShoppingDialog.showModal()}
-  function confirmAddIngredients(){const store=normalizeStore(els.ingredientStoreSelect.value);const source=els.confirmIngredientAdd.dataset.recipeName;els.ingredientShoppingChoices.querySelectorAll('input:checked').forEach(input=>{state.shoppingList.push({id:String(Date.now()+Math.random()),name:input.dataset.item,quantity:input.dataset.quantity,store,checked:false,source})});saveState();els.ingredientShoppingDialog.close();renderCounts();alert('Selected ingredients added to the shopping list.')}
+  function ingredientQuantityLabel(ingredient) {
+    let amount='';
+    if (ingredient.displayQuantity && ingredient.scalable === false) amount=ingredient.displayQuantity;
+    else if (typeof ingredient.quantity === 'number') amount=formatFraction(ingredient.scalable === false ? ingredient.quantity : ingredient.quantity * activeScale);
+    return [amount, ingredient.unit].filter(Boolean).join(' ').trim();
+  }
+  function cleanShoppingName(item) { return String(item || '').replace(/^of\s+/i,'').trim(); }
+  function openIngredientShopping(recipe){
+    populateStoreSelects();
+    els.ingredientShoppingChoices.innerHTML='';
+    (recipe.ingredientGroups||[]).forEach(group=>{
+      if(group.name&&group.name!=='Main'){const h=document.createElement('h3');h.textContent=group.name;els.ingredientShoppingChoices.append(h)}
+      ;(group.ingredients||[]).forEach(ing=>{
+        const label=document.createElement('label');label.className='ingredient-choice';
+        const name=cleanShoppingName(ing.item); const quantity=ingredientQuantityLabel(ing);
+        label.innerHTML=`<input type="checkbox" data-item="${escapeHtml(name)}" data-quantity="${escapeHtml(quantity)}" checked><span>${formatIngredient(ing)}</span>`;
+        els.ingredientShoppingChoices.append(label)
+      })
+    });
+    els.confirmIngredientAdd.dataset.recipeName=recipe.name;
+    els.ingredientShoppingDialog.showModal();
+  }
+  function confirmAddIngredients(){
+    const store=normalizeStore(els.ingredientStoreSelect.value);const source=els.confirmIngredientAdd.dataset.recipeName;
+    els.ingredientShoppingChoices.querySelectorAll('input:checked').forEach(input=>{
+      state.shoppingList.push({id:String(Date.now()+Math.random()),name:cleanShoppingName(input.dataset.item),quantity:input.dataset.quantity,store,checked:false,source})
+    });
+    saveState();els.ingredientShoppingDialog.close();renderCounts();alert('Selected ingredients added to the shopping list.');
+  }
+
+  function manageStores() {
+    const action = prompt(`Stores:
+${(state.stores||[]).join('\n')}
+
+Type a new store name to add it, or type REMOVE: Store Name to remove one.`);
+    if (!action) return;
+    if (/^REMOVE:/i.test(action)) {
+      const name=action.replace(/^REMOVE:/i,'').trim();
+      if (!name || name==='Unassigned') return alert('Unassigned cannot be removed.');
+      state.stores=state.stores.filter(x=>x.toLowerCase()!==name.toLowerCase());
+      state.shoppingList.forEach(x=>{if(normalizeStore(x.store).toLowerCase()===name.toLowerCase())x.store='Unassigned'});
+      state.regularItems.forEach(x=>{if(normalizeStore(x.store).toLowerCase()===name.toLowerCase())x.store='Unassigned'});
+    } else {
+      const name=action.trim(); if(name && !state.stores.some(x=>x.toLowerCase()===name.toLowerCase()))state.stores.push(name);
+    }
+    saveState();populateStoreSelects();renderShoppingList();
+  }
 
   function shoppingText(){const groups={};state.shoppingList.filter(x=>!x.checked).forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));return Object.entries(groups).map(([store,items])=>`${store}\n${items.map(x=>`- ${x.quantity?x.quantity+' ':''}${x.name}`).join('\n')}`).join('\n\n')||'Shopping list is empty.'}
   async function shareShoppingList(){const text=shoppingText();if(navigator.share){try{await navigator.share({title:'Kitchen Companion Shopping List',text});return}catch(e){if(e.name==='AbortError')return}}try{await navigator.clipboard.writeText(text);alert('Shopping list copied to the clipboard.')}catch{prompt('Copy your shopping list:',text)}}
 
   async function loadModuleCatalog(){
-    try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`Catalog returned ${res.status}`);const catalog=await res.json();renderCatalog(catalog.modules||[])}catch(error){alert(`Could not load the module catalog: ${error.message}`)}
+    currentView='modules'; showModules();
+    try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`Catalog returned ${res.status}`);const catalog=await res.json();renderCatalog(catalog.modules||[])}catch(error){alert(`Could not load the GitHub module catalog: ${error.message}. Make sure catalog.json and the recipepack files are uploaded to the repository root.`)}
   }
   function renderCatalog(modules){
     const existing=document.querySelector('#catalogSection');existing?.remove();const section=document.createElement('section');section.id='catalogSection';section.className='catalog-section';section.innerHTML='<h2>Available from GitHub</h2><div class="module-cards catalog-cards"></div>';const box=section.querySelector('.catalog-cards');modules.forEach(entry=>{const installed=state.modules.find(m=>m.moduleId===entry.moduleId);const card=document.createElement('section');card.className='module-card';const newer=installed&&compareVersions(entry.version,installed.version)>0;card.innerHTML=`<div><h2>${escapeHtml(entry.name)}</h2><div class="module-meta">${escapeHtml(entry.publisher||'Unknown publisher')} · Version ${escapeHtml(entry.version)} · ${entry.recipeCount||'?'} recipes</div><p>${escapeHtml(entry.description||'')}</p></div><div class="module-actions"><button class="button catalog-install">${!installed?'Install':newer?'Update':'Reinstall'}</button></div>`;card.querySelector('button').addEventListener('click',()=>installCatalogModule(entry));box.append(card)});els.modulesPane.prepend(section)
   }
-  async function installCatalogModule(entry){try{const res=await fetch(`${entry.url}?v=${encodeURIComponent(entry.version)}`,{cache:'no-store'});if(!res.ok)throw new Error(`Module returned ${res.status}`);const module=await res.json();validateModule(module);const idx=state.modules.findIndex(m=>m.moduleId===module.moduleId);if(idx>=0)state.modules[idx]=module;else state.modules.push(module);state.moduleSources[module.moduleId]=entry.url;saveState();refreshAll();showModules();alert(`${module.name} ${module.version} installed.`)}catch(error){alert(`Could not install module: ${error.message}`)}}
+  async function installCatalogModule(entry){try{const moduleUrl=(entry.url||'').replace('./modules/','./');const res=await fetch(`${moduleUrl}?v=${encodeURIComponent(entry.version)}`,{cache:'no-store'});if(!res.ok)throw new Error(`Module returned ${res.status}`);const module=await res.json();validateModule(module);const idx=state.modules.findIndex(m=>m.moduleId===module.moduleId);if(idx>=0)state.modules[idx]=module;else state.modules.push(module);state.moduleSources[module.moduleId]=moduleUrl;saveState();refreshAll();showModules();alert(`${module.name} ${module.version} installed.`)}catch(error){alert(`Could not install module: ${error.message}`)}}
   async function updateModuleFromSource(module){const url=state.moduleSources[module.moduleId];if(!url)return;try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});const catalog=await res.json();const entry=(catalog.modules||[]).find(x=>x.moduleId===module.moduleId);if(!entry)return alert('This module is no longer listed in the catalog.');if(compareVersions(entry.version,module.version)<=0)return alert(`${module.name} is up to date (${module.version}).`);if(confirm(`Update ${module.name} from ${module.version} to ${entry.version}?`))await installCatalogModule(entry)}catch(error){alert(`Could not check for updates: ${error.message}`)}}
   function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=String(b).split('.').map(Number);for(let i=0;i<Math.max(aa.length,bb.length);i++){const d=(aa[i]||0)-(bb[i]||0);if(d)return d}return 0}
 
