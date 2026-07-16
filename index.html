@@ -19,6 +19,7 @@
         <button id="createRecipeBtn" class="button secondary">＋ Recipe</button>
         <button id="importBtn" class="button">Import module</button>
         <input id="moduleFile" type="file" accept=".json,.recipepack,application/json" hidden multiple>
+        <button id="timersBtn" class="icon-btn timer-header-btn" aria-label="Active timers">⏱<span id="timerCount" hidden>0</span></button>
         <button id="settingsBtn" class="icon-btn" aria-label="Settings">⚙</button>
       </div>
     </header>
@@ -111,13 +112,27 @@
       <div class="dialog-title-row"><h2 id="recipeEditorTitle">Create recipe</h2><button type="button" class="icon-btn" id="closeRecipeEditor" aria-label="Close">✕</button></div>
       <input id="editRecipeKey" type="hidden">
       <label>Recipe name<input id="editName" required></label>
-      <div class="form-grid"><label>Category<input id="editCategory" placeholder="Main Course"></label><label>Yield<input id="editYield" placeholder="4 servings"></label></div>
+      <div class="form-grid"><label>Category<select id="editCategory"></select><button type="button" id="addCustomCategory" class="text-button">＋ Add custom category</button><input id="customCategoryInput" placeholder="New category name" hidden></label><label>Yield<input id="editYield" placeholder="4 servings"></label></div>
       <label>Description<textarea id="editDescription" rows="2"></textarea></label>
       <div class="form-grid"><label>Prep time<input id="editPrepTime" placeholder="15 minutes"></label><label>Cook time<input id="editCookTime" placeholder="30 minutes"></label></div>
       <label>Ingredients <small>One per line, such as: 1 1/2 cups flour</small><textarea id="editIngredients" rows="9" required></textarea></label>
       <label>Instructions <small>One step per line</small><textarea id="editInstructions" rows="9" required></textarea></label>
       <label>Tags <small>Separate with commas</small><input id="editTags"></label>
       <div class="dialog-actions"><button type="button" class="button secondary" id="cancelRecipeEditor">Cancel</button><button type="submit" class="button">Save recipe</button></div>
+    </form>
+  </dialog>
+
+  <section id="timerDock" class="timer-dock" hidden aria-live="polite">
+    <div class="timer-dock-header"><strong>Active timers</strong><button id="closeTimerDock" class="icon-btn" aria-label="Close timers">✕</button></div>
+    <div id="timerList" class="timer-list"></div>
+  </section>
+
+  <dialog id="rangeTimerDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Start timer</h2>
+      <p id="rangeTimerLabel"></p>
+      <div id="rangeTimerChoices" class="timer-choice-list"></div>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button></div>
     </form>
   </dialog>
 

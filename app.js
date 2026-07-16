@@ -74,11 +74,12 @@
   };
 
   const state = loadState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00';
+  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= [];
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
   let activeScale = 1;
+  let timerTicker = null;
 
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
@@ -90,7 +91,10 @@
     moduleFile: document.querySelector('#moduleFile'), importBtn: document.querySelector('#importBtn'), moduleImportBtn: document.querySelector('#moduleImportBtn'),
     moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'),
     settingsBtn: document.querySelector('#settingsBtn'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'),
-    createRecipeBtn: document.querySelector('#createRecipeBtn'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta')
+    createRecipeBtn: document.querySelector('#createRecipeBtn'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta'),
+    timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
+    editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
+    rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices')
   };
 
   init();
@@ -101,6 +105,7 @@
     applySettings();
     bindEvents();
     refreshAll();
+    startTimerTicker();
   }
 
   function loadState() {
@@ -108,7 +113,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
+    return { modules: [], favorites: [], recipeNotes: {}, customCategories: [], timers: [], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
   }
 
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -130,6 +135,9 @@
     els.cancelRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.recipeEditorForm.addEventListener('submit', saveRecipeFromEditor);
     els.accentColorInput.addEventListener('input', () => setAccentColor(els.accentColorInput.value));
+    els.timersBtn.addEventListener('click', () => { els.timerDock.hidden = !els.timerDock.hidden; renderTimers(); });
+    els.closeTimerDock.addEventListener('click', () => { els.timerDock.hidden = true; });
+    els.addCustomCategory.addEventListener('click', () => { els.customCategoryInput.hidden = !els.customCategoryInput.hidden; if (!els.customCategoryInput.hidden) els.customCategoryInput.focus(); });
     document.querySelectorAll('.color-swatch').forEach(button => button.addEventListener('click', () => setAccentColor(button.dataset.color)));
 
     document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => {
@@ -173,10 +181,13 @@
     saveState();
   }
 
-  function getAllRecipes({ enabledOnly = true } = {}) {
-    return state.modules
+  function getAllRecipes({ enabledOnly = true, includeOverridden = false } = {}) {
+    const all = state.modules
       .filter(module => !enabledOnly || module.enabled !== false)
       .flatMap(module => module.recipes.map(recipe => ({ ...recipe, moduleId: module.moduleId, moduleName: module.name, publisher: module.publisher, key: `${module.moduleId}:${recipe.id}` })));
+    if (includeOverridden) return all;
+    const overridden = new Set(all.filter(r => r.moduleId === 'my-recipes' && r.copiedFrom).map(r => r.copiedFrom));
+    return all.filter(r => !overridden.has(r.key));
   }
 
   function renderCounts() {
@@ -271,7 +282,7 @@
   }
 
   function renderRecipeDetail() {
-    const recipe = getAllRecipes({ enabledOnly: false }).find(r => r.key === selectedRecipeKey);
+    const recipe = getAllRecipes({ enabledOnly: false, includeOverridden: true }).find(r => r.key === selectedRecipeKey);
     if (!recipe) return showList();
     const favorite = state.favorites.includes(recipe.key);
     const yieldText = recipe.yield ? `${formatNumber(recipe.yield.amount * activeScale)} ${recipe.yield.unit}` : '';
@@ -279,8 +290,7 @@
     els.recipeDetail.innerHTML = `
       <section class="recipe-hero">
         <div class="recipe-hero-top">
-          <div><div class="recipe-kicker">${escapeHtml(recipe.category || 'Uncategorized')}</div><h1>${escapeHtml(recipe.name)}</h1></div>
-          <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Favorited' : '☆ Add favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button></div>
+          <div><div class="recipe-kicker">${escapeHtml(recipe.category || 'Uncategorized')}</div><h1>${escapeHtml(recipe.name)}</h1>${recipe.copiedFrom ? '<span class="modified-badge">Modified personal version</span>' : ''}</div>
         </div>
         <p class="recipe-summary">${escapeHtml(recipe.description || '')}</p>
         <div class="recipe-stats">
@@ -289,16 +299,19 @@
           ${yieldText ? `<span class="stat"><strong>Yield:</strong> ${escapeHtml(yieldText)}</span>` : ''}
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
+        <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
         <section class="recipe-section"><h2>Ingredients</h2>${renderIngredientGroups(recipe)}</section>
-        <section class="recipe-section"><h2>Instructions</h2><ol class="instruction-list">${(recipe.instructions || []).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol></section>
+        <section class="recipe-section"><h2>Instructions</h2><ol class="instruction-list">${(recipe.instructions || []).map((step,index) => `<li>${renderInstructionWithTimers(step, recipe, index)}</li>`).join('')}</ol></section>
       </div>
       <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
     document.querySelector('#editRecipeBtn').addEventListener('click', () => openRecipeEditor(recipe));
+    document.querySelector('#viewOriginalBtn')?.addEventListener('click', () => { selectedRecipeKey = recipe.copiedFrom; renderRecipeDetail(); });
+    document.querySelectorAll('.timer-link').forEach(button => button.addEventListener('click', () => offerTimer(button, recipe)));
     const notesInput = document.querySelector('#recipeNotesInput'); let noteTimer;
     notesInput.addEventListener('input', () => { clearTimeout(noteTimer); document.querySelector('#saveNoteStatus').textContent = 'Saving…'; noteTimer=setTimeout(() => { state.recipeNotes[recipe.key]=notesInput.value; saveState(); document.querySelector('#saveNoteStatus').textContent='Saved on this device'; }, 350); });
     document.querySelectorAll('.scale-button').forEach(button => button.addEventListener('click', () => { activeScale = Number(button.dataset.scale); renderRecipeDetail(); }));
@@ -365,7 +378,8 @@
     document.querySelector('#recipeEditorTitle').textContent = recipe ? (recipe.moduleId === 'my-recipes' ? 'Edit recipe' : 'Edit as personal copy') : 'Create recipe';
     document.querySelector('#editRecipeKey').value = recipe?.key || '';
     document.querySelector('#editName').value = recipe?.name || '';
-    document.querySelector('#editCategory').value = recipe?.category || '';
+    populateCategorySelect(recipe?.category || '');
+    els.customCategoryInput.hidden = true; els.customCategoryInput.value = '';
     document.querySelector('#editDescription').value = recipe?.description || '';
     document.querySelector('#editPrepTime').value = recipe?.prepTime || '';
     document.querySelector('#editCookTime').value = recipe?.cookTime || '';
@@ -382,25 +396,103 @@
     event.preventDefault();
     const personal = ensurePersonalModule();
     const sourceKey = document.querySelector('#editRecipeKey').value;
-    const source = sourceKey ? getAllRecipes({enabledOnly:false}).find(r => r.key === sourceKey) : null;
+    const source = sourceKey ? getAllRecipes({enabledOnly:false, includeOverridden:true}).find(r => r.key === sourceKey) : null;
     const name = document.querySelector('#editName').value.trim();
     let id = source?.moduleId === 'my-recipes' ? source.id : uniqueRecipeId(slugify(name), personal.recipes);
     const yieldParts = document.querySelector('#editYield').value.trim().match(/^([0-9.]+)\s*(.*)$/);
     const recipe = {
       id, name,
-      category: document.querySelector('#editCategory').value.trim() || 'Uncategorized',
+      category: getEditorCategory(),
       description: document.querySelector('#editDescription').value.trim(),
       prepTime: document.querySelector('#editPrepTime').value.trim(), cookTime: document.querySelector('#editCookTime').value.trim(),
       yield: yieldParts ? { amount: Number(yieldParts[1]), unit: yieldParts[2] || 'servings' } : null,
       tags: document.querySelector('#editTags').value.split(',').map(x=>x.trim()).filter(Boolean),
       ingredientGroups: [{ name:'Main', ingredients: document.querySelector('#editIngredients').value.split('\n').map(x=>x.trim()).filter(Boolean).map(parseIngredientLine) }],
       instructions: document.querySelector('#editInstructions').value.split('\n').map(x=>x.trim()).filter(Boolean),
-      createdInApp: true, copiedFrom: source && source.moduleId !== 'my-recipes' ? source.key : undefined
+      createdInApp: true, copiedFrom: source?.moduleId === 'my-recipes' ? source.copiedFrom : (source ? source.key : undefined)
     };
     const index = personal.recipes.findIndex(r => r.id === id);
     if (index >= 0) personal.recipes[index] = recipe; else personal.recipes.push(recipe);
     selectedRecipeKey = `my-recipes:${id}`;
     closeRecipeEditor(); refreshAll(); showDetail();
+  }
+
+  function allCategoryNames() {
+    return [...new Set([...getAllRecipes({enabledOnly:false, includeOverridden:true}).map(r => r.category || 'Uncategorized'), ...(state.customCategories || [])])].sort((a,b)=>a.localeCompare(b));
+  }
+
+  function populateCategorySelect(selected='') {
+    els.editCategory.innerHTML = '';
+    allCategoryNames().forEach(category => { const option=document.createElement('option'); option.value=category; option.textContent=category; els.editCategory.append(option); });
+    if (selected && !allCategoryNames().includes(selected)) { const option=document.createElement('option'); option.value=selected; option.textContent=selected; els.editCategory.append(option); }
+    els.editCategory.value = selected || els.editCategory.options[0]?.value || 'Uncategorized';
+  }
+
+  function getEditorCategory() {
+    const custom = els.customCategoryInput.value.trim();
+    if (custom) {
+      if (!state.customCategories.includes(custom)) state.customCategories.push(custom);
+      return custom;
+    }
+    return els.editCategory.value || 'Uncategorized';
+  }
+
+  function renderInstructionWithTimers(step, recipe, stepIndex) {
+    const escaped = escapeHtml(step);
+    const pattern = /\b(?:(\d+)\s*(?:hours?|hrs?|hr)\s*(?:and\s*)?)?(\d+(?:\s*[–-]\s*\d+)?)\s*(minutes?|mins?|min)\b|\b(\d+)\s*(hours?|hrs?|hr)\b/gi;
+    return escaped.replace(pattern, (match, hours, minutePart, _minuteUnit, hourOnly) => {
+      let values=[];
+      if (hourOnly) values=[Number(hourOnly)*60];
+      else {
+        const base=(Number(hours)||0)*60;
+        const nums=String(minutePart).split(/[–-]/).map(x=>Number(x.trim()));
+        values=nums.map(n=>base+n);
+      }
+      return `<button type="button" class="timer-link" data-minutes="${values.join(',')}" data-step="${stepIndex+1}" data-label="${escapeHtml(match)}">⏱ ${escapeHtml(match)}</button>`;
+    });
+  }
+
+  function offerTimer(button, recipe) {
+    const values=button.dataset.minutes.split(',').map(Number).filter(Number.isFinite);
+    const label=button.dataset.label;
+    const step=Number(button.dataset.step);
+    if (values.length===1) return startTimer(values[0], recipe, step, label);
+    els.rangeTimerLabel.textContent = `${recipe.name}, step ${step}: ${label}`;
+    els.rangeTimerChoices.innerHTML='';
+    values.forEach((minutes,index)=>{ const b=document.createElement('button'); b.type='button'; b.className='button'; b.textContent=index===0?`Check at ${minutes} minutes`:`Set ${minutes} minutes`; b.addEventListener('click',()=>{ els.rangeTimerDialog.close(); startTimer(minutes,recipe,step,label); }); els.rangeTimerChoices.append(b); });
+    els.rangeTimerDialog.showModal();
+  }
+
+  function startTimer(minutes, recipe, step, label) {
+    const timer={ id:`timer-${Date.now()}-${Math.random().toString(16).slice(2)}`, recipeKey:recipe.key, recipeName:recipe.name, step, label, durationMs:minutes*60000, endAt:Date.now()+minutes*60000, paused:false, remainingMs:minutes*60000, done:false };
+    state.timers.push(timer); saveState(); els.timerDock.hidden=false; renderTimers();
+  }
+
+  function startTimerTicker() {
+    if (timerTicker) clearInterval(timerTicker);
+    timerTicker=setInterval(()=>renderTimers(),1000);
+    renderTimers();
+  }
+
+  function timerRemaining(timer) { return timer.paused ? timer.remainingMs : Math.max(0,timer.endAt-Date.now()); }
+  function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
+
+  function renderTimers() {
+    state.timers ||= [];
+    let changed=false;
+    state.timers.forEach(t=>{ if(!t.paused && !t.done && timerRemaining(t)<=0){t.done=true; changed=true;} });
+    if(changed){ saveState(); if(navigator.vibrate) navigator.vibrate([250,150,250]); }
+    els.timerCount.textContent=state.timers.length; els.timerCount.hidden=state.timers.length===0;
+    els.timerList.innerHTML='';
+    if(!state.timers.length){ els.timerList.innerHTML='<p class="module-meta">No active timers.</p>'; return; }
+    state.timers.forEach(timer=>{
+      const card=document.createElement('div'); card.className=`timer-card ${timer.done?'done':''}`;
+      card.innerHTML=`<div class="timer-name">${escapeHtml(timer.recipeName)}</div><div class="timer-step">Step ${timer.step} · ${escapeHtml(timer.label)}</div><div class="timer-time">${timer.done?'Done':formatClock(timerRemaining(timer))}</div><div class="timer-actions"><button class="pause-timer">${timer.paused?'Resume':'Pause'}</button><button class="add-timer">+1 min</button><button class="cancel-timer">Cancel</button></div>`;
+      card.querySelector('.pause-timer').addEventListener('click',()=>{ if(timer.done)return; if(timer.paused){timer.endAt=Date.now()+timer.remainingMs;timer.paused=false;}else{timer.remainingMs=timerRemaining(timer);timer.paused=true;} saveState();renderTimers(); });
+      card.querySelector('.add-timer').addEventListener('click',()=>{ timer.done=false; if(timer.paused) timer.remainingMs+=60000; else timer.endAt=Math.max(Date.now(),timer.endAt)+60000; saveState();renderTimers(); });
+      card.querySelector('.cancel-timer').addEventListener('click',()=>{ state.timers=state.timers.filter(t=>t.id!==timer.id); saveState();renderTimers(); });
+      els.timerList.append(card);
+    });
   }
 
   function parseIngredientLine(line) {
