@@ -189,3 +189,19 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .recipe-action-row > * { width:100%; }
   .timer-dock { left:10px; right:10px; bottom:10px; width:auto; }
 }
+
+
+/* v0.5 */
+.settings-nav{margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem}
+.version-card{display:grid;gap:.35rem;padding:1rem;border:1px solid var(--border);border-radius:1rem;background:var(--surface-2);margin-bottom:1rem}
+.module-header-actions,.shopping-toolbar,.section-title-row{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap}
+.shopping-pane{padding:clamp(1rem,3vw,2rem);max-width:1100px;margin:0 auto;width:100%}
+.shopping-toolbar{margin:1rem 0 1.5rem}.shopping-toolbar select{min-width:180px}
+.shopping-store-card{background:var(--surface);border:1px solid var(--border);border-radius:1.25rem;padding:1rem;margin-bottom:1rem}
+.shopping-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.85rem 0;border-bottom:1px dashed var(--border)}
+.shopping-row:last-child{border-bottom:0}.shopping-row label{display:flex;gap:.75rem;align-items:flex-start;flex:1}.shopping-row label span{display:grid}.shopping-row em{font-size:.78rem;color:var(--muted);font-style:normal}.shopping-row.checked span{text-decoration:line-through;opacity:.6}
+.regular-item-row{display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.75rem 0;border-bottom:1px solid var(--border)}.regular-item-row span{display:grid}.regular-item-row small{color:var(--muted)}
+.ingredient-choice{display:flex;gap:.7rem;padding:.65rem 0;border-bottom:1px dashed var(--border)}
+.catalog-section{margin-bottom:2rem}.catalog-section>h2{margin-bottom:1rem}
+#ingredientShoppingChoices{max-height:50vh;overflow:auto;margin:1rem 0}
+@media(max-width:720px){.topbar .brand span{display:none}.top-actions{margin-left:auto}.shopping-toolbar>*{flex:1 1 45%}.section-title-row{align-items:flex-start}.section-title-row .button{width:100%}.module-header-actions{width:100%}.module-header-actions .button{flex:1}.shopping-row{align-items:flex-start}}

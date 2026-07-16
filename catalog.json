@@ -1,0 +1,23 @@
+{
+  "catalogVersion": 1,
+  "modules": [
+    {
+      "moduleId": "recipes-to-fill-the-stomach-and-heart",
+      "name": "Recipes to Fill the Stomach and Heart",
+      "publisher": "Randy & Family",
+      "version": "1.0.2",
+      "recipeCount": 105,
+      "description": "Family recipes and recipes developed together.",
+      "url": "./modules/recipes-to-fill-the-stomach-and-heart.recipepack"
+    },
+    {
+      "moduleId": "starter-kitchen",
+      "name": "Starter Kitchen",
+      "publisher": "Kitchen Companion",
+      "version": "1.0.0",
+      "recipeCount": 2,
+      "description": "Small demonstration collection.",
+      "url": "./modules/example-family-recipes.recipepack"
+    }
+  ]
+}

@@ -2,6 +2,8 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
+  const ENGINE_VERSION = '0.5.0';
+  const MODULE_CATALOG_URL = './modules/catalog.json';
   const builtInModule = {
     schemaVersion: 1,
     moduleId: 'starter-kitchen',
@@ -74,7 +76,7 @@
   };
 
   const state = loadState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= [];
+  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {};
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -86,15 +88,16 @@
     searchInput: document.querySelector('#searchInput'), recipeGrid: document.querySelector('#recipeGrid'), emptyState: document.querySelector('#emptyState'),
     categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'),
     viewTitle: document.querySelector('#viewTitle'), viewSubtitle: document.querySelector('#viewSubtitle'),
-    listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'),
+    listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'),
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
     moduleFile: document.querySelector('#moduleFile'), importBtn: document.querySelector('#importBtn'), moduleImportBtn: document.querySelector('#moduleImportBtn'),
     moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'),
-    settingsBtn: document.querySelector('#settingsBtn'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'),
-    createRecipeBtn: document.querySelector('#createRecipeBtn'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta'),
+    settingsBtn: document.querySelector('#menuSettings'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'),
+    createRecipeBtn: document.querySelector('#menuCreateRecipe'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta'),
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
-    rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices')
+    rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn')
   };
 
   init();
@@ -113,7 +116,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, customCategories: [], timers: [], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
+    return { modules: [], favorites: [], recipeNotes: {}, customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
   }
 
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -124,13 +127,14 @@
     els.searchInput.addEventListener('input', renderRecipeList);
     els.moduleFilter.addEventListener('change', renderRecipeList);
     els.backBtn.addEventListener('click', showList);
-    els.importBtn.addEventListener('click', () => els.moduleFile.click());
+    
     els.moduleImportBtn.addEventListener('click', () => els.moduleFile.click());
+    els.menuImportModule.addEventListener('click', () => { toggleSidebar(false); els.moduleFile.click(); });
     els.moduleFile.addEventListener('change', importModules);
-    els.settingsBtn.addEventListener('click', () => els.settingsDialog.showModal());
+    els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); els.settingsDialog.showModal(); });
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
-    els.createRecipeBtn.addEventListener('click', () => openRecipeEditor());
+    els.createRecipeBtn.addEventListener('click', () => { toggleSidebar(false); openRecipeEditor(); });
     els.closeRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.cancelRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.recipeEditorForm.addEventListener('submit', saveRecipeFromEditor);
@@ -139,14 +143,25 @@
     els.closeTimerDock.addEventListener('click', () => { els.timerDock.hidden = true; });
     els.addCustomCategory.addEventListener('click', () => { els.customCategoryInput.hidden = !els.customCategoryInput.hidden; if (!els.customCategoryInput.hidden) els.customCategoryInput.focus(); });
     document.querySelectorAll('.color-swatch').forEach(button => button.addEventListener('click', () => setAccentColor(button.dataset.color)));
+    els.shoppingStoreFilter.addEventListener('change', renderShoppingList);
+    els.addShoppingItemBtn.addEventListener('click', openShoppingItemDialog);
+    document.querySelector('#cancelShoppingItem').addEventListener('click', () => els.shoppingItemDialog.close());
+    els.shoppingItemForm.addEventListener('submit', addManualShoppingItem);
+    els.regularItemsBtn.addEventListener('click', showRegularItems);
+    els.shareShoppingBtn.addEventListener('click', shareShoppingList);
+    els.clearCheckedBtn.addEventListener('click', () => { state.shoppingList = state.shoppingList.filter(x => !x.checked); saveState(); renderShoppingList(); renderCounts(); });
+    els.confirmIngredientAdd.addEventListener('click', confirmAddIngredients);
+    els.catalogRefreshBtn.addEventListener('click', loadModuleCatalog);
+
 
     document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => {
+      if (!button.dataset.view) return;
       currentView = button.dataset.view;
       selectedCategory = null;
       document.querySelectorAll('.nav-item').forEach(x => x.classList.toggle('active', x === button));
       document.querySelectorAll('.category-button').forEach(x => x.classList.remove('active'));
       toggleSidebar(false);
-      if (currentView === 'modules') showModules(); else showList();
+      if (currentView === 'modules') showModules(); else if (currentView === 'shopping') showShopping(); else showList();
     }));
   }
 
@@ -196,6 +211,7 @@
     els.navModuleCount.textContent = state.modules.length;
     els.allCount.textContent = recipes.length;
     els.favoriteCount.textContent = state.favorites.length;
+    els.shoppingCount.textContent = state.shoppingList.filter(x=>!x.checked).length;
   }
 
   function renderModuleFilter() {
@@ -267,17 +283,17 @@
   }
 
   function showList() {
-    els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true;
+    els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
     renderRecipeList(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function showDetail() {
-    els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true;
+    els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
     renderRecipeDetail(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function showModules() {
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false;
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true;
     renderModules(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -303,13 +319,14 @@
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
-        <section class="recipe-section"><h2>Ingredients</h2>${renderIngredientGroups(recipe)}</section>
+        <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button></div>${renderIngredientGroups(recipe)}</section>
         <section class="recipe-section"><h2>Instructions</h2><ol class="instruction-list">${(recipe.instructions || []).map((step,index) => `<li>${renderInstructionWithTimers(step, recipe, index)}</li>`).join('')}</ol></section>
       </div>
       <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
     document.querySelector('#editRecipeBtn').addEventListener('click', () => openRecipeEditor(recipe));
+    document.querySelector('#addIngredientsBtn').addEventListener('click', () => openIngredientShopping(recipe));
     document.querySelector('#viewOriginalBtn')?.addEventListener('click', () => { selectedRecipeKey = recipe.copiedFrom; renderRecipeDetail(); });
     document.querySelectorAll('.timer-link').forEach(button => button.addEventListener('click', () => offerTimer(button, recipe)));
     const notesInput = document.querySelector('#recipeNotesInput'); let noteTimer;
@@ -525,7 +542,7 @@
       }
     }
     event.target.value = '';
-    refreshAll();
+    saveState(); refreshAll();
     currentView = 'modules'; showModules();
   }
 
@@ -573,19 +590,20 @@
       const card = document.createElement('section');
       card.className = 'module-card';
       card.innerHTML = `
-        <div><h2>${escapeHtml(module.name)}</h2><div class="module-meta">${escapeHtml(module.publisher || 'Unknown publisher')} · Version ${escapeHtml(module.version)} · ${module.recipes.length} recipes</div><p>${escapeHtml(module.description || '')}</p></div>
+        <div><h2>${escapeHtml(module.name)}</h2><div class="module-meta">${escapeHtml(module.publisher || 'Unknown publisher')} · Module version ${escapeHtml(module.version)} · ${module.recipes.length} recipes</div><p>${escapeHtml(module.description || '')}</p></div>
         <div class="module-actions">
           <button class="button secondary toggle-module">${module.enabled === false ? 'Enable' : 'Disable'}</button>
-          <button class="button secondary export-module">Export</button>
+          <button class="button secondary export-module">Export</button>${state.moduleSources[module.moduleId] ? '<button class="button secondary update-module">Check update</button>' : ''}
           ${module.moduleId === 'my-recipes' ? '' : '<button class="button danger remove-module">Uninstall</button>'}
         </div>`;
-      card.querySelector('.toggle-module').addEventListener('click', () => { module.enabled = module.enabled === false; refreshAll(); renderModules(); });
+      card.querySelector('.toggle-module').addEventListener('click', () => { module.enabled = module.enabled === false; saveState(); refreshAll(); renderModules(); });
       card.querySelector('.export-module').addEventListener('click', () => exportModule(module));
+      card.querySelector('.update-module')?.addEventListener('click', () => updateModuleFromSource(module));
       card.querySelector('.remove-module')?.addEventListener('click', () => {
         if (!confirm(`Uninstall ${module.name}?\n\nThis removes all ${module.recipes.length} imported recipes from this device. User-created recipes and copied personal variations are not part of the module and will remain. Favorites that point to this module will be cleaned up.`)) return;
-        state.modules = state.modules.filter(m => m.moduleId !== module.moduleId);
+        state.modules = state.modules.filter(m => m.moduleId !== module.moduleId); delete state.moduleSources[module.moduleId];
         state.favorites = state.favorites.filter(key => !key.startsWith(`${module.moduleId}:`));
-        refreshAll(); renderModules();
+        saveState(); refreshAll(); renderModules();
       });
       els.moduleCards.append(card);
     });
@@ -598,6 +616,57 @@
     a.href = url; a.download = `${module.moduleId}.recipepack`; a.click();
     URL.revokeObjectURL(url);
   }
+
+
+  function showShopping() {
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false;
+    populateStoreSelects(); renderShoppingList(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function normalizeStore(store) { return store && store.trim() ? store.trim() : 'Unassigned'; }
+  function populateStoreSelects() {
+    const stores=[...new Set(['Unassigned',...(state.stores||[]),...state.shoppingList.map(x=>normalizeStore(x.store))])];
+    state.stores=stores;
+    const fill=(select,all=false)=>{ const current=select.value; select.innerHTML=all?'<option value="all">All stores</option>':''; stores.forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;select.append(o)}); if([...select.options].some(o=>o.value===current))select.value=current; };
+    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect);
+  }
+
+  function renderShoppingList() {
+    populateStoreSelects();
+    const filter=els.shoppingStoreFilter.value||'all';
+    const items=state.shoppingList.filter(x=>filter==='all'||normalizeStore(x.store)===filter);
+    els.shoppingGroups.innerHTML='';
+    if(!items.length){els.shoppingGroups.innerHTML='<div class="empty-state"><h2>Your list is empty</h2><p>Add items manually, from regular items, or from a recipe.</p></div>';return;}
+    const groups={}; items.forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));
+    Object.entries(groups).forEach(([store,list])=>{
+      const section=document.createElement('section');section.className='shopping-store-card';
+      section.innerHTML=`<h2>${escapeHtml(store)}</h2><div class="shopping-items"></div>`;
+      const box=section.querySelector('.shopping-items');
+      list.forEach(item=>{const row=document.createElement('div');row.className=`shopping-row ${item.checked?'checked':''}`;row.innerHTML=`<label><input type="checkbox" ${item.checked?'checked':''}><span><strong>${escapeHtml(item.name)}</strong>${item.quantity?` <small>${escapeHtml(item.quantity)}</small>`:''}${item.source?`<em>${escapeHtml(item.source)}</em>`:''}</span></label><button class="text-button remove-shopping">Remove</button>`;row.querySelector('input').addEventListener('change',e=>{item.checked=e.target.checked;saveState();renderShoppingList();renderCounts()});row.querySelector('.remove-shopping').addEventListener('click',()=>{state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});box.append(row)});
+      els.shoppingGroups.append(section);
+    });
+  }
+
+  function openShoppingItemDialog() { populateStoreSelects(); els.shoppingItemForm.reset(); els.shoppingItemDialog.showModal(); }
+  function addManualShoppingItem(event){event.preventDefault();const name=document.querySelector('#shoppingItemName').value.trim();const quantity=document.querySelector('#shoppingItemQuantity').value.trim();const store=normalizeStore(els.shoppingItemStore.value);if(!name)return;state.shoppingList.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name,quantity,store,checked:false,source:'Manual'});if(document.querySelector('#saveRegularItem').checked&&!state.regularItems.some(x=>x.name.toLowerCase()===name.toLowerCase()))state.regularItems.push({id:String(Date.now()+Math.random()),name,quantity,store});saveState();els.shoppingItemDialog.close();renderShoppingList();renderCounts()}
+
+  function showRegularItems(){populateStoreSelects();els.regularItemsList.innerHTML='';if(!state.regularItems.length){els.regularItemsList.innerHTML='<p>No regular items yet. Add a manual item and choose “Save as regular item.”</p>';}state.regularItems.forEach(item=>{const row=document.createElement('div');row.className='regular-item-row';row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'')} · ${escapeHtml(item.store||'Unassigned')}</small></span><button type="button" class="button secondary">Add</button>`;row.querySelector('button').addEventListener('click',()=>{state.shoppingList.push({id:String(Date.now()+Math.random()),name:item.name,quantity:item.quantity,store:item.store,checked:false,source:'Regular item'});saveState();renderCounts();});els.regularItemsList.append(row)});els.regularItemsDialog.showModal()}
+
+  function openIngredientShopping(recipe){populateStoreSelects();els.ingredientShoppingChoices.innerHTML='';(recipe.ingredientGroups||[]).forEach(group=>{if(group.name&&group.name!=='Main'){const h=document.createElement('h3');h.textContent=group.name;els.ingredientShoppingChoices.append(h)};(group.ingredients||[]).forEach((ing,i)=>{const id=`shop-${Math.random().toString(36).slice(2)}`;const label=document.createElement('label');label.className='ingredient-choice';label.innerHTML=`<input type="checkbox" data-item="${escapeHtml(ing.item)}" data-quantity="${escapeHtml(formatIngredient(ing))}" checked><span>${formatIngredient(ing)}</span>`;els.ingredientShoppingChoices.append(label)})});els.confirmIngredientAdd.dataset.recipeName=recipe.name;els.ingredientShoppingDialog.showModal()}
+  function confirmAddIngredients(){const store=normalizeStore(els.ingredientStoreSelect.value);const source=els.confirmIngredientAdd.dataset.recipeName;els.ingredientShoppingChoices.querySelectorAll('input:checked').forEach(input=>{state.shoppingList.push({id:String(Date.now()+Math.random()),name:input.dataset.item,quantity:input.dataset.quantity,store,checked:false,source})});saveState();els.ingredientShoppingDialog.close();renderCounts();alert('Selected ingredients added to the shopping list.')}
+
+  function shoppingText(){const groups={};state.shoppingList.filter(x=>!x.checked).forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));return Object.entries(groups).map(([store,items])=>`${store}\n${items.map(x=>`- ${x.quantity?x.quantity+' ':''}${x.name}`).join('\n')}`).join('\n\n')||'Shopping list is empty.'}
+  async function shareShoppingList(){const text=shoppingText();if(navigator.share){try{await navigator.share({title:'Kitchen Companion Shopping List',text});return}catch(e){if(e.name==='AbortError')return}}try{await navigator.clipboard.writeText(text);alert('Shopping list copied to the clipboard.')}catch{prompt('Copy your shopping list:',text)}}
+
+  async function loadModuleCatalog(){
+    try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`Catalog returned ${res.status}`);const catalog=await res.json();renderCatalog(catalog.modules||[])}catch(error){alert(`Could not load the module catalog: ${error.message}`)}
+  }
+  function renderCatalog(modules){
+    const existing=document.querySelector('#catalogSection');existing?.remove();const section=document.createElement('section');section.id='catalogSection';section.className='catalog-section';section.innerHTML='<h2>Available from GitHub</h2><div class="module-cards catalog-cards"></div>';const box=section.querySelector('.catalog-cards');modules.forEach(entry=>{const installed=state.modules.find(m=>m.moduleId===entry.moduleId);const card=document.createElement('section');card.className='module-card';const newer=installed&&compareVersions(entry.version,installed.version)>0;card.innerHTML=`<div><h2>${escapeHtml(entry.name)}</h2><div class="module-meta">${escapeHtml(entry.publisher||'Unknown publisher')} · Version ${escapeHtml(entry.version)} · ${entry.recipeCount||'?'} recipes</div><p>${escapeHtml(entry.description||'')}</p></div><div class="module-actions"><button class="button catalog-install">${!installed?'Install':newer?'Update':'Reinstall'}</button></div>`;card.querySelector('button').addEventListener('click',()=>installCatalogModule(entry));box.append(card)});els.modulesPane.prepend(section)
+  }
+  async function installCatalogModule(entry){try{const res=await fetch(`${entry.url}?v=${encodeURIComponent(entry.version)}`,{cache:'no-store'});if(!res.ok)throw new Error(`Module returned ${res.status}`);const module=await res.json();validateModule(module);const idx=state.modules.findIndex(m=>m.moduleId===module.moduleId);if(idx>=0)state.modules[idx]=module;else state.modules.push(module);state.moduleSources[module.moduleId]=entry.url;saveState();refreshAll();showModules();alert(`${module.name} ${module.version} installed.`)}catch(error){alert(`Could not install module: ${error.message}`)}}
+  async function updateModuleFromSource(module){const url=state.moduleSources[module.moduleId];if(!url)return;try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});const catalog=await res.json();const entry=(catalog.modules||[]).find(x=>x.moduleId===module.moduleId);if(!entry)return alert('This module is no longer listed in the catalog.');if(compareVersions(entry.version,module.version)<=0)return alert(`${module.name} is up to date (${module.version}).`);if(confirm(`Update ${module.name} from ${module.version} to ${entry.version}?`))await installCatalogModule(entry)}catch(error){alert(`Could not check for updates: ${error.message}`)}}
+  function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=String(b).split('.').map(Number);for(let i=0;i<Math.max(aa.length,bb.length);i++){const d=(aa[i]||0)-(bb[i]||0);if(d)return d}return 0}
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));

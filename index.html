@@ -16,11 +16,8 @@
         <span id="moduleCount">0 modules</span>
       </div>
       <div class="top-actions">
-        <button id="createRecipeBtn" class="button secondary">＋ Recipe</button>
-        <button id="importBtn" class="button">Import module</button>
-        <input id="moduleFile" type="file" accept=".json,.recipepack,application/json" hidden multiple>
+        <input id="moduleFile" type="file" hidden multiple>
         <button id="timersBtn" class="icon-btn timer-header-btn" aria-label="Active timers">⏱<span id="timerCount" hidden>0</span></button>
-        <button id="settingsBtn" class="icon-btn" aria-label="Settings">⚙</button>
       </div>
     </header>
 
@@ -33,7 +30,11 @@
       <nav class="nav-section" aria-label="Library navigation">
         <button class="nav-item active" data-view="all">All recipes <span id="allCount">0</span></button>
         <button class="nav-item" data-view="favorites">Favorites <span id="favoriteCount">0</span></button>
+        <button class="nav-item" data-view="shopping">Shopping list <span id="shoppingCount">0</span></button>
+        <button class="nav-item" id="menuCreateRecipe">＋ Create recipe</button>
         <button class="nav-item" data-view="modules">Modules <span id="navModuleCount">0</span></button>
+        <button class="nav-item" id="menuImportModule">Import module</button>
+        <button class="nav-item settings-nav" id="menuSettings">Settings</button>
       </nav>
 
       <div class="sidebar-heading">Categories</div>
@@ -71,16 +72,27 @@
             <h1>Recipe modules</h1>
             <p>Import, enable, disable, export, or uninstall recipe collections.</p>
           </div>
-          <button id="moduleImportBtn" class="button">Import module</button>
+          <div class="module-header-actions"><button id="catalogRefreshBtn" class="button">Browse available modules</button><button id="moduleImportBtn" class="button secondary">Import file</button></div>
         </div>
         <div id="moduleCards" class="module-cards"></div>
+      </section>
+
+      <section id="shoppingPane" class="shopping-pane" hidden>
+        <div class="list-header"><div><h1>Shopping list</h1><p>Organize items by store, add weekly staples, and share the list.</p></div><button id="addShoppingItemBtn" class="button">＋ Item</button></div>
+        <div class="shopping-toolbar">
+          <select id="shoppingStoreFilter"><option value="all">All stores</option></select>
+          <button id="regularItemsBtn" class="button secondary">Regular items</button>
+          <button id="shareShoppingBtn" class="button secondary">Share</button>
+          <button id="clearCheckedBtn" class="button secondary">Clear checked</button>
+        </div>
+        <div id="shoppingGroups"></div>
       </section>
     </main>
   </div>
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.5.0</b></span><span>Module format 1.x</span></div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -133,6 +145,34 @@
       <p id="rangeTimerLabel"></p>
       <div id="rangeTimerChoices" class="timer-choice-list"></div>
       <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button></div>
+    </form>
+  </dialog>
+
+
+  <dialog id="ingredientShoppingDialog">
+    <form method="dialog" class="dialog-card shopping-selector">
+      <h2>Add ingredients</h2><p>Select only what you need. Quantities use the current recipe scale.</p>
+      <div id="ingredientShoppingChoices"></div>
+      <label>Default store<select id="ingredientStoreSelect"></select></label>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button><button id="confirmIngredientAdd" type="button" class="button">Add selected</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="shoppingItemDialog">
+    <form id="shoppingItemForm" class="dialog-card">
+      <h2>Add shopping item</h2>
+      <label>Item<input id="shoppingItemName" required></label>
+      <label>Quantity or note<input id="shoppingItemQuantity" placeholder="1 gallon, 2 boxes, etc."></label>
+      <label>Store<select id="shoppingItemStore"></select></label>
+      <label class="setting-row"><span>Save as regular item</span><input id="saveRegularItem" type="checkbox"></label>
+      <div class="dialog-actions"><button type="button" id="cancelShoppingItem" class="button secondary">Cancel</button><button class="button" type="submit">Add item</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="regularItemsDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Regular items</h2><p>Quick-add things you buy often.</p><div id="regularItemsList"></div>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Close</button></div>
     </form>
   </dialog>
 
