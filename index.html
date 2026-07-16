@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#7b3f00">
-  <title>Recipe Engine</title>
+  <meta name="theme-color" id="themeColorMeta" content="#7b3f00">
+  <title>Kitchen Companion</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,10 +12,11 @@
     <header class="topbar">
       <button id="menuBtn" class="icon-btn mobile-only" aria-label="Open navigation">☰</button>
       <div class="brand">
-        <strong>Recipe Engine</strong>
+        <strong>Kitchen Companion</strong>
         <span id="moduleCount">0 modules</span>
       </div>
       <div class="top-actions">
+        <button id="createRecipeBtn" class="button secondary">＋ Recipe</button>
         <button id="importBtn" class="button">Import module</button>
         <input id="moduleFile" type="file" accept=".json,.recipepack,application/json" hidden multiple>
         <button id="settingsBtn" class="icon-btn" aria-label="Settings">⚙</button>
@@ -87,9 +88,36 @@
         <span>Show metric helper amounts</span>
         <input id="metricToggle" type="checkbox">
       </label>
+      <div class="setting-block">
+        <strong>Layout color</strong>
+        <div class="color-presets" id="colorPresets">
+          <button type="button" class="color-swatch" data-color="#7b3f00" style="--swatch:#7b3f00" aria-label="Brown"></button>
+          <button type="button" class="color-swatch" data-color="#0ABAB5" style="--swatch:#0ABAB5" aria-label="Tiffany blue"></button>
+          <button type="button" class="color-swatch" data-color="#2563EB" style="--swatch:#2563EB" aria-label="Blue"></button>
+          <button type="button" class="color-swatch" data-color="#7C3AED" style="--swatch:#7C3AED" aria-label="Purple"></button>
+          <button type="button" class="color-swatch" data-color="#15803D" style="--swatch:#15803D" aria-label="Green"></button>
+          <button type="button" class="color-swatch" data-color="#BE123C" style="--swatch:#BE123C" aria-label="Rose"></button>
+        </div>
+        <label class="custom-color-row"><span>Custom color</span><input id="accentColorInput" type="color" value="#7b3f00"></label>
+      </div>
       <div class="dialog-actions">
         <button class="button secondary" value="cancel">Close</button>
       </div>
+    </form>
+  </dialog>
+
+  <dialog id="recipeEditorDialog">
+    <form id="recipeEditorForm" class="dialog-card recipe-editor">
+      <div class="dialog-title-row"><h2 id="recipeEditorTitle">Create recipe</h2><button type="button" class="icon-btn" id="closeRecipeEditor" aria-label="Close">✕</button></div>
+      <input id="editRecipeKey" type="hidden">
+      <label>Recipe name<input id="editName" required></label>
+      <div class="form-grid"><label>Category<input id="editCategory" placeholder="Main Course"></label><label>Yield<input id="editYield" placeholder="4 servings"></label></div>
+      <label>Description<textarea id="editDescription" rows="2"></textarea></label>
+      <div class="form-grid"><label>Prep time<input id="editPrepTime" placeholder="15 minutes"></label><label>Cook time<input id="editCookTime" placeholder="30 minutes"></label></div>
+      <label>Ingredients <small>One per line, such as: 1 1/2 cups flour</small><textarea id="editIngredients" rows="9" required></textarea></label>
+      <label>Instructions <small>One step per line</small><textarea id="editInstructions" rows="9" required></textarea></label>
+      <label>Tags <small>Separate with commas</small><input id="editTags"></label>
+      <div class="dialog-actions"><button type="button" class="button secondary" id="cancelRecipeEditor">Cancel</button><button type="submit" class="button">Save recipe</button></div>
     </form>
   </dialog>
 

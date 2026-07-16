@@ -6,7 +6,7 @@
     schemaVersion: 1,
     moduleId: 'starter-kitchen',
     name: 'Starter Kitchen',
-    publisher: 'Recipe Engine',
+    publisher: 'Kitchen Companion',
     version: '1.0.0',
     description: 'A small starter collection demonstrating the module format.',
     license: 'Demo content',
@@ -74,6 +74,7 @@
   };
 
   const state = loadState();
+  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00';
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -88,13 +89,15 @@
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
     moduleFile: document.querySelector('#moduleFile'), importBtn: document.querySelector('#importBtn'), moduleImportBtn: document.querySelector('#moduleImportBtn'),
     moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'),
-    settingsBtn: document.querySelector('#settingsBtn'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle')
+    settingsBtn: document.querySelector('#settingsBtn'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'),
+    createRecipeBtn: document.querySelector('#createRecipeBtn'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta')
   };
 
   init();
 
   function init() {
     if (!state.modules.length) state.modules.push(builtInModule);
+    ensurePersonalModule();
     applySettings();
     bindEvents();
     refreshAll();
@@ -105,7 +108,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], settings: { darkMode: false, metricHelpers: false } };
+    return { modules: [], favorites: [], recipeNotes: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
   }
 
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -122,6 +125,12 @@
     els.settingsBtn.addEventListener('click', () => els.settingsDialog.showModal());
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
+    els.createRecipeBtn.addEventListener('click', () => openRecipeEditor());
+    els.closeRecipeEditor.addEventListener('click', closeRecipeEditor);
+    els.cancelRecipeEditor.addEventListener('click', closeRecipeEditor);
+    els.recipeEditorForm.addEventListener('submit', saveRecipeFromEditor);
+    els.accentColorInput.addEventListener('input', () => setAccentColor(els.accentColorInput.value));
+    document.querySelectorAll('.color-swatch').forEach(button => button.addEventListener('click', () => setAccentColor(button.dataset.color)));
 
     document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => {
       currentView = button.dataset.view;
@@ -139,6 +148,20 @@
     document.documentElement.dataset.theme = state.settings.darkMode ? 'dark' : 'light';
     els.darkModeToggle.checked = !!state.settings.darkMode;
     els.metricToggle.checked = !!state.settings.metricHelpers;
+    const accent = state.settings.accentColor || '#7b3f00';
+    document.documentElement.style.setProperty('--accent', accent);
+    document.documentElement.style.setProperty('--accent-2', adjustColor(accent, state.settings.darkMode ? 22 : -14));
+    els.accentColorInput.value = accent;
+    if (els.themeColorMeta) els.themeColorMeta.content = accent;
+    document.querySelectorAll('.color-swatch').forEach(x => x.classList.toggle('active', x.dataset.color.toLowerCase() === accent.toLowerCase()));
+  }
+
+  function setAccentColor(color) { state.settings.accentColor = color; applySettings(); saveState(); }
+  function adjustColor(hex, amount) {
+    const value = hex.replace('#',''); const num = parseInt(value,16);
+    const clamp = n => Math.max(0, Math.min(255,n));
+    const r=clamp((num>>16)+amount), g=clamp(((num>>8)&255)+amount), b=clamp((num&255)+amount);
+    return `#${[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
   }
 
   function refreshAll() {
@@ -257,7 +280,7 @@
       <section class="recipe-hero">
         <div class="recipe-hero-top">
           <div><div class="recipe-kicker">${escapeHtml(recipe.category || 'Uncategorized')}</div><h1>${escapeHtml(recipe.name)}</h1></div>
-          <button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Favorited' : '☆ Add favorite'}</button>
+          <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Favorited' : '☆ Add favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button></div>
         </div>
         <p class="recipe-summary">${escapeHtml(recipe.description || '')}</p>
         <div class="recipe-stats">
@@ -271,9 +294,13 @@
       <div class="recipe-layout">
         <section class="recipe-section"><h2>Ingredients</h2>${renderIngredientGroups(recipe)}</section>
         <section class="recipe-section"><h2>Instructions</h2><ol class="instruction-list">${(recipe.instructions || []).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol></section>
-      </div>`;
+      </div>
+      <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
+    document.querySelector('#editRecipeBtn').addEventListener('click', () => openRecipeEditor(recipe));
+    const notesInput = document.querySelector('#recipeNotesInput'); let noteTimer;
+    notesInput.addEventListener('input', () => { clearTimeout(noteTimer); document.querySelector('#saveNoteStatus').textContent = 'Saving…'; noteTimer=setTimeout(() => { state.recipeNotes[recipe.key]=notesInput.value; saveState(); document.querySelector('#saveNoteStatus').textContent='Saved on this device'; }, 350); });
     document.querySelectorAll('.scale-button').forEach(button => button.addEventListener('click', () => { activeScale = Number(button.dataset.scale); renderRecipeDetail(); }));
   }
 
@@ -321,6 +348,71 @@
     if (index >= 0) state.favorites.splice(index, 1); else state.favorites.push(key);
     saveState(); renderCounts(); renderRecipeDetail();
   }
+
+  function ensurePersonalModule() {
+    let module = state.modules.find(m => m.moduleId === 'my-recipes');
+    if (!module) {
+      module = { schemaVersion: 1, moduleId: 'my-recipes', name: 'My Recipes', publisher: 'Kitchen Companion user', version: '1.0.0', description: 'Recipes created or edited in Kitchen Companion.', license: 'Personal', enabled: true, recipes: [] };
+      state.modules.push(module);
+    }
+    return module;
+  }
+
+  function closeRecipeEditor() { els.recipeEditorDialog.close(); els.recipeEditorForm.reset(); document.querySelector('#editRecipeKey').value = ''; }
+
+  function openRecipeEditor(recipe = null) {
+    els.recipeEditorForm.reset();
+    document.querySelector('#recipeEditorTitle').textContent = recipe ? (recipe.moduleId === 'my-recipes' ? 'Edit recipe' : 'Edit as personal copy') : 'Create recipe';
+    document.querySelector('#editRecipeKey').value = recipe?.key || '';
+    document.querySelector('#editName').value = recipe?.name || '';
+    document.querySelector('#editCategory').value = recipe?.category || '';
+    document.querySelector('#editDescription').value = recipe?.description || '';
+    document.querySelector('#editPrepTime').value = recipe?.prepTime || '';
+    document.querySelector('#editCookTime').value = recipe?.cookTime || '';
+    document.querySelector('#editYield').value = recipe?.yield ? `${recipe.yield.amount} ${recipe.yield.unit || ''}`.trim() : '';
+    document.querySelector('#editTags').value = (recipe?.tags || []).join(', ');
+    document.querySelector('#editIngredients').value = (recipe?.ingredientGroups || []).flatMap(group => (group.ingredients || []).map(formatIngredientForEditor)).join('\n');
+    document.querySelector('#editInstructions').value = (recipe?.instructions || []).join('\n');
+    els.recipeEditorDialog.showModal();
+  }
+
+  function formatIngredientForEditor(i) { return [i.displayQuantity ?? i.quantity ?? '', i.unit || '', i.item || ''].filter(x => x !== '').join(' '); }
+
+  function saveRecipeFromEditor(event) {
+    event.preventDefault();
+    const personal = ensurePersonalModule();
+    const sourceKey = document.querySelector('#editRecipeKey').value;
+    const source = sourceKey ? getAllRecipes({enabledOnly:false}).find(r => r.key === sourceKey) : null;
+    const name = document.querySelector('#editName').value.trim();
+    let id = source?.moduleId === 'my-recipes' ? source.id : uniqueRecipeId(slugify(name), personal.recipes);
+    const yieldParts = document.querySelector('#editYield').value.trim().match(/^([0-9.]+)\s*(.*)$/);
+    const recipe = {
+      id, name,
+      category: document.querySelector('#editCategory').value.trim() || 'Uncategorized',
+      description: document.querySelector('#editDescription').value.trim(),
+      prepTime: document.querySelector('#editPrepTime').value.trim(), cookTime: document.querySelector('#editCookTime').value.trim(),
+      yield: yieldParts ? { amount: Number(yieldParts[1]), unit: yieldParts[2] || 'servings' } : null,
+      tags: document.querySelector('#editTags').value.split(',').map(x=>x.trim()).filter(Boolean),
+      ingredientGroups: [{ name:'Main', ingredients: document.querySelector('#editIngredients').value.split('\n').map(x=>x.trim()).filter(Boolean).map(parseIngredientLine) }],
+      instructions: document.querySelector('#editInstructions').value.split('\n').map(x=>x.trim()).filter(Boolean),
+      createdInApp: true, copiedFrom: source && source.moduleId !== 'my-recipes' ? source.key : undefined
+    };
+    const index = personal.recipes.findIndex(r => r.id === id);
+    if (index >= 0) personal.recipes[index] = recipe; else personal.recipes.push(recipe);
+    selectedRecipeKey = `my-recipes:${id}`;
+    closeRecipeEditor(); refreshAll(); showDetail();
+  }
+
+  function parseIngredientLine(line) {
+    const normalized = line.replace(/^[-•]\s*/, '');
+    const match = normalized.match(/^(\d+(?:\.\d+)?|\d+\s+\d+\/\d+|\d+\/\d+|[⅛¼⅓⅜½⅝⅔¾⅞])\s+([^\s]+)?\s*(.*)$/);
+    if (!match) return { quantity:null, unit:'', item:normalized, scalable:false };
+    const quantity = parseQuantity(match[1]); const unit = match[2] || ''; const item = match[3] || unit;
+    return { quantity, unit: item === unit ? '' : unit, item, scalable: Number.isFinite(quantity) };
+  }
+  function parseQuantity(text) { const glyphs={'⅛':.125,'¼':.25,'⅓':1/3,'⅜':.375,'½':.5,'⅝':.625,'⅔':2/3,'¾':.75,'⅞':.875}; if(glyphs[text]) return glyphs[text]; if(text.includes(' ')){const [a,b]=text.split(' '); return Number(a)+parseQuantity(b);} if(text.includes('/')){const [a,b]=text.split('/').map(Number); return a/b;} return Number(text); }
+  function slugify(text) { return text.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'recipe'; }
+  function uniqueRecipeId(base, recipes) { let id=base, n=2; while(recipes.some(r=>r.id===id)) id=`${base}-${n++}`; return id; }
 
   async function importModules(event) {
     const files = [...event.target.files];
@@ -393,11 +485,11 @@
         <div class="module-actions">
           <button class="button secondary toggle-module">${module.enabled === false ? 'Enable' : 'Disable'}</button>
           <button class="button secondary export-module">Export</button>
-          <button class="button danger remove-module">Uninstall</button>
+          ${module.moduleId === 'my-recipes' ? '' : '<button class="button danger remove-module">Uninstall</button>'}
         </div>`;
       card.querySelector('.toggle-module').addEventListener('click', () => { module.enabled = module.enabled === false; refreshAll(); renderModules(); });
       card.querySelector('.export-module').addEventListener('click', () => exportModule(module));
-      card.querySelector('.remove-module').addEventListener('click', () => {
+      card.querySelector('.remove-module')?.addEventListener('click', () => {
         if (!confirm(`Uninstall ${module.name}?\n\nThis removes all ${module.recipes.length} imported recipes from this device. User-created recipes and copied personal variations are not part of the module and will remain. Favorites that point to this module will be cleaned up.`)) return;
         state.modules = state.modules.filter(m => m.moduleId !== module.moduleId);
         state.favorites = state.favorites.filter(key => !key.startsWith(`${module.moduleId}:`));

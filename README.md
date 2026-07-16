@@ -1,30 +1,16 @@
-# Recipe Engine v0.2
+# Kitchen Companion v0.3
 
-Open `index.html` in a modern browser. The engine is responsive and works offline on phones and computers.
+Responsive recipe and kitchen app for phone and desktop.
 
-## Module controls
+## New in v0.3
+- Kitchen Companion branding
+- Create recipes in the app
+- Edit personal recipes
+- Edit imported recipes as safe personal copies
+- Per-recipe personal notes saved on the device
+- Accent-color settings with presets, including Tiffany blue (#0ABAB5), and a custom color picker
+- Existing module import, disable, export, and uninstall controls
 
-Open **Modules** to import, enable, disable, export, or uninstall a `.recipepack` collection.
+Open `index.html` in a browser or publish the contents to GitHub Pages.
 
-- **Disable** hides the module without deleting it.
-- **Uninstall** removes the imported module and its recipes from that browser.
-- User-created recipes and copied personal variations are designed to remain separate from publisher modules.
-- Favorites pointing only to an uninstalled module are cleaned up.
-
-## Validation
-
-The importer validates module metadata, ID formatting, duplicate recipe IDs, ingredient groups, ingredient quantities, and instructions before installation. Invalid modules are rejected with recipe names and positions.
-
-For command-line validation:
-
-```bash
-python tools/validate-recipepack.py path/to/module.recipepack
-```
-
-To repair duplicate IDs deterministically:
-
-```bash
-python tools/validate-recipepack.py input.recipepack --repair-duplicates --output fixed.recipepack
-```
-
-See `docs/RECIPEPACK-SCHEMA.md` for the format.
+Browser data is stored locally. Replacing the hosted files does not erase imported modules, favorites, notes, or personal recipes in the same browser/site address.

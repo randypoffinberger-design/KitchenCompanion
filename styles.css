@@ -135,3 +135,27 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .recipe-hero, .recipe-section { box-shadow: none; border-color: #bbb; }
   .recipe-layout { grid-template-columns: 1fr 1fr; }
 }
+
+/* Version 0.3: custom themes, personal recipes, notes and editor */
+.setting-block { padding: 16px 0 4px; }
+.color-presets { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
+.color-swatch { width:38px; height:38px; border:3px solid var(--panel); outline:1px solid var(--border); border-radius:50%; background:var(--swatch); cursor:pointer; }
+.color-swatch.active { outline:3px solid var(--text); }
+.custom-color-row { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.custom-color-row input { width:64px; height:42px; padding:2px; border:1px solid var(--border); border-radius:9px; background:var(--panel); }
+.dialog-title-row { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.recipe-editor { width:min(94vw,760px); max-height:90vh; overflow:auto; }
+.recipe-editor > label, .form-grid label { display:grid; gap:6px; margin-top:14px; font-weight:700; }
+.recipe-editor small { color:var(--muted); font-weight:400; }
+.recipe-editor input, .recipe-editor textarea { width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); resize:vertical; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.recipe-action-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.recipe-notes { margin-top:18px; }
+.recipe-notes textarea { width:100%; min-height:130px; padding:13px; border:1px solid var(--border); border-radius:12px; background:var(--bg); color:var(--text); resize:vertical; }
+.save-note-status { min-height:1.2em; margin-top:6px; color:var(--muted); font-size:.82rem; }
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns:1fr; gap:0; }
+  .top-actions { gap:6px; }
+  .top-actions .button { font-size:.78rem; padding:9px 8px; }
+  .brand strong { font-size:1rem; max-width:130px; }
+}
