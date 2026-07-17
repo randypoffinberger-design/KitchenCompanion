@@ -2,7 +2,8 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.5.1';
+  const ENGINE_VERSION = '0.6.0-engine-preview';
+  const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
     schemaVersion: 1,
@@ -86,7 +87,7 @@
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
     searchInput: document.querySelector('#searchInput'), recipeGrid: document.querySelector('#recipeGrid'), emptyState: document.querySelector('#emptyState'),
-    categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'),
+    categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'), categoryFilter: document.querySelector('#categoryFilter'), clearSearchBtn: document.querySelector('#clearSearchBtn'),
     viewTitle: document.querySelector('#viewTitle'), viewSubtitle: document.querySelector('#viewSubtitle'),
     listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'),
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
@@ -128,7 +129,9 @@
     els.menuBtn.addEventListener('click', () => toggleSidebar(true));
     els.scrim.addEventListener('click', () => toggleSidebar(false));
     els.searchInput.addEventListener('input', renderRecipeList);
+    els.clearSearchBtn.addEventListener('click', () => { els.searchInput.value = ''; renderRecipeList(); els.searchInput.focus(); });
     els.moduleFilter.addEventListener('change', renderRecipeList);
+    els.categoryFilter.addEventListener('change', renderRecipeList);
     els.backBtn.addEventListener('click', showList);
     
     els.moduleImportBtn.addEventListener('click', openImportOptions);
@@ -237,20 +240,14 @@
   function refreshAll() {
     renderCounts();
     renderModuleFilter();
+    renderCategoryFilter();
     renderCategories();
     renderRecipeList();
     renderModules();
     saveState();
   }
 
-  function getAllRecipes({ enabledOnly = true, includeOverridden = false } = {}) {
-    const all = state.modules
-      .filter(module => !enabledOnly || module.enabled !== false)
-      .flatMap(module => module.recipes.map(recipe => ({ ...recipe, moduleId: module.moduleId, moduleName: module.name, publisher: module.publisher, key: `${module.moduleId}:${recipe.id}` })));
-    if (includeOverridden) return all;
-    const overridden = new Set(all.filter(r => r.moduleId === 'my-recipes' && r.copiedFrom).map(r => r.copiedFrom));
-    return all.filter(r => !overridden.has(r.key));
-  }
+  function getAllRecipes(options = {}) { return engine.getRecipes(state.modules, options); }
 
   function renderCounts() {
     const recipes = getAllRecipes();
@@ -271,6 +268,14 @@
       els.moduleFilter.append(option);
     });
     els.moduleFilter.value = [...els.moduleFilter.options].some(o => o.value === current) ? current : 'all';
+  }
+
+  function renderCategoryFilter() {
+    const current = els.categoryFilter.value || 'all';
+    const categories = [...new Set(getAllRecipes().map(recipe => recipe.category || 'Uncategorized'))].sort((a,b) => a.localeCompare(b));
+    els.categoryFilter.innerHTML = '<option value="all">All categories</option>';
+    categories.forEach(category => { const option=document.createElement('option'); option.value=category; option.textContent=category; els.categoryFilter.append(option); });
+    els.categoryFilter.value = categories.includes(current) ? current : 'all';
   }
 
   function renderCategories() {
@@ -295,12 +300,8 @@
     if (currentView === 'modules') return;
     const query = els.searchInput.value.trim().toLowerCase();
     const moduleId = els.moduleFilter.value;
-    let recipes = getAllRecipes();
-
-    if (currentView === 'favorites') recipes = recipes.filter(recipe => state.favorites.includes(recipe.key));
-    if (currentView === 'category') recipes = recipes.filter(recipe => (recipe.category || 'Uncategorized') === selectedCategory);
-    if (moduleId !== 'all') recipes = recipes.filter(recipe => recipe.moduleId === moduleId);
-    if (query) recipes = recipes.filter(recipe => recipeSearchText(recipe).includes(query));
+    const selectedFilterCategory = currentView === 'category' ? selectedCategory : els.categoryFilter.value;
+    let recipes = engine.filterRecipes(getAllRecipes(), { query, moduleId, category: selectedFilterCategory, favorites: currentView === 'favorites' ? state.favorites : null });
 
     els.viewTitle.textContent = currentView === 'favorites' ? 'Favorites' : currentView === 'category' ? selectedCategory : 'All recipes';
     els.viewSubtitle.textContent = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'} shown.`;
@@ -324,10 +325,7 @@
     });
   }
 
-  function recipeSearchText(recipe) {
-    const ingredients = (recipe.ingredientGroups || []).flatMap(group => group.ingredients || []).map(i => i.item).join(' ');
-    return [recipe.name, recipe.category, recipe.description, ...(recipe.tags || []), ingredients, recipe.moduleName, recipe.publisher].filter(Boolean).join(' ').toLowerCase();
-  }
+  function recipeSearchText(recipe) { return engine.searchText(recipe); }
 
   function showList() {
     els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
@@ -567,8 +565,8 @@
     return { quantity, unit: item === unit ? '' : unit, item, scalable: Number.isFinite(quantity) };
   }
   function parseQuantity(text) { const glyphs={'⅛':.125,'¼':.25,'⅓':1/3,'⅜':.375,'½':.5,'⅝':.625,'⅔':2/3,'¾':.75,'⅞':.875}; if(glyphs[text]) return glyphs[text]; if(text.includes(' ')){const [a,b]=text.split(' '); return Number(a)+parseQuantity(b);} if(text.includes('/')){const [a,b]=text.split('/').map(Number); return a/b;} return Number(text); }
-  function slugify(text) { return text.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'recipe'; }
-  function uniqueRecipeId(base, recipes) { let id=base, n=2; while(recipes.some(r=>r.id===id)) id=`${base}-${n++}`; return id; }
+  function slugify(text) { return engine.slugify(text); }
+  function uniqueRecipeId(base, recipes) { return engine.uniqueRecipeId(base, recipes); }
 
   async function importModules(event) {
     const files = [...event.target.files];
@@ -593,43 +591,7 @@
     currentView = 'modules'; showModules();
   }
 
-  function validateModule(module) {
-    const errors = [];
-    const warnings = [];
-    if (!module || typeof module !== 'object' || Array.isArray(module)) throw new Error('Module must be a JSON object.');
-    for (const field of ['schemaVersion','moduleId','name','version','recipes']) {
-      if (module[field] === undefined || module[field] === null || module[field] === '') errors.push(`Missing required field: ${field}`);
-    }
-    if (module.schemaVersion !== 1) errors.push(`Unsupported schema version: ${module.schemaVersion}. Expected 1.`);
-    if (typeof module.moduleId !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(module.moduleId || '')) errors.push('moduleId must use lowercase letters, numbers, and hyphens only.');
-    if (!Array.isArray(module.recipes)) errors.push('recipes must be an array.');
-    if (errors.length) throw new Error(errors.join('\n'));
-
-    const ids = new Map();
-    module.recipes.forEach((recipe, index) => {
-      const label = `Recipe ${index + 1}${recipe && recipe.name ? ` (${recipe.name})` : ''}`;
-      if (!recipe || typeof recipe !== 'object' || Array.isArray(recipe)) { errors.push(`${label} must be an object.`); return; }
-      if (typeof recipe.id !== 'string' || !recipe.id.trim()) errors.push(`${label} needs an id.`);
-      else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(recipe.id)) errors.push(`${label} has invalid id “${recipe.id}”. Use lowercase letters, numbers, and hyphens only.`);
-      if (typeof recipe.name !== 'string' || !recipe.name.trim()) errors.push(`${label} needs a name.`);
-      if (recipe.id) {
-        if (ids.has(recipe.id)) errors.push(`Duplicate recipe id “${recipe.id}”:\n• Recipe ${ids.get(recipe.id) + 1}: ${module.recipes[ids.get(recipe.id)].name || 'Unnamed'}\n• Recipe ${index + 1}: ${recipe.name || 'Unnamed'}`);
-        else ids.set(recipe.id, index);
-      }
-      if (!Array.isArray(recipe.ingredientGroups)) errors.push(`${label}: ingredientGroups must be an array.`);
-      else recipe.ingredientGroups.forEach((group, groupIndex) => {
-        if (!group || typeof group !== 'object' || !Array.isArray(group.ingredients)) errors.push(`${label}: ingredient group ${groupIndex + 1} must contain an ingredients array.`);
-        else group.ingredients.forEach((ingredient, ingredientIndex) => {
-          if (!ingredient || typeof ingredient !== 'object' || typeof ingredient.item !== 'string' || !ingredient.item.trim()) errors.push(`${label}: ingredient ${groupIndex + 1}.${ingredientIndex + 1} needs an item.`);
-          if (ingredient && ingredient.quantity !== null && ingredient.quantity !== undefined && typeof ingredient.quantity !== 'number') errors.push(`${label}: ingredient ${groupIndex + 1}.${ingredientIndex + 1} quantity must be numeric or null.`);
-        });
-      });
-      if (!Array.isArray(recipe.instructions)) errors.push(`${label}: instructions must be an array.`);
-      else if (!recipe.instructions.length) warnings.push(`${label} has no instructions.`);
-    });
-    if (errors.length) throw new Error(`${errors.length} validation problem${errors.length === 1 ? '' : 's'}:\n\n${errors.join('\n\n')}`);
-    return { warnings };
-  }
+  function validateModule(module) { return engine.validateModule(module); }
 
   function renderModules() {
     els.moduleCards.innerHTML = '';

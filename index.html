@@ -28,11 +28,6 @@
     </header>
 
     <aside id="sidebar" class="sidebar">
-      <div class="sidebar-search">
-        <label for="searchInput">Search recipes</label>
-        <input id="searchInput" type="search" placeholder="Name, ingredient, tag…" autocomplete="off">
-      </div>
-
       <nav class="nav-section" aria-label="Library navigation">
         <button class="nav-item active" data-view="all">All recipes <span id="allCount">0</span></button>
         <button class="nav-item" data-view="favorites">Favorites <span id="favoriteCount">0</span></button>
@@ -56,9 +51,11 @@
             <h1 id="viewTitle">All recipes</h1>
             <p id="viewSubtitle">Browse every enabled module.</p>
           </div>
-          <select id="moduleFilter" aria-label="Filter by module">
-            <option value="all">All modules</option>
-          </select>
+          <div class="recipe-filters">
+            <div class="main-search"><input id="searchInput" type="search" placeholder="Search name, ingredient, or tag…" autocomplete="off"><button id="clearSearchBtn" type="button" class="button secondary">Clear</button></div>
+            <select id="moduleFilter" aria-label="Filter by module"><option value="all">All modules</option></select>
+            <select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option></select>
+          </div>
         </div>
         <div id="recipeGrid" class="recipe-grid"></div>
         <div id="emptyState" class="empty-state" hidden>
@@ -99,7 +96,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.5.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.6.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -208,6 +205,7 @@
     </button>
   </template>
 
-  <script src="app.js?v=0.5.1"></script>
+  <script src="kitchen-engine.js?v=0.6.0"></script>
+  <script src="app.js?v=0.6.0"></script>
 </body>
 </html>
