@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.6.2">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.6.2">
+  <link rel="manifest" href="app.webmanifest?v=0.7.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.7.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.6.2">
+  <link rel="stylesheet" href="styles.css?v=0.7.1">
 </head>
 <body>
   <div class="app-shell">
@@ -55,6 +55,8 @@
             <div class="main-search"><input id="searchInput" type="search" placeholder="Search name, ingredient, or tag…" autocomplete="off"><button id="clearSearchBtn" type="button" class="button secondary">Clear</button></div>
             <select id="moduleFilter" aria-label="Filter by module"><option value="all">All modules</option></select>
             <select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option></select>
+            <button id="favoritesFilterBtn" type="button" class="button secondary" aria-pressed="false">☆ Favorites</button>
+            <button id="clearFiltersBtn" type="button" class="button secondary">Clear filters</button>
           </div>
         </div>
         <div id="recipeGrid" class="recipe-grid"></div>
@@ -96,7 +98,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.6.2</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.7.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -149,7 +151,7 @@
   <dialog id="imageRecipeDialog">
     <form id="imageRecipeForm" class="dialog-card recipe-import-card">
       <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close">✕</button></div>
-      <p>Select one or more screenshots or photos. Images are processed on this device when the browser supports built-in text recognition.</p>
+      <p>Select one or more screenshots or photos. Kitchen Companion will read them on this device, combine them in order, and let you correct the text before parsing.</p>
       <label>Recipe images<input id="recipeImageFiles" type="file" accept="image/*" multiple required></label>
       <div id="recipeImagePreviews" class="recipe-image-previews"></div>
       <label>Recognized text<textarea id="recognizedRecipeText" rows="14" placeholder="Recognized text will appear here. You can correct it before continuing."></textarea></label>
@@ -229,19 +231,21 @@
   </dialog>
 
   <template id="recipeCardTemplate">
-    <button class="recipe-card">
+    <article class="recipe-card" role="button" tabindex="0">
       <div class="recipe-card-topline">
         <span class="recipe-category"></span>
-        <span class="recipe-favorite" aria-hidden="true">☆</span>
+        <button type="button" class="recipe-favorite" aria-label="Add to favorites" aria-pressed="false">☆</button>
       </div>
       <h2 class="recipe-name"></h2>
       <p class="recipe-description"></p>
       <div class="recipe-meta"></div>
       <small class="recipe-source"></small>
-    </button>
+    </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.6.2"></script>
-  <script src="app.js?v=0.6.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
+  <script src="kitchen-engine.js?v=0.7.1"></script>
+  <script src="app.js?v=0.7.1"></script>
+  <script src="ocr-service.js?v=0.7.0"></script>
 </body>
 </html>

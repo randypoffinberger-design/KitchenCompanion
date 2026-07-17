@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.6.2-engine-preview';
+  const ENGINE_VERSION = '0.7.1-ocr-qol-preview';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -87,7 +87,7 @@
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
     searchInput: document.querySelector('#searchInput'), recipeGrid: document.querySelector('#recipeGrid'), emptyState: document.querySelector('#emptyState'),
-    categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'), categoryFilter: document.querySelector('#categoryFilter'), clearSearchBtn: document.querySelector('#clearSearchBtn'),
+    categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'), categoryFilter: document.querySelector('#categoryFilter'), clearSearchBtn: document.querySelector('#clearSearchBtn'), favoritesFilterBtn: document.querySelector('#favoritesFilterBtn'), clearFiltersBtn: document.querySelector('#clearFiltersBtn'),
     viewTitle: document.querySelector('#viewTitle'), viewSubtitle: document.querySelector('#viewSubtitle'),
     listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'),
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
@@ -132,6 +132,8 @@
     els.clearSearchBtn.addEventListener('click', () => { els.searchInput.value = ''; renderRecipeList(); els.searchInput.focus(); });
     els.moduleFilter.addEventListener('change', renderRecipeList);
     els.categoryFilter.addEventListener('change', renderRecipeList);
+    els.favoritesFilterBtn.addEventListener('click', () => { currentView = currentView === 'favorites' ? 'all' : 'favorites'; selectedCategory = null; syncFavoriteFilterButton(); renderRecipeList(); });
+    els.clearFiltersBtn.addEventListener('click', clearRecipeFilters);
     els.backBtn.addEventListener('click', showList);
     
     els.moduleImportBtn.addEventListener('click', openImportOptions);
@@ -182,6 +184,7 @@
       document.querySelectorAll('.nav-item').forEach(x => x.classList.toggle('active', x === button));
       document.querySelectorAll('.category-button').forEach(x => x.classList.remove('active'));
       toggleSidebar(false);
+      syncFavoriteFilterButton();
       if (currentView === 'modules') showModules(); else if (currentView === 'shopping') showShopping(); else showList();
     }));
   }
@@ -219,7 +222,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.5.1').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.7.1').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -253,6 +256,7 @@
     renderModuleFilter();
     renderCategoryFilter();
     renderCategories();
+    syncFavoriteFilterButton();
     renderRecipeList();
     renderModules();
     saveState();
@@ -307,6 +311,22 @@
     });
   }
 
+  function syncFavoriteFilterButton() {
+    const active = currentView === 'favorites';
+    els.favoritesFilterBtn?.classList.toggle('active', active);
+    els.favoritesFilterBtn?.setAttribute('aria-pressed', String(active));
+    if (els.favoritesFilterBtn) els.favoritesFilterBtn.textContent = active ? '★ Favorites' : '☆ Favorites';
+  }
+
+  function clearRecipeFilters() {
+    els.moduleFilter.value = 'all';
+    els.categoryFilter.value = 'all';
+    selectedCategory = null;
+    if (currentView === 'category') currentView = 'all';
+    document.querySelectorAll('.category-button').forEach(x => x.classList.remove('active'));
+    renderRecipeList();
+  }
+
   function renderRecipeList() {
     if (currentView === 'modules') return;
     const query = els.searchInput.value.trim().toLowerCase();
@@ -323,7 +343,12 @@
       const fragment = document.querySelector('#recipeCardTemplate').content.cloneNode(true);
       const card = fragment.querySelector('.recipe-card');
       fragment.querySelector('.recipe-category').textContent = recipe.category || 'Uncategorized';
-      fragment.querySelector('.recipe-favorite').textContent = state.favorites.includes(recipe.key) ? '★' : '☆';
+      const favoriteButton = fragment.querySelector('.recipe-favorite');
+      const isFavorite = state.favorites.includes(recipe.key);
+      favoriteButton.textContent = isFavorite ? '★' : '☆';
+      favoriteButton.setAttribute('aria-pressed', String(isFavorite));
+      favoriteButton.setAttribute('aria-label', isFavorite ? `Remove ${recipe.name} from favorites` : `Add ${recipe.name} to favorites`);
+      favoriteButton.addEventListener('click', event => { event.stopPropagation(); toggleFavoriteFromList(recipe.key); });
       fragment.querySelector('.recipe-name').textContent = recipe.name;
       fragment.querySelector('.recipe-description').textContent = recipe.description || 'No description yet.';
       const meta = fragment.querySelector('.recipe-meta');
@@ -331,7 +356,9 @@
         const span = document.createElement('span'); span.textContent = text; meta.append(span);
       });
       fragment.querySelector('.recipe-source').textContent = recipe.moduleName;
-      card.addEventListener('click', () => { selectedRecipeKey = recipe.key; activeScale = 1; showDetail(); });
+      const openCard = () => { selectedRecipeKey = recipe.key; activeScale = 1; showDetail(); };
+      card.addEventListener('click', openCard);
+      card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCard(); } });
       els.recipeGrid.append(fragment);
     });
   }
@@ -433,6 +460,14 @@
     const index = state.favorites.indexOf(key);
     if (index >= 0) state.favorites.splice(index, 1); else state.favorites.push(key);
     saveState(); renderCounts(); renderRecipeDetail();
+  }
+
+  function toggleFavoriteFromList(key) {
+    const index = state.favorites.indexOf(key);
+    if (index >= 0) state.favorites.splice(index, 1); else state.favorites.push(key);
+    saveState();
+    renderCounts();
+    renderRecipeList();
   }
 
   function ensurePersonalModule() {
