@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.7.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.7.1">
+  <link rel="manifest" href="app.webmanifest?v=0.7.2">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.7.2">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.7.1">
+  <link rel="stylesheet" href="styles.css?v=0.7.2">
 </head>
 <body>
   <div class="app-shell">
@@ -53,10 +53,14 @@
           </div>
           <div class="recipe-filters">
             <div class="main-search"><input id="searchInput" type="search" placeholder="Search name, ingredient, or tag…" autocomplete="off"><button id="clearSearchBtn" type="button" class="button secondary">Clear</button></div>
-            <select id="moduleFilter" aria-label="Filter by module"><option value="all">All modules</option></select>
-            <select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option></select>
-            <button id="favoritesFilterBtn" type="button" class="button secondary" aria-pressed="false">☆ Favorites</button>
-            <button id="clearFiltersBtn" type="button" class="button secondary">Clear filters</button>
+            <div class="filter-select-row">
+              <label class="filter-field"><span>Module</span><select id="moduleFilter"><option value="all">All modules</option></select></label>
+              <label class="filter-field"><span>Category</span><select id="categoryFilter"><option value="all">All categories</option></select></label>
+            </div>
+            <div class="filter-action-row">
+              <button id="favoritesFilterBtn" type="button" class="button secondary" aria-pressed="false">☆ Favorites</button>
+              <button id="clearFiltersBtn" type="button" class="button secondary">Clear filters</button>
+            </div>
           </div>
         </div>
         <div id="recipeGrid" class="recipe-grid"></div>
@@ -244,8 +248,8 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.7.1"></script>
-  <script src="app.js?v=0.7.1"></script>
+  <script src="kitchen-engine.js?v=0.7.2"></script>
+  <script src="app.js?v=0.7.2"></script>
   <script src="ocr-service.js?v=0.7.0"></script>
 </body>
 </html>

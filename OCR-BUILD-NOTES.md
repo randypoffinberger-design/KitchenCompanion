@@ -21,7 +21,7 @@ The OCR runtime, WebAssembly core, and English language data are loaded from pin
 This update package intentionally omits catalog.json and recipe module files. Keep the current catalog and current recipe module already in GitHub. Upload/replace only the files in this package.
 
 
-## v0.7.1 quality-of-life additions
+## v0.7.2 quality-of-life additions
 - Sticky back button while viewing a recipe.
 - Favorite/unfavorite directly from recipe cards.
 - Main-screen Favorites filter that combines with module, category, and search filters.

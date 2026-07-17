@@ -228,12 +228,24 @@ body.menu-open { overflow: hidden; touch-action: none; }
 
 /* Engine preview v0.6.0: accessible main-list search and combined filters */
 .recipe-filters .button.active { background: var(--accent); color: white; }
-.recipe-filters { display:flex; gap:.65rem; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+.recipe-filters { display:flex; gap:.65rem; align-items:flex-end; flex-wrap:wrap; justify-content:flex-end; }
 .main-search { display:flex; gap:.45rem; min-width:min(28rem,100%); }
 .main-search input { flex:1; min-width:14rem; }
+.filter-select-row, .filter-action-row { display:flex; gap:.65rem; align-items:flex-end; }
+.filter-field { display:grid; gap:.3rem; min-width:10rem; font-weight:700; }
+.filter-field > span { font-size:.82rem; color:var(--muted); }
+.filter-field select { width:100%; }
 @media (max-width: 760px) {
-  .recipe-filters, .main-search { width:100%; }
-  .recipe-filters select { flex:1; min-width:0; }
+  .recipe-filters, .main-search, .filter-select-row, .filter-action-row { width:100%; }
+  .filter-select-row { display:grid; grid-template-columns:1fr 1fr; }
+  .filter-action-row { display:grid; grid-template-columns:1fr 1fr; }
+  .filter-field { min-width:0; }
+  .filter-field > span { font-size:1rem; color:var(--text); }
+  .filter-field select { min-width:0; }
+  .filter-action-row .button { width:100%; }
+}
+@media (max-width: 430px) {
+  .filter-select-row { grid-template-columns:1fr; }
 }
 
 .recipe-create-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); }
