@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.5.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.5.1">
+  <link rel="manifest" href="app.webmanifest?v=0.6.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.6.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.5.1">
+  <link rel="stylesheet" href="styles.css?v=0.6.1">
 </head>
 <body>
   <div class="app-shell">
@@ -123,6 +123,41 @@
     </form>
   </dialog>
 
+
+  <dialog id="recipeCreateDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Add a recipe</h2>
+      <p>Choose how you want to enter the recipe. Imported text is always reviewed before saving.</p>
+      <div class="import-choice-grid recipe-create-choices">
+        <button type="button" id="manualRecipeBtn" class="button">Enter manually</button>
+        <button type="button" id="pasteRecipeBtn" class="button secondary">Paste recipe text</button>
+        <button type="button" id="imageRecipeBtn" class="button secondary">Import from image</button>
+      </div>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="pasteRecipeDialog">
+    <form id="pasteRecipeForm" class="dialog-card recipe-import-card">
+      <div class="dialog-title-row"><h2>Paste recipe text</h2><button type="button" class="icon-btn" id="closePasteRecipe" aria-label="Close">✕</button></div>
+      <p>Paste the entire recipe exactly as you have it. Kitchen Companion will separate the title, ingredients, instructions, times, yield, category, and notes for review.</p>
+      <label>Recipe text<textarea id="pastedRecipeText" rows="18" required placeholder="Recipe title&#10;&#10;Ingredients&#10;2 cups flour&#10;...&#10;&#10;Instructions&#10;1. Preheat oven..." ></textarea></label>
+      <div class="dialog-actions"><button type="button" class="button secondary" id="cancelPasteRecipe">Cancel</button><button type="submit" class="button">Parse and review</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="imageRecipeDialog">
+    <form id="imageRecipeForm" class="dialog-card recipe-import-card">
+      <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close">✕</button></div>
+      <p>Select one or more screenshots or photos. Images are processed on this device when the browser supports built-in text recognition.</p>
+      <label>Recipe images<input id="recipeImageFiles" type="file" accept="image/*" multiple required></label>
+      <div id="recipeImagePreviews" class="recipe-image-previews"></div>
+      <label>Recognized text<textarea id="recognizedRecipeText" rows="14" placeholder="Recognized text will appear here. You can correct it before continuing."></textarea></label>
+      <p id="ocrStatus" class="import-status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" class="button secondary" id="cancelImageRecipe">Cancel</button><button type="button" class="button secondary" id="recognizeRecipeImages">Read images</button><button type="submit" class="button">Parse and review</button></div>
+    </form>
+  </dialog>
+
   <dialog id="recipeEditorDialog">
     <form id="recipeEditorForm" class="dialog-card recipe-editor">
       <div class="dialog-title-row"><h2 id="recipeEditorTitle">Create recipe</h2><button type="button" class="icon-btn" id="closeRecipeEditor" aria-label="Close">✕</button></div>
@@ -130,6 +165,7 @@
       <label>Recipe name<input id="editName" required></label>
       <div class="form-grid"><label>Category<select id="editCategory"></select><button type="button" id="addCustomCategory" class="text-button">＋ Add custom category</button><input id="customCategoryInput" placeholder="New category name" hidden></label><label>Yield<input id="editYield" placeholder="4 servings"></label></div>
       <label>Description<textarea id="editDescription" rows="2"></textarea></label>
+      <label>Notes<textarea id="editNotes" rows="3" placeholder="Optional recipe notes"></textarea></label>
       <div class="form-grid"><label>Prep time<input id="editPrepTime" placeholder="15 minutes"></label><label>Cook time<input id="editCookTime" placeholder="30 minutes"></label></div>
       <label>Ingredients <small>One per line, such as: 1 1/2 cups flour</small><textarea id="editIngredients" rows="9" required></textarea></label>
       <label>Instructions <small>One step per line</small><textarea id="editInstructions" rows="9" required></textarea></label>
@@ -205,7 +241,7 @@
     </button>
   </template>
 
-  <script src="kitchen-engine.js?v=0.6.0"></script>
-  <script src="app.js?v=0.6.0"></script>
+  <script src="kitchen-engine.js?v=0.6.1"></script>
+  <script src="app.js?v=0.6.1"></script>
 </body>
 </html>

@@ -21,3 +21,8 @@ Recipe search now appears on the main recipe screen with a Clear button. Module 
 3. OCR ingestion adapter and review model.
 4. Persistent storage adapter with migrations.
 5. Shopping-list and timer services.
+
+
+## Import pipeline
+
+Plain text and OCR-derived text both pass through `KitchenCompanionEngine.parseRecipeText()`, then into the shared recipe editor. Image recognition remains a browser adapter; parsing and normalization remain engine responsibilities.

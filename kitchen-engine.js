@@ -106,6 +106,63 @@
       while (recipes.some(recipe => recipe.id === id)) id = `${base}-${number++}`;
       return id;
     }
+
+    parseRecipeText(rawText) {
+      const text = String(rawText || '').replace(/\r/g, '').replace(/[\t ]+$/gm, '').trim();
+      if (!text) throw new Error('No recipe text was provided.');
+      const lines = text.split('\n').map(line => line.trim());
+      const nonblank = lines.filter(Boolean);
+      const result = { name: '', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], instructions: [], notes: '' };
+      result.name = nonblank[0] || 'Imported Recipe';
+
+      const heading = line => line.toLowerCase().replace(/[:：]$/, '').trim();
+      const ingredientHeads = new Set(['ingredients', 'ingredient', 'what you need']);
+      const instructionHeads = new Set(['instructions', 'directions', 'method', 'steps', 'preparation']);
+      const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
+      let section = 'meta';
+      const description = [], notes = [];
+
+      const stripBullet = line => line.replace(/^[-•*▪◦]+\s*/, '').replace(/^\d+[.)]\s*/, '').trim();
+      const looksIngredient = line => /^(?:\d+(?:[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|a|an)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
+      const looksInstruction = line => /^\d+[.)]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|spread|sprinkle)\b/i.test(stripBullet(line));
+
+      lines.forEach((line, index) => {
+        if (!line || (index === lines.findIndex(Boolean))) return;
+        const h = heading(line);
+        if (ingredientHeads.has(h)) { section = 'ingredients'; return; }
+        if (instructionHeads.has(h)) { section = 'instructions'; return; }
+        if (noteHeads.has(h)) { section = 'notes'; return; }
+        let match;
+        if ((match = line.match(/^(?:prep(?:aration)?\s*time)\s*[:：-]\s*(.+)$/i))) { result.prepTime = match[1].trim(); return; }
+        if ((match = line.match(/^(?:cook(?:ing)?\s*time)\s*[:：-]\s*(.+)$/i))) { result.cookTime = match[1].trim(); return; }
+        if ((match = line.match(/^(?:total\s*time)\s*[:：-]\s*(.+)$/i))) { if (!result.cookTime) result.cookTime = match[1].trim(); return; }
+        if ((match = line.match(/^(?:yield|serves|servings|makes)\s*[:：-]?\s*(.+)$/i))) { result.yieldText = match[1].trim(); return; }
+        if ((match = line.match(/^category\s*[:：-]\s*(.+)$/i))) { result.category = match[1].trim(); return; }
+        if ((match = line.match(/^tags?\s*[:：-]\s*(.+)$/i))) { result.tags = match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean); return; }
+
+        if (section === 'ingredients') result.ingredients.push(stripBullet(line));
+        else if (section === 'instructions') result.instructions.push(stripBullet(line));
+        else if (section === 'notes') notes.push(line);
+        else if (looksIngredient(line) && !looksInstruction(line)) { section = 'ingredients'; result.ingredients.push(stripBullet(line)); }
+        else if (looksInstruction(line)) { section = 'instructions'; result.instructions.push(stripBullet(line)); }
+        else description.push(line);
+      });
+
+      result.description = description.join(' ').trim();
+      result.notes = notes.join('\n').trim();
+      if (!result.ingredients.length || !result.instructions.length) {
+        const blankBlocks = text.split(/\n\s*\n+/).map(block => block.trim()).filter(Boolean);
+        if (!result.ingredients.length && blankBlocks.length >= 2) {
+          const candidate = blankBlocks.find(block => block.split('\n').filter(Boolean).filter(looksIngredient).length >= 2);
+          if (candidate) result.ingredients = candidate.split('\n').map(stripBullet).filter(Boolean).filter(line => !ingredientHeads.has(heading(line)));
+        }
+        if (!result.instructions.length) {
+          const candidate = blankBlocks.find(block => block.split('\n').filter(Boolean).filter(looksInstruction).length >= 2);
+          if (candidate) result.instructions = candidate.split('\n').map(stripBullet).filter(Boolean).filter(line => !instructionHeads.has(heading(line)));
+        }
+      }
+      return result;
+    }
   }
 
   globalThis.KitchenCompanionEngine = KitchenCompanionEngine;

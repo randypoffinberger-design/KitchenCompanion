@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.6.0-engine-preview';
+  const ENGINE_VERSION = '0.6.1-engine-preview';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -98,7 +98,7 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus')
   };
 
   init();
@@ -142,7 +142,18 @@
     els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); els.settingsDialog.showModal(); });
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
-    els.createRecipeBtn.addEventListener('click', () => { toggleSidebar(false); openRecipeEditor(); });
+    els.createRecipeBtn.addEventListener('click', () => { toggleSidebar(false); els.recipeCreateDialog.showModal(); });
+    els.manualRecipeBtn.addEventListener('click', () => { els.recipeCreateDialog.close(); openRecipeEditor(); });
+    els.pasteRecipeBtn.addEventListener('click', () => { els.recipeCreateDialog.close(); els.pasteRecipeForm.reset(); els.pasteRecipeDialog.showModal(); });
+    els.imageRecipeBtn.addEventListener('click', () => { els.recipeCreateDialog.close(); els.imageRecipeForm.reset(); els.recipeImagePreviews.innerHTML = ''; els.ocrStatus.textContent = ''; els.imageRecipeDialog.showModal(); });
+    document.querySelector('#closePasteRecipe').addEventListener('click', () => els.pasteRecipeDialog.close());
+    document.querySelector('#cancelPasteRecipe').addEventListener('click', () => els.pasteRecipeDialog.close());
+    document.querySelector('#closeImageRecipe').addEventListener('click', () => els.imageRecipeDialog.close());
+    document.querySelector('#cancelImageRecipe').addEventListener('click', () => els.imageRecipeDialog.close());
+    els.pasteRecipeForm.addEventListener('submit', parsePastedRecipe);
+    els.imageRecipeForm.addEventListener('submit', parseRecognizedRecipe);
+    els.recipeImageFiles.addEventListener('change', previewRecipeImages);
+    els.recognizeRecipeImages.addEventListener('click', recognizeRecipeImageText);
     els.closeRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.cancelRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.recipeEditorForm.addEventListener('submit', saveRecipeFromEditor);
@@ -443,6 +454,7 @@
     populateCategorySelect(recipe?.category || '');
     els.customCategoryInput.hidden = true; els.customCategoryInput.value = '';
     document.querySelector('#editDescription').value = recipe?.description || '';
+    document.querySelector('#editNotes').value = recipe?.notes || '';
     document.querySelector('#editPrepTime').value = recipe?.prepTime || '';
     document.querySelector('#editCookTime').value = recipe?.cookTime || '';
     document.querySelector('#editYield').value = recipe?.yield ? `${recipe.yield.amount} ${recipe.yield.unit || ''}`.trim() : '';
@@ -450,6 +462,78 @@
     document.querySelector('#editIngredients').value = (recipe?.ingredientGroups || []).flatMap(group => (group.ingredients || []).map(formatIngredientForEditor)).join('\n');
     document.querySelector('#editInstructions').value = (recipe?.instructions || []).join('\n');
     els.recipeEditorDialog.showModal();
+  }
+
+  function fillRecipeEditorFromParsed(parsed) {
+    openRecipeEditor();
+    document.querySelector('#editName').value = parsed.name || '';
+    if (parsed.category) populateCategorySelect(parsed.category);
+    document.querySelector('#editDescription').value = parsed.description || '';
+    document.querySelector('#editNotes').value = parsed.notes || '';
+    document.querySelector('#editPrepTime').value = parsed.prepTime || '';
+    document.querySelector('#editCookTime').value = parsed.cookTime || '';
+    document.querySelector('#editYield').value = parsed.yieldText || '';
+    document.querySelector('#editTags').value = (parsed.tags || []).join(', ');
+    document.querySelector('#editIngredients').value = (parsed.ingredients || []).join('\n');
+    document.querySelector('#editInstructions').value = (parsed.instructions || []).join('\n');
+  }
+
+  function parsePastedRecipe(event) {
+    event.preventDefault();
+    try {
+      const parsed = engine.parseRecipeText(els.pastedRecipeText.value);
+      els.pasteRecipeDialog.close();
+      fillRecipeEditorFromParsed(parsed);
+    } catch (error) { alert(error.message); }
+  }
+
+  function parseRecognizedRecipe(event) {
+    event.preventDefault();
+    try {
+      const parsed = engine.parseRecipeText(els.recognizedRecipeText.value);
+      els.imageRecipeDialog.close();
+      fillRecipeEditorFromParsed(parsed);
+    } catch (error) { alert(error.message); }
+  }
+
+  function previewRecipeImages() {
+    els.recipeImagePreviews.innerHTML = '';
+    [...els.recipeImageFiles.files].forEach(file => {
+      const image = document.createElement('img');
+      image.alt = file.name;
+      image.src = URL.createObjectURL(file);
+      image.addEventListener('load', () => URL.revokeObjectURL(image.src), { once: true });
+      els.recipeImagePreviews.append(image);
+    });
+    els.ocrStatus.textContent = els.recipeImageFiles.files.length ? `${els.recipeImageFiles.files.length} image${els.recipeImageFiles.files.length === 1 ? '' : 's'} selected.` : '';
+  }
+
+  async function recognizeRecipeImageText() {
+    const files = [...els.recipeImageFiles.files];
+    if (!files.length) { alert('Choose at least one recipe image first.'); return; }
+    if (!('TextDetector' in globalThis)) {
+      els.ocrStatus.textContent = 'Automatic on-device text recognition is not available in this browser. You can type or paste the text into the review box, or open this build in a browser that supports TextDetector.';
+      els.recognizedRecipeText.focus();
+      return;
+    }
+    els.recognizeRecipeImages.disabled = true;
+    try {
+      const detector = new TextDetector();
+      const pages = [];
+      for (let index = 0; index < files.length; index += 1) {
+        els.ocrStatus.textContent = `Reading image ${index + 1} of ${files.length}…`;
+        const bitmap = await createImageBitmap(files[index]);
+        const blocks = await detector.detect(bitmap);
+        bitmap.close?.();
+        blocks.sort((a, b) => (a.boundingBox?.y || 0) - (b.boundingBox?.y || 0) || (a.boundingBox?.x || 0) - (b.boundingBox?.x || 0));
+        pages.push(blocks.map(block => block.rawValue || '').filter(Boolean).join('\n'));
+      }
+      els.recognizedRecipeText.value = pages.filter(Boolean).join('\n\n');
+      els.ocrStatus.textContent = 'Text recognition complete. Correct anything needed, then choose Parse and review.';
+    } catch (error) {
+      console.error(error);
+      els.ocrStatus.textContent = `Text recognition failed: ${error.message}. You can still type or paste the text into the review box.`;
+    } finally { els.recognizeRecipeImages.disabled = false; }
   }
 
   function formatIngredientForEditor(i) { return [i.displayQuantity ?? i.quantity ?? '', i.unit || '', i.item || ''].filter(x => x !== '').join(' '); }
@@ -465,7 +549,7 @@
     const recipe = {
       id, name,
       category: getEditorCategory(),
-      description: document.querySelector('#editDescription').value.trim(),
+      description: document.querySelector('#editDescription').value.trim(), notes: document.querySelector('#editNotes').value.trim(),
       prepTime: document.querySelector('#editPrepTime').value.trim(), cookTime: document.querySelector('#editCookTime').value.trim(),
       yield: yieldParts ? { amount: Number(yieldParts[1]), unit: yieldParts[2] || 'servings' } : null,
       tags: document.querySelector('#editTags').value.split(',').map(x=>x.trim()).filter(Boolean),
