@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.6.1-engine-preview';
+  const ENGINE_VERSION = '0.6.2-engine-preview';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -810,11 +810,64 @@ Type a new store name to add it, or type REMOVE: Store Name to remove one.`);
     currentView='modules'; showModules();
     try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`Catalog returned ${res.status}`);const catalog=await res.json();renderCatalog(catalog.modules||[])}catch(error){alert(`Could not load the GitHub module catalog: ${error.message}. Make sure catalog.json and the recipepack files are uploaded to the repository root.`)}
   }
-  function renderCatalog(modules){
-    const existing=document.querySelector('#catalogSection');existing?.remove();const section=document.createElement('section');section.id='catalogSection';section.className='catalog-section';section.innerHTML='<h2>Available from GitHub</h2><div class="module-cards catalog-cards"></div>';const box=section.querySelector('.catalog-cards');modules.forEach(entry=>{const installed=state.modules.find(m=>m.moduleId===entry.moduleId);const card=document.createElement('section');card.className='module-card';const newer=installed&&compareVersions(entry.version,installed.version)>0;card.innerHTML=`<div><h2>${escapeHtml(entry.name)}</h2><div class="module-meta">${escapeHtml(entry.publisher||'Unknown publisher')} · Version ${escapeHtml(entry.version)} · ${entry.recipeCount||'?'} recipes</div><p>${escapeHtml(entry.description||'')}</p></div><div class="module-actions"><button class="button catalog-install">${!installed?'Install':newer?'Update':'Reinstall'}</button></div>`;card.querySelector('button').addEventListener('click',()=>installCatalogModule(entry));box.append(card)});els.modulesPane.prepend(section)
+  function replacementIds(entry, module) {
+    return [...new Set([...(entry.replacesModuleIds || []), ...(module.replacesModuleIds || [])].filter(Boolean))];
   }
-  async function installCatalogModule(entry){try{const moduleUrl=(entry.url||'').replace('./modules/','./');const res=await fetch(`${moduleUrl}?v=${encodeURIComponent(entry.version)}`,{cache:'no-store'});if(!res.ok)throw new Error(`Module returned ${res.status}`);const module=await res.json();validateModule(module);const idx=state.modules.findIndex(m=>m.moduleId===module.moduleId);if(idx>=0)state.modules[idx]=module;else state.modules.push(module);state.moduleSources[module.moduleId]=moduleUrl;saveState();refreshAll();showModules();alert(`${module.name} ${module.version} installed.`)}catch(error){alert(`Could not install module: ${error.message}`)}}
-  async function updateModuleFromSource(module){const url=state.moduleSources[module.moduleId];if(!url)return;try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});const catalog=await res.json();const entry=(catalog.modules||[]).find(x=>x.moduleId===module.moduleId);if(!entry)return alert('This module is no longer listed in the catalog.');if(compareVersions(entry.version,module.version)<=0)return alert(`${module.name} is up to date (${module.version}).`);if(confirm(`Update ${module.name} from ${module.version} to ${entry.version}?`))await installCatalogModule(entry)}catch(error){alert(`Could not check for updates: ${error.message}`)}}
+  function renderCatalog(modules){
+    const existing=document.querySelector('#catalogSection');existing?.remove();
+    const section=document.createElement('section');section.id='catalogSection';section.className='catalog-section';
+    section.innerHTML='<h2>Available from GitHub</h2><div class="module-cards catalog-cards"></div>';
+    const box=section.querySelector('.catalog-cards');
+    modules.forEach(entry=>{
+      const aliases=entry.replacesModuleIds||[];
+      const installed=state.modules.find(m=>m.moduleId===entry.moduleId)||state.modules.find(m=>aliases.includes(m.moduleId));
+      const card=document.createElement('section');card.className='module-card';
+      const renamed=installed&&installed.moduleId!==entry.moduleId;
+      const newer=installed&&compareVersions(entry.version,installed.version)>0;
+      const action=!installed?'Install':renamed?'Replace old module':newer?'Update':'Reinstall';
+      card.innerHTML=`<div><h2>${escapeHtml(entry.name)}</h2><div class="module-meta">${escapeHtml(entry.publisher||'Unknown publisher')} · Version ${escapeHtml(entry.version)} · ${entry.recipeCount||'?'} recipes</div><p>${escapeHtml(entry.description||'')}</p>${renamed?`<p><strong>Replaces installed module:</strong> ${escapeHtml(installed.name)}</p>`:''}</div><div class="module-actions"><button class="button catalog-install">${action}</button></div>`;
+      card.querySelector('button').addEventListener('click',()=>installCatalogModule(entry));box.append(card)
+    });
+    els.modulesPane.prepend(section)
+  }
+  async function installCatalogModule(entry){
+    try{
+      const moduleUrl=(entry.url||'').replace('./modules/','./');
+      const separator=moduleUrl.includes('?')?'&':'?';
+      const res=await fetch(`${moduleUrl}${separator}kc=${Date.now()}`,{cache:'no-store'});
+      if(!res.ok)throw new Error(`Module returned ${res.status}`);
+      const module=await res.json();validateModule(module);
+      if(entry.moduleId&&module.moduleId!==entry.moduleId)throw new Error(`Catalog expects moduleId ${entry.moduleId}, but the downloaded file contains ${module.moduleId}. Update catalog.json or the module file so they match.`);
+      if(entry.version&&String(module.version)!==String(entry.version))throw new Error(`Catalog lists version ${entry.version}, but the downloaded file contains version ${module.version}. Update catalog.json so both versions match.`);
+      const replacedIds=replacementIds(entry,module).filter(id=>id!==module.moduleId);
+      const oldFavorites=new Set(state.favorites);
+      state.modules=state.modules.filter(m=>!replacedIds.includes(m.moduleId));
+      replacedIds.forEach(id=>delete state.moduleSources[id]);
+      const idx=state.modules.findIndex(m=>m.moduleId===module.moduleId);
+      if(idx>=0)state.modules[idx]=module;else state.modules.push(module);
+      state.moduleSources[module.moduleId]=moduleUrl;
+      if(replacedIds.length){
+        state.favorites=[...new Set(state.favorites.map(key=>{
+          const oldId=replacedIds.find(id=>key.startsWith(`${id}:`));
+          return oldId?`${module.moduleId}:${key.slice(oldId.length+1)}`:key;
+        }))];
+      }
+      saveState();refreshAll();showModules();
+      alert(`${module.name} ${module.version} installed.${replacedIds.length?' The previous module was removed and matching favorites were preserved.':''}`)
+    }catch(error){alert(`Could not install module: ${error.message}`)}
+  }
+  async function updateModuleFromSource(module){
+    const url=state.moduleSources[module.moduleId];if(!url)return;
+    try{
+      const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`Catalog returned ${res.status}`);
+      const catalog=await res.json();
+      const entry=(catalog.modules||[]).find(x=>x.moduleId===module.moduleId||(x.replacesModuleIds||[]).includes(module.moduleId));
+      if(!entry)return alert("This installed module is no longer listed in the catalog. Uninstall it, or add its old moduleId to the new catalog entry's replacesModuleIds list.");
+      const renamed=entry.moduleId!==module.moduleId;
+      if(!renamed&&compareVersions(entry.version,module.version)<=0)return alert(`${module.name} is up to date (${module.version}).`);
+      if(confirm(renamed?`Replace ${module.name} with ${entry.name} ${entry.version}?`:`Update ${module.name} from ${module.version} to ${entry.version}?`))await installCatalogModule(entry)
+    }catch(error){alert(`Could not check for updates: ${error.message}`)}
+  }
   function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=String(b).split('.').map(Number);for(let i=0;i<Math.max(aa.length,bb.length);i++){const d=(aa[i]||0)-(bb[i]||0);if(d)return d}return 0}
 
   function escapeHtml(value) {
