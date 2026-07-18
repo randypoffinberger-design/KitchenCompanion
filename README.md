@@ -20,3 +20,13 @@ Older home-screen shortcuts were created before Kitchen Companion had a service 
 ## Recipe creation workflows
 
 Recipes can be entered manually, pasted as complete plain text for automatic field parsing, or imported from one or more images using on-device browser text recognition when available. All imported content opens in the standard recipe editor for review and correction before saving.
+
+## v0.8.0 highlights
+- Share one recipe as Kitchen Companion JSON or plain text, with private notes excluded by default.
+- Import a shared single-recipe file into My Recipes.
+- Create and restore full backups; merge or replace after validation.
+- Export personal recipes separately.
+- Save an automatic pre-update state snapshot before forcing an app refresh.
+- Improved two-pass OCR, cleanup of common website clutter, overlap deduplication, and low-confidence fallback guidance.
+- Added a copyable AI conversion prompt for screenshots local OCR cannot reliably read.
+- Fixed mobile sticky Back and Scale controls so they no longer overlap.

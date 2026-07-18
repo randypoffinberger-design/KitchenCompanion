@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.7.2-ocr-qol-preview';
+  const ENGINE_VERSION = '0.8.0-safety-sharing-ocr';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -77,7 +77,7 @@
   };
 
   const state = loadState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {};
+  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {};
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -98,7 +98,7 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup')
   };
 
   init();
@@ -175,6 +175,16 @@
     els.catalogRefreshBtn.addEventListener('click', loadModuleCatalog);
     els.manageStoresBtn.addEventListener('click', manageStores);
     els.forceUpdateBtn?.addEventListener('click', forceAppUpdate);
+    els.createBackupBtn?.addEventListener('click', createFullBackup);
+    els.restoreBackupBtn?.addEventListener('click', () => els.backupRestoreFile.click());
+    els.exportPersonalRecipesBtn?.addEventListener('click', exportPersonalRecipes);
+    els.importRecipeBtn?.addEventListener('click', () => els.recipeImportFile.click());
+    els.recipeImportFile?.addEventListener('change', importSharedRecipe);
+    els.backupRestoreFile?.addEventListener('change', prepareBackupRestore);
+    els.restoreBackupForm?.addEventListener('submit', restoreSelectedBackup);
+    els.cancelRestoreBackup?.addEventListener('click', () => els.restoreBackupDialog.close());
+    els.shareRecipeJsonBtn?.addEventListener('click', () => shareSelectedRecipe('json'));
+    els.shareRecipeTextBtn?.addEventListener('click', () => shareSelectedRecipe('text'));
 
 
     document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => {
@@ -212,6 +222,7 @@
 
   async function forceAppUpdate() {
     try {
+      localStorage.setItem(`${STORAGE_KEY}.preUpdate`, JSON.stringify({ createdAt:new Date().toISOString(), engineVersion:ENGINE_VERSION, state }));
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r => r.update()));
@@ -222,7 +233,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.7.2').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.8.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -398,7 +409,7 @@
           ${yieldText ? `<span class="stat"><strong>Yield:</strong> ${escapeHtml(yieldText)}</span>` : ''}
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
-        <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}</div>
+        <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
@@ -409,6 +420,7 @@
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
     document.querySelector('#editRecipeBtn').addEventListener('click', () => openRecipeEditor(recipe));
+    document.querySelector('#shareRecipeBtn').addEventListener('click', () => openShareRecipe(recipe));
     document.querySelector('#addIngredientsBtn').addEventListener('click', () => openIngredientShopping(recipe));
     document.querySelector('#viewOriginalBtn')?.addEventListener('click', () => { selectedRecipeKey = recipe.copiedFrom; renderRecipeDetail(); });
     document.querySelectorAll('.timer-link').forEach(button => button.addEventListener('click', () => offerTimer(button, recipe)));
@@ -904,6 +916,84 @@ Type a new store name to add it, or type REMOVE: Store Name to remove one.`);
     }catch(error){alert(`Could not check for updates: ${error.message}`)}
   }
   function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=String(b).split('.').map(Number);for(let i=0;i<Math.max(aa.length,bb.length);i++){const d=(aa[i]||0)-(bb[i]||0);if(d)return d}return 0}
+
+
+  let pendingBackup = null;
+
+  function safeFilename(name) {
+    return String(name || 'recipe').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'recipe';
+  }
+
+  async function deliverFile(filename, content, mime = 'application/json') {
+    const blob = new Blob([content], { type: mime });
+    const file = new File([blob], filename, { type: mime });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: filename }); return; } catch (error) { if (error.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function openShareRecipe(recipe) {
+    selectedRecipeKey = recipe.key;
+    els.shareRecipeName.textContent = recipe.name;
+    els.shareIncludeNotes.checked = false;
+    els.shareRecipeDialog.showModal();
+  }
+
+  function recipePlainText(recipe, includeNotes = false) {
+    const lines = [recipe.name, ''];
+    if (recipe.category) lines.push(`Category: ${recipe.category}`);
+    if (recipe.prepTime) lines.push(`Prep time: ${recipe.prepTime}`);
+    if (recipe.cookTime) lines.push(`Cook time: ${recipe.cookTime}`);
+    if (recipe.yield) lines.push(`Yield: ${recipe.yield.amount ?? ''} ${recipe.yield.unit ?? ''}`.trim());
+    if (recipe.description) lines.push('', recipe.description);
+    lines.push('', 'Ingredients');
+    (recipe.ingredientGroups || []).forEach(group => { if (group.name && group.name !== 'Main') lines.push('', group.name); (group.ingredients || []).forEach(i => lines.push(`- ${[i.displayQuantity || (i.quantity ?? ''), i.unit, i.item].filter(Boolean).join(' ')}`)); });
+    lines.push('', 'Instructions'); (recipe.instructions || []).forEach((step, i) => lines.push(`${i + 1}. ${step}`));
+    if (includeNotes && state.recipeNotes[recipe.key]) lines.push('', 'My notes', state.recipeNotes[recipe.key]);
+    return lines.join('\n');
+  }
+
+  async function shareSelectedRecipe(format) {
+    const recipe = getAllRecipes({ enabledOnly:false, includeOverridden:true }).find(r => r.key === selectedRecipeKey); if (!recipe) return;
+    const includeNotes = els.shareIncludeNotes.checked;
+    els.shareRecipeDialog.close();
+    if (format === 'text') return deliverFile(`${safeFilename(recipe.name)}.txt`, recipePlainText(recipe, includeNotes), 'text/plain');
+    const payload = { format:'kitchen-companion-recipe', schemaVersion:1, exportedAt:new Date().toISOString(), recipe:{...recipe, key:undefined, moduleId:undefined, moduleName:undefined, publisher:undefined}, notes:includeNotes ? (state.recipeNotes[recipe.key] || '') : '' };
+    await deliverFile(`${safeFilename(recipe.name)}.kcrecipe`, JSON.stringify(payload, null, 2));
+  }
+
+  async function importSharedRecipe(event) {
+    const file = event.target.files[0]; event.target.value=''; if (!file) return;
+    try { const payload=JSON.parse(await file.text()); const recipe=payload.format==='kitchen-companion-recipe'?payload.recipe:payload.recipe || payload; if (!recipe?.name || !Array.isArray(recipe.instructions)) throw new Error('This is not a valid shared recipe file.');
+      const personal=ensurePersonalModule(); const copy={...recipe,id:uniqueRecipeId(slugify(recipe.name),personal.recipes),copiedFrom:null}; personal.recipes.push(copy); saveState(); refreshAll(); alert(`${copy.name} was imported into My Recipes.`);
+    } catch(error){ alert(`Could not import recipe: ${error.message}`); }
+  }
+
+  function backupPayload() {
+    return { format:'kitchen-companion-backup', schemaVersion:1, engineVersion:ENGINE_VERSION, createdAt:new Date().toISOString(), state:JSON.parse(JSON.stringify(state)) };
+  }
+
+  async function createFullBackup() { const b=backupPayload(); await deliverFile(`Kitchen-Companion-Backup-${new Date().toISOString().slice(0,10)}.kcbackup`, JSON.stringify(b,null,2)); state.backupMeta.lastManualBackupAt=b.createdAt; saveState(); }
+  async function exportPersonalRecipes() { const module=state.modules.find(m=>m.moduleId==='my-recipes'); const payload={format:'kitchen-companion-personal-recipes',schemaVersion:1,exportedAt:new Date().toISOString(),recipes:module?.recipes||[]}; await deliverFile(`My-Kitchen-Companion-Recipes-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(payload,null,2)); }
+
+  async function prepareBackupRestore(event) {
+    const file=event.target.files[0]; event.target.value=''; if(!file)return;
+    try { const payload=JSON.parse(await file.text()); if(payload.format!=='kitchen-companion-backup' || !payload.state || !Array.isArray(payload.state.modules)) throw new Error('This is not a valid Kitchen Companion backup.'); pendingBackup=payload;
+      const personal=payload.state.modules.find(m=>m.moduleId==='my-recipes'); els.backupSummary.innerHTML=`<strong>${escapeHtml(new Date(payload.createdAt).toLocaleString())}</strong><span>Personal recipes: <b>${personal?.recipes?.length||0}</b></span><span>Favorites: <b>${payload.state.favorites?.length||0}</b></span><span>Installed modules: <b>${payload.state.modules.length}</b></span>`; els.settingsDialog.close(); els.restoreBackupDialog.showModal();
+    } catch(error){ alert(`Could not read backup: ${error.message}`); }
+  }
+
+  function mergeBackupState(current, incoming) {
+    const result=JSON.parse(JSON.stringify(current)); const incomingPersonal=incoming.modules.find(m=>m.moduleId==='my-recipes'); const personal=result.modules.find(m=>m.moduleId==='my-recipes') || ensurePersonalModule();
+    if(incomingPersonal){ const byId=new Map(personal.recipes.map(r=>[r.id,r])); incomingPersonal.recipes.forEach(r=>byId.set(r.id,r)); personal.recipes=[...byId.values()]; }
+    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; return result;
+  }
+
+  function restoreSelectedBackup(event) {
+    event.preventDefault(); if(!pendingBackup)return; const mode=new FormData(els.restoreBackupForm).get('restoreMode');
+    try { localStorage.setItem(`${STORAGE_KEY}.rollback`, JSON.stringify(state)); const restored=mode==='replace'?pendingBackup.state:mergeBackupState(state,pendingBackup.state); if(!Array.isArray(restored.modules))throw new Error('Backup validation failed.'); localStorage.setItem(STORAGE_KEY,JSON.stringify(restored)); pendingBackup=null; els.restoreBackupDialog.close(); alert('Backup restored. Kitchen Companion will reload now.'); location.reload(); } catch(error){ alert(`Restore failed: ${error.message}`); }
+  }
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));

@@ -256,3 +256,21 @@ body.menu-open { overflow: hidden; touch-action: none; }
 @media (max-width: 620px) { .recipe-create-choices { grid-template-columns: 1fr; } }
 
 @media (max-width: 760px) { .back-btn { top: 68px; width: max-content; } .recipe-filters .button { flex: 1 1 auto; } }
+
+/* v0.8.0 safety, sharing, OCR, and sticky recipe controls */
+.detail-sticky-row { position: sticky; top: 66px; z-index: 32; display:flex; align-items:center; min-height:64px; padding:8px 0 10px; background:var(--bg); }
+.detail-sticky-row .back-btn { position:static; margin:0; box-shadow:none; }
+.scale-bar { top: 132px; }
+.backup-settings p { margin:.45rem 0 1rem; color:var(--muted); }
+.backup-actions,.share-choice-grid,.ocr-fallback-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; margin-top:1rem; }
+.warning-text { color:var(--danger); font-weight:700; }
+.form-check { display:flex; gap:.65rem; align-items:center; padding:.7rem 0; }
+.ocr-fallback-actions[hidden] { display:none; }
+@media (max-width:760px) {
+  .detail-sticky-row { top:62px; min-height:60px; padding:6px 0 8px; }
+  .detail-sticky-row .back-btn { width:max-content; padding:9px 12px; font-size:.95rem; }
+  .scale-bar { top:122px; }
+}
+@media (max-width:520px) {
+  .backup-actions,.share-choice-grid,.ocr-fallback-actions { grid-template-columns:1fr; }
+}

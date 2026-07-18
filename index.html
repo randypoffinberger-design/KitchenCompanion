@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.7.2">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.7.2">
+  <link rel="manifest" href="app.webmanifest?v=0.8.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.8.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.7.2">
+  <link rel="stylesheet" href="styles.css?v=0.8.0">
 </head>
 <body>
   <div class="app-shell">
@@ -23,6 +23,8 @@
       </div>
       <div class="top-actions">
         <input id="moduleFile" type="file" hidden multiple>
+        <input id="recipeImportFile" type="file" accept=".json,.kcrecipe,application/json" hidden>
+        <input id="backupRestoreFile" type="file" accept=".json,.kcbackup,application/json" hidden>
         <button id="timersBtn" class="icon-btn timer-header-btn" aria-label="Active timers">⏱<span id="timerCount" hidden>0</span></button>
       </div>
     </header>
@@ -71,7 +73,7 @@
       </section>
 
       <section id="detailPane" class="detail-pane" hidden>
-        <button id="backBtn" class="back-btn">← Back to recipes</button>
+        <div class="detail-sticky-row"><button id="backBtn" class="back-btn">← Back to recipes</button></div>
         <article id="recipeDetail"></article>
       </section>
 
@@ -102,7 +104,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.7.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.8.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -123,12 +125,45 @@
         </div>
         <label class="custom-color-row"><span>Custom color</span><input id="accentColorInput" type="color" value="#7b3f00"></label>
       </div>
+      <div class="setting-block backup-settings">
+        <strong>Backup and restore</strong>
+        <p>Protect your personal recipes, notes, favorites, shopping data, and settings.</p>
+        <div class="backup-actions">
+          <button type="button" id="createBackupBtn" class="button">Create full backup</button>
+          <button type="button" id="restoreBackupBtn" class="button secondary">Restore backup</button>
+          <button type="button" id="exportPersonalRecipesBtn" class="button secondary">Export my recipes</button>
+          <button type="button" id="importRecipeBtn" class="button secondary">Import shared recipe</button>
+        </div>
+      </div>
       <div class="dialog-actions">
         <button class="button secondary" value="cancel">Close</button>
       </div>
     </form>
   </dialog>
 
+  <dialog id="shareRecipeDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Share recipe</h2>
+      <p id="shareRecipeName"></p>
+      <label class="setting-row"><span>Include my private notes</span><input id="shareIncludeNotes" type="checkbox"></label>
+      <div class="share-choice-grid">
+        <button type="button" id="shareRecipeJsonBtn" class="button">Kitchen Companion JSON</button>
+        <button type="button" id="shareRecipeTextBtn" class="button secondary">Plain text file</button>
+      </div>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="restoreBackupDialog">
+    <form id="restoreBackupForm" class="dialog-card">
+      <h2>Restore backup</h2>
+      <div id="backupSummary" class="version-card"></div>
+      <label class="form-check"><input class="form-check-input" type="radio" name="restoreMode" value="merge" checked><span class="form-check-label">Merge with current data</span></label>
+      <label class="form-check"><input class="form-check-input" type="radio" name="restoreMode" value="replace"><span class="form-check-label">Replace current data</span></label>
+      <p class="warning-text">The current library is validated and snapshotted before restore.</p>
+      <div class="dialog-actions"><button type="button" id="cancelRestoreBackup" class="button secondary">Cancel</button><button type="submit" class="button">Restore</button></div>
+    </form>
+  </dialog>
 
   <dialog id="recipeCreateDialog">
     <form method="dialog" class="dialog-card">
@@ -157,9 +192,11 @@
       <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close">✕</button></div>
       <p>Select one or more screenshots or photos. Kitchen Companion will read them on this device, combine them in order, and let you correct the text before parsing.</p>
       <label>Recipe images<input id="recipeImageFiles" type="file" accept="image/*" multiple required></label>
+      <label class="setting-row"><span>Remove common website clutter</span><input id="ocrCleanupToggle" type="checkbox" checked></label>
       <div id="recipeImagePreviews" class="recipe-image-previews"></div>
       <label>Recognized text<textarea id="recognizedRecipeText" rows="14" placeholder="Recognized text will appear here. You can correct it before continuing."></textarea></label>
       <p id="ocrStatus" class="import-status" aria-live="polite"></p>
+      <div id="ocrFallbackActions" class="ocr-fallback-actions" hidden><button type="button" id="copyAiRecipePrompt" class="button secondary">Copy AI conversion instructions</button><button type="button" id="openPasteFromOcr" class="button secondary">Switch to pasted text</button></div>
       <div class="dialog-actions"><button type="button" class="button secondary" id="cancelImageRecipe">Cancel</button><button type="button" class="button secondary" id="recognizeRecipeImages">Read images</button><button type="submit" class="button">Parse and review</button></div>
     </form>
   </dialog>
@@ -248,8 +285,8 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.7.2"></script>
-  <script src="app.js?v=0.7.2"></script>
-  <script src="ocr-service.js?v=0.7.0"></script>
+  <script src="kitchen-engine.js?v=0.8.0"></script>
+  <script src="app.js?v=0.8.0"></script>
+  <script src="ocr-service.js?v=0.8.0"></script>
 </body>
 </html>
