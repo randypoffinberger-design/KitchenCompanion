@@ -1,4 +1,4 @@
-# Kitchen Companion v0.9.1 OCR Notes
+# Kitchen Companion v0.9.2 OCR Notes
 
 Kitchen Companion uses Tesseract.js for browser-based OCR on iPhone, iPad, Android, and desktop browsers.
 
@@ -10,7 +10,7 @@ Kitchen Companion uses Tesseract.js for browser-based OCR on iPhone, iPad, Andro
 4. The combined text opens in a correction box.
 5. Corrected text passes through the same recipe parser and editor used by pasted recipes.
 
-## v0.9.1 reliability changes
+## v0.9.2 reliability changes
 
 - `ocr-service.js` is now the only OCR controller.
 - Large and unusually tall images are constrained to a mobile-safe canvas budget.
