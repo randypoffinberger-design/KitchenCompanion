@@ -1,8 +1,8 @@
-# Kitchen Companion v0.9.0
+# Kitchen Companion v0.9.1
 
 Kitchen Companion is a static, installable recipe application for GitHub Pages. It supports recipe modules, personal recipes, recipe editing, scaling, timers, favorites, notes, shopping lists, sharing, backup/restore, pasted-text importing, and screenshot/photo OCR.
 
-## v0.9.0 highlights
+## v0.9.1 highlights
 
 - Replaced the conflicting browser-only image reader with one cross-platform Tesseract.js OCR workflow.
 - Supports one or multiple screenshots/photos, ordered page combination, overlap deduplication, and optional website-clutter cleanup.
@@ -33,8 +33,8 @@ Tesseract.js, its WebAssembly core, and English language model are loaded from p
 
 ## Updating an existing Home Screen installation
 
-After uploading v0.9.0, open the GitHub Pages site in Safari and use **Settings → Check for app update**. If an older Home Screen installation remains stuck on an old service worker, remove the shortcut once and add it again from Safari.
+After uploading v0.9.1, open the GitHub Pages site in Safari and use **Settings → Check for app update**. If an older Home Screen installation remains stuck on an old service worker, remove the shortcut once and add it again from Safari.
 
-## v0.9.0 cookbook management
+## v0.9.1 cookbook management
 
 Personal recipes support permanent deletion. Module recipes support persistent hiding and can be restored from Settings → Hidden Recipes. Timers use persistent finished states with dismissible repeating alarms, and scaled cup amounts favor practical kitchen measurements.

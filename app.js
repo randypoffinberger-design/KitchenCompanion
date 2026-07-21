@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.9.0';
+  const ENGINE_VERSION = '0.9.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -77,14 +77,15 @@
   };
 
   const state = loadState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {};
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {};
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
   let activeScale = 1;
   let timerTicker = null;
-  let alarmInterval = null;
-  let audioContext = null;
+  let bellAudio = null;
+  let wakeLockSentinel = null;
+  let wakeLockRequestPending = false;
 
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
@@ -100,7 +101,7 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn')
   };
 
   init();
@@ -115,6 +116,8 @@
     refreshAll();
     startTimerTicker();
     registerServiceWorker();
+    initBellAudio();
+    updateWakeLock();
   }
 
   function loadState() {
@@ -122,7 +125,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
+    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true } };
   }
 
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -148,6 +151,13 @@
     els.restoreAllHiddenBtn?.addEventListener('click', restoreAllHiddenRecipes);
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
+    els.wakeLockMode?.addEventListener('change', () => { state.settings.wakeLockMode = els.wakeLockMode.value; saveState(); updateWakeLock(); });
+    els.alarmSoundToggle?.addEventListener('change', () => { state.settings.alarmSoundEnabled = els.alarmSoundToggle.checked; saveState(); if (!state.settings.alarmSoundEnabled) stopBell(); });
+    els.alarmVolume?.addEventListener('input', () => { state.settings.alarmVolume = Number(els.alarmVolume.value); if (bellAudio) bellAudio.volume = state.settings.alarmVolume; saveState(); });
+    els.testBellBtn?.addEventListener('click', testBell);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') updateWakeLock(); else releaseWakeLock(); });
+    window.addEventListener('pageshow', updateWakeLock);
+    window.addEventListener('pagehide', releaseWakeLock);
     els.createRecipeBtn.addEventListener('click', () => { toggleSidebar(false); els.recipeCreateDialog.showModal(); });
     els.manualRecipeBtn.addEventListener('click', () => { els.recipeCreateDialog.close(); openRecipeEditor(); });
     els.pasteRecipeBtn.addEventListener('click', () => { els.recipeCreateDialog.close(); els.pasteRecipeForm.reset(); els.pasteRecipeDialog.showModal(); });
@@ -236,7 +246,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.9.0').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.9.1').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -249,6 +259,9 @@
     document.documentElement.dataset.theme = state.settings.darkMode ? 'dark' : 'light';
     els.darkModeToggle.checked = !!state.settings.darkMode;
     els.metricToggle.checked = !!state.settings.metricHelpers;
+    if (els.wakeLockMode) els.wakeLockMode.value = state.settings.wakeLockMode || 'recipes-and-timers';
+    if (els.alarmSoundToggle) els.alarmSoundToggle.checked = state.settings.alarmSoundEnabled !== false;
+    if (els.alarmVolume) els.alarmVolume.value = String(state.settings.alarmVolume ?? 0.85);
     const accent = state.settings.accentColor || '#7b3f00';
     document.documentElement.style.setProperty('--accent', accent);
     document.documentElement.style.setProperty('--accent-2', adjustColor(accent, state.settings.darkMode ? 22 : -14));
@@ -383,18 +396,20 @@
   function recipeSearchText(recipe) { return engine.searchText(recipe); }
 
   function showList() {
+    selectedRecipeKey = null;
     els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
-    renderRecipeList(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderRecipeList(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function showDetail() {
     els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
-    renderRecipeDetail(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderRecipeDetail(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function showModules() {
+    selectedRecipeKey = null;
     els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true;
-    renderModules(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderModules(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function renderRecipeDetail() {
@@ -712,7 +727,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     ensureAudioContext();
     if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
     const timer={ id:`timer-${Date.now()}-${Math.random().toString(16).slice(2)}`, recipeKey:recipe.key, recipeName:recipe.name, step, label, durationMs:minutes*60000, endAt:Date.now()+minutes*60000, paused:false, remainingMs:minutes*60000, done:false };
-    state.timers.push(timer); saveState(); els.timerDock.hidden=false; renderTimers();
+    state.timers.push(timer); unlockBellAudio(); saveState(); els.timerDock.hidden=false; renderTimers(); updateWakeLock();
   }
 
   function startTimerTicker() {
@@ -724,34 +739,101 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function timerRemaining(timer) { return timer.paused ? timer.remainingMs : Math.max(0,timer.endAt-Date.now()); }
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
-  function ensureAudioContext() {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return null;
-    audioContext ||= new AudioCtx();
-    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
-    return audioContext;
+  function initBellAudio() {
+    bellAudio = new Audio('./alarm-bell.wav?v=0.9.1');
+    bellAudio.loop = true;
+    bellAudio.preload = 'auto';
+    bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
   }
 
-  function soundAlarm() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-    [0, 0.32, 0.64].forEach(offset => {
-      const osc = ctx.createOscillator(); const gain = ctx.createGain();
-      osc.frequency.value = 880; gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
-      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + offset + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.22);
-      osc.connect(gain); gain.connect(ctx.destination); osc.start(ctx.currentTime + offset); osc.stop(ctx.currentTime + offset + 0.24);
-    });
+  async function unlockBellAudio() {
+    if (!bellAudio) initBellAudio();
+    if (!state.settings.alarmSoundEnabled) return;
+    const previousVolume = bellAudio.volume;
+    try {
+      bellAudio.volume = 0.001;
+      await bellAudio.play();
+      bellAudio.pause();
+      bellAudio.currentTime = 0;
+    } catch (error) {
+      console.warn('Timer bell needs a user tap before iOS will allow playback.', error);
+    } finally {
+      bellAudio.volume = previousVolume;
+    }
+  }
+
+  async function startBell() {
+    if (!state.settings.alarmSoundEnabled || document.visibilityState !== 'visible') return;
+    if (!bellAudio) initBellAudio();
+    bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
+    try { await bellAudio.play(); }
+    catch (error) { console.warn('Unable to start timer bell. Use Test Bell in Settings once to enable sound.', error); }
+  }
+
+  function stopBell() {
+    if (!bellAudio) return;
+    bellAudio.pause();
+    bellAudio.currentTime = 0;
+  }
+
+  async function testBell() {
+    if (!bellAudio) initBellAudio();
+    state.settings.alarmSoundEnabled = true;
+    if (els.alarmSoundToggle) els.alarmSoundToggle.checked = true;
+    saveState();
+    bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
+    try {
+      await bellAudio.play();
+      els.testBellBtn.textContent = 'Bell enabled ✓';
+      setTimeout(() => { if (!state.timers.some(timer => timer.done && !timer.dismissed)) stopBell(); els.testBellBtn.textContent = 'Test bell'; }, 2200);
+    } catch (error) {
+      alert('The bell could not start. Make sure media volume is turned up, then tap Test bell again.');
+    }
   }
 
   function updateAlarmLoop() {
     const ringing = state.timers.some(timer => timer.done && !timer.dismissed);
-    if (ringing && !alarmInterval) { soundAlarm(); alarmInterval = setInterval(soundAlarm, 4000); }
-    if (!ringing && alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+    if (ringing) startBell(); else stopBell();
+  }
+
+  function shouldHoldWakeLock() {
+    const mode = state.settings.wakeLockMode || 'recipes-and-timers';
+    if (mode === 'never') return false;
+    const viewingRecipe = !els.detailPane.hidden && !!selectedRecipeKey;
+    const hasTimer = state.timers.some(timer => !timer.done || !timer.dismissed);
+    return mode === 'recipes' ? viewingRecipe : viewingRecipe || hasTimer;
+  }
+
+  async function updateWakeLock() {
+    if (!('wakeLock' in navigator)) {
+      if (els.wakeLockStatus) els.wakeLockStatus.textContent = 'Screen wake lock is not supported on this device.';
+      return;
+    }
+    if (document.visibilityState !== 'visible' || !shouldHoldWakeLock()) { await releaseWakeLock(); return; }
+    if (wakeLockSentinel || wakeLockRequestPending) return;
+    wakeLockRequestPending = true;
+    try {
+      wakeLockSentinel = await navigator.wakeLock.request('screen');
+      if (els.wakeLockStatus) els.wakeLockStatus.textContent = 'Screen will stay awake while cooking.';
+      wakeLockSentinel.addEventListener('release', () => {
+        wakeLockSentinel = null;
+        if (els.wakeLockStatus) els.wakeLockStatus.textContent = 'Wake lock released. It will reconnect when Kitchen Companion is active.';
+        if (document.visibilityState === 'visible' && shouldHoldWakeLock()) setTimeout(updateWakeLock, 250);
+      });
+    } catch (error) {
+      if (els.wakeLockStatus) els.wakeLockStatus.textContent = 'Could not keep the screen awake. Low Power Mode or an iOS restriction may be active.';
+    } finally { wakeLockRequestPending = false; }
+  }
+
+  async function releaseWakeLock() {
+    if (!wakeLockSentinel) return;
+    const lock = wakeLockSentinel;
+    wakeLockSentinel = null;
+    try { await lock.release(); } catch (error) { console.warn('Unable to release wake lock', error); }
   }
 
   function announceFinishedTimer(timer) {
-    soundAlarm();
+    startBell();
     if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 700]);
     if ('Notification' in window && Notification.permission === 'granted') new Notification('Kitchen timer finished', { body: `${timer.recipeName}: ${timer.label}`, tag: timer.id, requireInteraction: true });
   }
@@ -771,8 +853,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       card.innerHTML=`<div class="timer-name">${escapeHtml(timer.recipeName)}</div><div class="timer-step">Step ${timer.step} · ${escapeHtml(timer.label)}</div><div class="timer-time">${finished?'⏰ Finished':timer.done?'Alarm dismissed':formatClock(timerRemaining(timer))}</div><div class="timer-actions">${finished?'<button class="dismiss-timer button danger">Dismiss alarm</button>':`<button class="pause-timer">${timer.paused?'Resume':'Pause'}</button><button class="add-timer">+1 min</button>`}<button class="cancel-timer">${timer.done?'Remove':'Cancel'}</button></div>`;
       card.querySelector('.pause-timer')?.addEventListener('click',()=>{ if(timer.done)return; if(timer.paused){timer.endAt=Date.now()+timer.remainingMs;timer.paused=false;}else{timer.remainingMs=timerRemaining(timer);timer.paused=true;} saveState();renderTimers(); });
       card.querySelector('.add-timer')?.addEventListener('click',()=>{ timer.done=false; timer.dismissed=false; if(timer.paused) timer.remainingMs+=60000; else timer.endAt=Math.max(Date.now(),timer.endAt)+60000; saveState();renderTimers(); });
-      card.querySelector('.dismiss-timer')?.addEventListener('click',()=>{ timer.dismissed=true; saveState(); updateAlarmLoop(); renderTimers(); });
-      card.querySelector('.cancel-timer').addEventListener('click',()=>{ state.timers=state.timers.filter(t=>t.id!==timer.id); saveState();updateAlarmLoop();renderTimers(); });
+      card.querySelector('.dismiss-timer')?.addEventListener('click',()=>{ timer.dismissed=true; saveState(); updateAlarmLoop(); renderTimers(); updateWakeLock(); });
+      card.querySelector('.cancel-timer').addEventListener('click',()=>{ state.timers=state.timers.filter(t=>t.id!==timer.id); saveState();updateAlarmLoop();renderTimers();updateWakeLock(); });
       els.timerList.append(card);
     });
   }
@@ -859,8 +941,9 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
 
   function showShopping() {
+    selectedRecipeKey = null;
     els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false;
-    populateStoreSelects(); renderShoppingList(); window.scrollTo({top:0,behavior:'smooth'});
+    populateStoreSelects(); renderShoppingList(); updateWakeLock(); window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function normalizeStore(store) { return store && store.trim() ? store.trim() : 'Unassigned'; }

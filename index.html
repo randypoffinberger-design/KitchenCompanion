@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.9.0">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.9.0">
+  <link rel="manifest" href="app.webmanifest?v=0.9.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.9.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.9.0">
+  <link rel="stylesheet" href="styles.css?v=0.9.1">
 </head>
 <body>
   <div class="app-shell">
@@ -104,7 +104,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.9.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.9.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -124,6 +124,18 @@
           <button type="button" class="color-swatch" data-color="#BE123C" style="--swatch:#BE123C" aria-label="Rose"></button>
         </div>
         <label class="custom-color-row"><span>Custom color</span><input id="accentColorInput" type="color" value="#7b3f00"></label>
+      </div>
+      <div class="setting-block">
+        <strong>Timer alarm</strong>
+        <label class="setting-row"><span>Bell sound</span><input id="alarmSoundToggle" type="checkbox" checked></label>
+        <label class="setting-slider"><span>Bell volume</span><input id="alarmVolume" type="range" min="0.1" max="1" step="0.05" value="0.85"></label>
+        <button type="button" id="testBellBtn" class="button secondary">Test bell</button>
+        <p class="setting-help">Tap Test bell once on each device to authorize audio. A finished timer rings continuously while Kitchen Companion is active until the alarm is dismissed.</p>
+      </div>
+      <div class="setting-block">
+        <strong>Screen wake</strong>
+        <label class="setting-column"><span>Keep the screen awake</span><select id="wakeLockMode"><option value="never">Never</option><option value="recipes">Only while viewing a recipe</option><option value="recipes-and-timers" selected>While viewing recipes or using timers</option></select></label>
+        <p id="wakeLockStatus" class="setting-help">Wake lock reconnects automatically when you return to Kitchen Companion.</p>
       </div>
       <div class="setting-block">
         <strong>Hidden recipes</strong>
@@ -300,8 +312,8 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.9.0"></script>
-  <script src="app.js?v=0.9.0"></script>
-  <script src="ocr-service.js?v=0.9.0"></script>
+  <script src="kitchen-engine.js?v=0.9.1"></script>
+  <script src="app.js?v=0.9.1"></script>
+  <script src="ocr-service.js?v=0.9.1"></script>
 </body>
 </html>

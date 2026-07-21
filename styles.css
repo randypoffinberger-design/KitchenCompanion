@@ -257,7 +257,7 @@ body.menu-open { overflow: hidden; touch-action: none; }
 
 @media (max-width: 760px) { .back-btn { top: 68px; width: max-content; } .recipe-filters .button { flex: 1 1 auto; } }
 
-/* v0.9.0 safety, sharing, OCR, and sticky recipe controls */
+/* v0.9.1 safety, sharing, OCR, alarms, wake lock, and sticky recipe controls */
 .detail-sticky-row { position: sticky; top: 66px; z-index: 32; display:flex; align-items:center; min-height:64px; padding:8px 0 10px; background:var(--bg); }
 .detail-sticky-row .back-btn { position:static; margin:0; box-shadow:none; }
 .scale-bar { top: 132px; }
@@ -281,3 +281,6 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .timer-card.done { border-width: 2px; animation: timerPulse 1.2s ease-in-out infinite alternate; }
 .timer-card.done .timer-time { font-weight: 800; font-size: 1.2rem; }
 @keyframes timerPulse { from { transform: scale(1); } to { transform: scale(1.015); } }
+
+/* v0.9.1 timer bell and cooking wake controls */
+.setting-slider,.setting-column{display:grid;gap:7px;margin:10px 0}.setting-slider input{width:100%}.setting-column select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text)}.setting-help{margin:.55rem 0 0;color:var(--muted);font-size:.86rem;line-height:1.4}
