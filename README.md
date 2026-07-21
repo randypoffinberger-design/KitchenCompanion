@@ -1,32 +1,40 @@
-# Kitchen Companion v0.5.1
+# Kitchen Companion v0.9.0
 
-Bug-fix release for mobile updates, shopping-list ingredient formatting, store assignment, sidebar scrolling, and direct GitHub module installation.
+Kitchen Companion is a static, installable recipe application for GitHub Pages. It supports recipe modules, personal recipes, recipe editing, scaling, timers, favorites, notes, shopping lists, sharing, backup/restore, pasted-text importing, and screenshot/photo OCR.
 
-## Important repository layout
-Upload the files from this folder directly to the root of the GitHub repository. In particular, keep these together at the root:
+## v0.9.0 highlights
+
+- Replaced the conflicting browser-only image reader with one cross-platform Tesseract.js OCR workflow.
+- Supports one or multiple screenshots/photos, ordered page combination, overlap deduplication, and optional website-clutter cleanup.
+- Uses two recognition passes and chooses the stronger result.
+- Limits OCR canvas memory for unusually tall screenshots to reduce mobile browser crashes.
+- Resets a failed OCR worker so a second attempt can succeed without reloading the app.
+- Routes corrected OCR text through the same parser and recipe editor used by pasted recipe text.
+- Retains recipe sharing, single-recipe import, full backup/restore, personal-recipe export, and pre-update safety snapshots from v0.8.0.
+
+## Repository layout
+
+Upload the contents of this folder directly to the root of the GitHub repository. Keep these files together:
 
 - `index.html`
 - `app.js`
 - `styles.css`
+- `kitchen-engine.js`
+- `ocr-service.js`
 - `service-worker.js`
 - `app.webmanifest`
-- `catalog.json`
-- the `.recipepack` files
+- `catalog.json` and the stable `.recipepack` module files already used by the repository
 
-## One-time iPhone update step
-Older home-screen shortcuts were created before Kitchen Companion had a service worker. After uploading v0.5.1, open the GitHub Pages link in Safari, refresh it, then remove and re-add the Home Screen shortcut once. Future releases will use the new network-first service worker and the in-app **Check for app update** button.
+This engine package intentionally does not replace the repository's current `catalog.json` or recipe modules.
 
+## OCR first-use requirement
 
-## Recipe creation workflows
+Tesseract.js, its WebAssembly core, and English language model are loaded from pinned jsDelivr URLs. The first OCR run therefore requires internet access. Recipe viewing, editing, timers, notes, shopping lists, and installed modules remain local browser features.
 
-Recipes can be entered manually, pasted as complete plain text for automatic field parsing, or imported from one or more images using on-device browser text recognition when available. All imported content opens in the standard recipe editor for review and correction before saving.
+## Updating an existing Home Screen installation
 
-## v0.8.0 highlights
-- Share one recipe as Kitchen Companion JSON or plain text, with private notes excluded by default.
-- Import a shared single-recipe file into My Recipes.
-- Create and restore full backups; merge or replace after validation.
-- Export personal recipes separately.
-- Save an automatic pre-update state snapshot before forcing an app refresh.
-- Improved two-pass OCR, cleanup of common website clutter, overlap deduplication, and low-confidence fallback guidance.
-- Added a copyable AI conversion prompt for screenshots local OCR cannot reliably read.
-- Fixed mobile sticky Back and Scale controls so they no longer overlap.
+After uploading v0.9.0, open the GitHub Pages site in Safari and use **Settings → Check for app update**. If an older Home Screen installation remains stuck on an old service worker, remove the shortcut once and add it again from Safari.
+
+## v0.9.0 cookbook management
+
+Personal recipes support permanent deletion. Module recipes support persistent hiding and can be restored from Settings → Hidden Recipes. Timers use persistent finished states with dismissible repeating alarms, and scaled cup amounts favor practical kitchen measurements.

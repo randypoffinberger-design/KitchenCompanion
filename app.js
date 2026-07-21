@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.8.0-safety-sharing-ocr';
+  const ENGINE_VERSION = '0.9.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -77,12 +77,14 @@
   };
 
   const state = loadState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {};
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {};
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
   let activeScale = 1;
   let timerTicker = null;
+  let alarmInterval = null;
+  let audioContext = null;
 
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
@@ -98,7 +100,7 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn')
   };
 
   init();
@@ -120,7 +122,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
+    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00' } };
   }
 
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -141,7 +143,9 @@
     els.browseGithubBtn.addEventListener('click', () => { els.importOptionsDialog.close(); currentView='modules'; showModules(); loadModuleCatalog(); });
     els.importFileBtn.addEventListener('click', () => { els.importOptionsDialog.close(); els.moduleFile.click(); });
     els.moduleFile.addEventListener('change', importModules);
-    els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); els.settingsDialog.showModal(); });
+    els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); renderHiddenRecipes(); els.settingsDialog.showModal(); });
+    els.hiddenRecipesBtn?.addEventListener('click', () => { renderHiddenRecipes(); els.settingsDialog.close(); els.hiddenRecipesDialog.showModal(); });
+    els.restoreAllHiddenBtn?.addEventListener('click', restoreAllHiddenRecipes);
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
     els.createRecipeBtn.addEventListener('click', () => { toggleSidebar(false); els.recipeCreateDialog.showModal(); });
@@ -155,7 +159,6 @@
     els.pasteRecipeForm.addEventListener('submit', parsePastedRecipe);
     els.imageRecipeForm.addEventListener('submit', parseRecognizedRecipe);
     els.recipeImageFiles.addEventListener('change', previewRecipeImages);
-    els.recognizeRecipeImages.addEventListener('click', recognizeRecipeImageText);
     els.closeRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.cancelRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.recipeEditorForm.addEventListener('submit', saveRecipeFromEditor);
@@ -233,7 +236,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.8.0').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.9.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -273,7 +276,10 @@
     saveState();
   }
 
-  function getAllRecipes(options = {}) { return engine.getRecipes(state.modules, options); }
+  function getAllRecipes(options = {}) {
+    const recipes = engine.getRecipes(state.modules, options);
+    return options.includeHidden ? recipes : recipes.filter(recipe => !state.hiddenRecipes.includes(recipe.key));
+  }
 
   function renderCounts() {
     const recipes = getAllRecipes();
@@ -409,7 +415,7 @@
           ${yieldText ? `<span class="stat"><strong>Yield:</strong> ${escapeHtml(yieldText)}</span>` : ''}
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
-        <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}</div>
+        <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
@@ -423,6 +429,8 @@
     document.querySelector('#shareRecipeBtn').addEventListener('click', () => openShareRecipe(recipe));
     document.querySelector('#addIngredientsBtn').addEventListener('click', () => openIngredientShopping(recipe));
     document.querySelector('#viewOriginalBtn')?.addEventListener('click', () => { selectedRecipeKey = recipe.copiedFrom; renderRecipeDetail(); });
+    document.querySelector('#deleteRecipeBtn')?.addEventListener('click', () => deletePersonalRecipe(recipe));
+    document.querySelector('#hideRecipeBtn')?.addEventListener('click', () => hideModuleRecipe(recipe));
     document.querySelectorAll('.timer-link').forEach(button => button.addEventListener('click', () => offerTimer(button, recipe)));
     const notesInput = document.querySelector('#recipeNotesInput'); let noteTimer;
     notesInput.addEventListener('input', () => { clearTimeout(noteTimer); document.querySelector('#saveNoteStatus').textContent = 'Saving…'; noteTimer=setTimeout(() => { state.recipeNotes[recipe.key]=notesInput.value; saveState(); document.querySelector('#saveNoteStatus').textContent='Saved on this device'; }, 350); });
@@ -440,10 +448,11 @@
   function formatIngredient(ingredient) {
     let amount = '';
     if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
-    else if (typeof ingredient.quantity === 'number') amount = formatFraction(ingredient.scalable === false ? ingredient.quantity : ingredient.quantity * activeScale);
+    else if (typeof ingredient.quantity === 'number') amount = formatPracticalMeasurement(ingredient.scalable === false ? ingredient.quantity : ingredient.quantity * activeScale, ingredient.unit);
     const optional = ingredient.optional ? ' (optional)' : '';
     const metric = state.settings.metricHelpers ? metricHelper(ingredient, activeScale) : '';
-    return escapeHtml([amount, ingredient.unit, ingredient.item].filter(Boolean).join(' ') + optional + metric);
+    const unit = amount.includes('tablespoon') || amount.includes('teaspoon') || amount.includes(' cup') ? '' : ingredient.unit;
+    return escapeHtml([amount, unit, ingredient.item].filter(Boolean).join(' ') + optional + metric);
   }
 
   function metricHelper(ingredient, scale) {
@@ -466,6 +475,24 @@
     return formatNumber(value);
   }
 
+  function formatPracticalMeasurement(value, unit = '') {
+    const normalized = String(unit).toLowerCase().replace(/\./g, '');
+    if (!['cup','cups'].includes(normalized)) return formatFraction(value);
+    const eighths = Math.round(value * 8);
+    if (Math.abs(value - eighths / 8) > 0.02) return formatFraction(value);
+    const whole = Math.floor(eighths / 8);
+    const rem = eighths % 8;
+    const parts = [];
+    if (whole) parts.push(String(whole));
+    const cupMap = {1:'⅛',2:'¼',3:'¼ cup + 2 tablespoons',4:'½',5:'½ cup + 2 tablespoons',6:'¾',7:'¾ cup + 2 tablespoons'};
+    if (rem === 3 || rem === 5 || rem === 7) {
+      const prefix = whole ? `${whole} cup${whole === 1 ? '' : 's'} + ` : '';
+      return prefix + cupMap[rem];
+    }
+    if (rem) parts.push(cupMap[rem]);
+    return parts.join(' ') || '0';
+  }
+
   function formatNumber(value) { return Number(value.toFixed(2)).toString(); }
 
   function toggleFavorite(key) {
@@ -480,6 +507,56 @@
     saveState();
     renderCounts();
     renderRecipeList();
+  }
+
+  function cleanupRecipeReferences(key) {
+    state.favorites = state.favorites.filter(item => item !== key);
+    delete state.recipeNotes[key];
+    state.timers = state.timers.filter(timer => timer.recipeKey !== key);
+    state.shoppingList = state.shoppingList.filter(item => item.recipeKey !== key);
+  }
+
+  function deletePersonalRecipe(recipe) {
+    if (recipe.moduleId !== 'my-recipes') return;
+    if (!confirm(`Permanently delete “${recipe.name}”?
+
+This removes the recipe, its favorite status, notes, and related personal metadata from this device.`)) return;
+    const personal = ensurePersonalModule();
+    personal.recipes = personal.recipes.filter(item => item.id !== recipe.id);
+    cleanupRecipeReferences(recipe.key);
+    state.hiddenRecipes = state.hiddenRecipes.filter(key => key !== recipe.key);
+    selectedRecipeKey = null;
+    saveState(); refreshAll(); showList();
+  }
+
+  function hideModuleRecipe(recipe) {
+    if (recipe.moduleId === 'my-recipes') return;
+    if (!confirm(`Hide “${recipe.name}”?
+
+The recipe remains installed and can be restored from Settings → Hidden Recipes.`)) return;
+    if (!state.hiddenRecipes.includes(recipe.key)) state.hiddenRecipes.push(recipe.key);
+    selectedRecipeKey = null;
+    saveState(); refreshAll(); showList();
+  }
+
+  function renderHiddenRecipes() {
+    if (!els.hiddenRecipesList) return;
+    const all = engine.getRecipes(state.modules, { enabledOnly: false, includeOverridden: true });
+    const hidden = state.hiddenRecipes.map(key => all.find(recipe => recipe.key === key)).filter(Boolean);
+    els.hiddenRecipesList.innerHTML = '';
+    els.restoreAllHiddenBtn.disabled = hidden.length === 0;
+    if (!hidden.length) { els.hiddenRecipesList.innerHTML = '<p class="module-meta">No hidden recipes.</p>'; return; }
+    hidden.sort((a,b) => a.name.localeCompare(b.name)).forEach(recipe => {
+      const row = document.createElement('div'); row.className = 'hidden-recipe-row';
+      row.innerHTML = `<div><strong>${escapeHtml(recipe.name)}</strong><div class="module-meta">${escapeHtml(recipe.moduleName)}</div></div><button type="button" class="button secondary">Restore</button>`;
+      row.querySelector('button').addEventListener('click', () => { state.hiddenRecipes = state.hiddenRecipes.filter(key => key !== recipe.key); saveState(); renderHiddenRecipes(); refreshAll(); });
+      els.hiddenRecipesList.append(row);
+    });
+  }
+
+  function restoreAllHiddenRecipes() {
+    if (!state.hiddenRecipes.length) return;
+    state.hiddenRecipes = []; saveState(); renderHiddenRecipes(); refreshAll();
   }
 
   function ensurePersonalModule() {
@@ -506,7 +583,7 @@
     document.querySelector('#editCookTime').value = recipe?.cookTime || '';
     document.querySelector('#editYield').value = recipe?.yield ? `${recipe.yield.amount} ${recipe.yield.unit || ''}`.trim() : '';
     document.querySelector('#editTags').value = (recipe?.tags || []).join(', ');
-    document.querySelector('#editIngredients').value = (recipe?.ingredientGroups || []).flatMap(group => (group.ingredients || []).map(formatIngredientForEditor)).join('\n');
+    document.querySelector('#editIngredients').value = (recipe?.ingredientGroups || []).flatMap(group => [group.name && group.name !== 'Main' ? `[${group.name}]` : '', ...(group.ingredients || []).map(formatIngredientForEditor)]).filter(Boolean).join('\n');
     document.querySelector('#editInstructions').value = (recipe?.instructions || []).join('\n');
     els.recipeEditorDialog.showModal();
   }
@@ -521,7 +598,7 @@
     document.querySelector('#editCookTime').value = parsed.cookTime || '';
     document.querySelector('#editYield').value = parsed.yieldText || '';
     document.querySelector('#editTags').value = (parsed.tags || []).join(', ');
-    document.querySelector('#editIngredients').value = (parsed.ingredients || []).join('\n');
+    document.querySelector('#editIngredients').value = (parsed.ingredientGroups || []).length ? parsed.ingredientGroups.flatMap(group => [group.name !== 'Main' ? `[${group.name}]` : '', ...group.ingredients]).filter(Boolean).join('\n') : (parsed.ingredients || []).join('\n');
     document.querySelector('#editInstructions').value = (parsed.instructions || []).join('\n');
   }
 
@@ -555,33 +632,8 @@
     els.ocrStatus.textContent = els.recipeImageFiles.files.length ? `${els.recipeImageFiles.files.length} image${els.recipeImageFiles.files.length === 1 ? '' : 's'} selected.` : '';
   }
 
-  async function recognizeRecipeImageText() {
-    const files = [...els.recipeImageFiles.files];
-    if (!files.length) { alert('Choose at least one recipe image first.'); return; }
-    if (!('TextDetector' in globalThis)) {
-      els.ocrStatus.textContent = 'Automatic on-device text recognition is not available in this browser. You can type or paste the text into the review box, or open this build in a browser that supports TextDetector.';
-      els.recognizedRecipeText.focus();
-      return;
-    }
-    els.recognizeRecipeImages.disabled = true;
-    try {
-      const detector = new TextDetector();
-      const pages = [];
-      for (let index = 0; index < files.length; index += 1) {
-        els.ocrStatus.textContent = `Reading image ${index + 1} of ${files.length}…`;
-        const bitmap = await createImageBitmap(files[index]);
-        const blocks = await detector.detect(bitmap);
-        bitmap.close?.();
-        blocks.sort((a, b) => (a.boundingBox?.y || 0) - (b.boundingBox?.y || 0) || (a.boundingBox?.x || 0) - (b.boundingBox?.x || 0));
-        pages.push(blocks.map(block => block.rawValue || '').filter(Boolean).join('\n'));
-      }
-      els.recognizedRecipeText.value = pages.filter(Boolean).join('\n\n');
-      els.ocrStatus.textContent = 'Text recognition complete. Correct anything needed, then choose Parse and review.';
-    } catch (error) {
-      console.error(error);
-      els.ocrStatus.textContent = `Text recognition failed: ${error.message}. You can still type or paste the text into the review box.`;
-    } finally { els.recognizeRecipeImages.disabled = false; }
-  }
+  // OCR is owned by ocr-service.js. Keeping it outside app.js prevents duplicate
+  // click handlers and lets the OCR worker lifecycle remain isolated.
 
   function formatIngredientForEditor(i) { return [i.displayQuantity ?? i.quantity ?? '', i.unit || '', i.item || ''].filter(x => x !== '').join(' '); }
 
@@ -600,7 +652,7 @@
       prepTime: document.querySelector('#editPrepTime').value.trim(), cookTime: document.querySelector('#editCookTime').value.trim(),
       yield: yieldParts ? { amount: Number(yieldParts[1]), unit: yieldParts[2] || 'servings' } : null,
       tags: document.querySelector('#editTags').value.split(',').map(x=>x.trim()).filter(Boolean),
-      ingredientGroups: [{ name:'Main', ingredients: document.querySelector('#editIngredients').value.split('\n').map(x=>x.trim()).filter(Boolean).map(parseIngredientLine) }],
+      ingredientGroups: parseIngredientGroups(document.querySelector('#editIngredients').value),
       instructions: document.querySelector('#editInstructions').value.split('\n').map(x=>x.trim()).filter(Boolean),
       createdInApp: true, copiedFrom: source?.moduleId === 'my-recipes' ? source.copiedFrom : (source ? source.key : undefined)
     };
@@ -657,6 +709,8 @@
   }
 
   function startTimer(minutes, recipe, step, label) {
+    ensureAudioContext();
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
     const timer={ id:`timer-${Date.now()}-${Math.random().toString(16).slice(2)}`, recipeKey:recipe.key, recipeName:recipe.name, step, label, durationMs:minutes*60000, endAt:Date.now()+minutes*60000, paused:false, remainingMs:minutes*60000, done:false };
     state.timers.push(timer); saveState(); els.timerDock.hidden=false; renderTimers();
   }
@@ -670,22 +724,67 @@
   function timerRemaining(timer) { return timer.paused ? timer.remainingMs : Math.max(0,timer.endAt-Date.now()); }
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
+  function ensureAudioContext() {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    audioContext ||= new AudioCtx();
+    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+    return audioContext;
+  }
+
+  function soundAlarm() {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    [0, 0.32, 0.64].forEach(offset => {
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.frequency.value = 880; gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.22);
+      osc.connect(gain); gain.connect(ctx.destination); osc.start(ctx.currentTime + offset); osc.stop(ctx.currentTime + offset + 0.24);
+    });
+  }
+
+  function updateAlarmLoop() {
+    const ringing = state.timers.some(timer => timer.done && !timer.dismissed);
+    if (ringing && !alarmInterval) { soundAlarm(); alarmInterval = setInterval(soundAlarm, 4000); }
+    if (!ringing && alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+  }
+
+  function announceFinishedTimer(timer) {
+    soundAlarm();
+    if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 700]);
+    if ('Notification' in window && Notification.permission === 'granted') new Notification('Kitchen timer finished', { body: `${timer.recipeName}: ${timer.label}`, tag: timer.id, requireInteraction: true });
+  }
+
   function renderTimers() {
     state.timers ||= [];
-    let changed=false;
-    state.timers.forEach(t=>{ if(!t.paused && !t.done && timerRemaining(t)<=0){t.done=true; changed=true;} });
-    if(changed){ saveState(); if(navigator.vibrate) navigator.vibrate([250,150,250]); }
+    let changed=false; const newlyFinished=[];
+    state.timers.forEach(t=>{ if(!t.paused && !t.done && timerRemaining(t)<=0){t.done=true;t.dismissed=false;changed=true;newlyFinished.push(t);} });
+    if(changed) saveState();
+    newlyFinished.forEach(announceFinishedTimer); updateAlarmLoop();
     els.timerCount.textContent=state.timers.length; els.timerCount.hidden=state.timers.length===0;
     els.timerList.innerHTML='';
     if(!state.timers.length){ els.timerList.innerHTML='<p class="module-meta">No active timers.</p>'; return; }
     state.timers.forEach(timer=>{
       const card=document.createElement('div'); card.className=`timer-card ${timer.done?'done':''}`;
-      card.innerHTML=`<div class="timer-name">${escapeHtml(timer.recipeName)}</div><div class="timer-step">Step ${timer.step} · ${escapeHtml(timer.label)}</div><div class="timer-time">${timer.done?'Done':formatClock(timerRemaining(timer))}</div><div class="timer-actions"><button class="pause-timer">${timer.paused?'Resume':'Pause'}</button><button class="add-timer">+1 min</button><button class="cancel-timer">Cancel</button></div>`;
-      card.querySelector('.pause-timer').addEventListener('click',()=>{ if(timer.done)return; if(timer.paused){timer.endAt=Date.now()+timer.remainingMs;timer.paused=false;}else{timer.remainingMs=timerRemaining(timer);timer.paused=true;} saveState();renderTimers(); });
-      card.querySelector('.add-timer').addEventListener('click',()=>{ timer.done=false; if(timer.paused) timer.remainingMs+=60000; else timer.endAt=Math.max(Date.now(),timer.endAt)+60000; saveState();renderTimers(); });
-      card.querySelector('.cancel-timer').addEventListener('click',()=>{ state.timers=state.timers.filter(t=>t.id!==timer.id); saveState();renderTimers(); });
+      const finished = timer.done && !timer.dismissed;
+      card.innerHTML=`<div class="timer-name">${escapeHtml(timer.recipeName)}</div><div class="timer-step">Step ${timer.step} · ${escapeHtml(timer.label)}</div><div class="timer-time">${finished?'⏰ Finished':timer.done?'Alarm dismissed':formatClock(timerRemaining(timer))}</div><div class="timer-actions">${finished?'<button class="dismiss-timer button danger">Dismiss alarm</button>':`<button class="pause-timer">${timer.paused?'Resume':'Pause'}</button><button class="add-timer">+1 min</button>`}<button class="cancel-timer">${timer.done?'Remove':'Cancel'}</button></div>`;
+      card.querySelector('.pause-timer')?.addEventListener('click',()=>{ if(timer.done)return; if(timer.paused){timer.endAt=Date.now()+timer.remainingMs;timer.paused=false;}else{timer.remainingMs=timerRemaining(timer);timer.paused=true;} saveState();renderTimers(); });
+      card.querySelector('.add-timer')?.addEventListener('click',()=>{ timer.done=false; timer.dismissed=false; if(timer.paused) timer.remainingMs+=60000; else timer.endAt=Math.max(Date.now(),timer.endAt)+60000; saveState();renderTimers(); });
+      card.querySelector('.dismiss-timer')?.addEventListener('click',()=>{ timer.dismissed=true; saveState(); updateAlarmLoop(); renderTimers(); });
+      card.querySelector('.cancel-timer').addEventListener('click',()=>{ state.timers=state.timers.filter(t=>t.id!==timer.id); saveState();updateAlarmLoop();renderTimers(); });
       els.timerList.append(card);
     });
+  }
+
+  function parseIngredientGroups(text) {
+    const groups = []; let current = { name: 'Main', ingredients: [] }; groups.push(current);
+    String(text || '').split('\n').map(line => line.trim()).filter(Boolean).forEach(line => {
+      const heading = line.match(/^\[(.+)]$/) || line.match(/^(?:for|to make)\s+(.+):$/i);
+      if (heading) { current = { name: heading[1].trim(), ingredients: [] }; groups.push(current); }
+      else current.ingredients.push(parseIngredientLine(line));
+    });
+    return groups.filter(group => group.ingredients.length);
   }
 
   function parseIngredientLine(line) {
@@ -743,6 +842,7 @@
         if (!confirm(`Uninstall ${module.name}?\n\nThis removes all ${module.recipes.length} imported recipes from this device. User-created recipes and copied personal variations are not part of the module and will remain. Favorites that point to this module will be cleaned up.`)) return;
         state.modules = state.modules.filter(m => m.moduleId !== module.moduleId); delete state.moduleSources[module.moduleId];
         state.favorites = state.favorites.filter(key => !key.startsWith(`${module.moduleId}:`));
+        state.hiddenRecipes = state.hiddenRecipes.filter(key => !key.startsWith(`${module.moduleId}:`));
         saveState(); refreshAll(); renderModules();
       });
       els.moduleCards.append(card);

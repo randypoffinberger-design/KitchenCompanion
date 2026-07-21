@@ -1,28 +1,22 @@
-# Kitchen Companion 0.8.0 OCR Preview
+# Kitchen Companion v0.9.0 OCR Notes
 
-This update replaces the browser-only TextDetector path with Tesseract.js OCR.
+Kitchen Companion uses Tesseract.js for browser-based OCR on iPhone, iPad, Android, and desktop browsers.
 
-## Included behavior
+## Workflow
 
-- Reads one or multiple screenshots/photos in the order selected.
-- Reuses one OCR worker for every selected image to reduce memory and setup time.
-- Preprocesses images with resizing, grayscale, and contrast adjustment.
-- Shows per-image OCR progress.
-- Keeps successful pages if one selected image fails.
-- Places combined OCR text in the existing correction box.
-- Sends corrected OCR text through the same recipe parser used by Paste Recipe Text.
+1. Select one or more screenshots or photos in reading order.
+2. Kitchen Companion preprocesses each image and runs two OCR passes.
+3. The stronger result is selected, optional website clutter is removed, and overlapping screenshot text is deduplicated.
+4. The combined text opens in a correction box.
+5. Corrected text passes through the same recipe parser and editor used by pasted recipes.
 
-## Important preview limitation
+## v0.9.0 reliability changes
 
-The OCR runtime, WebAssembly core, and English language data are loaded from pinned jsDelivr URLs on first use. This makes the preview practical to test on iPhone without adding several megabytes of binary files to the package yet. A later hardening pass should self-host those pinned assets in the repository and update the service worker for fully offline first-party OCR.
+- `ocr-service.js` is now the only OCR controller.
+- Large and unusually tall images are constrained to a mobile-safe canvas budget.
+- A failed worker is terminated and recreated on retry.
+- Low-quality results expose fallback instructions without discarding recognized text.
 
-## Uploading
+## Dependency note
 
-This update package intentionally omits catalog.json and recipe module files. Keep the current catalog and current recipe module already in GitHub. Upload/replace only the files in this package.
-
-
-## v0.8.0 quality-of-life additions
-- Sticky back button while viewing a recipe.
-- Favorite/unfavorite directly from recipe cards.
-- Main-screen Favorites filter that combines with module, category, and search filters.
-- Clear filters button resets module and category selections together.
+The Tesseract runtime, WebAssembly core, and English model are loaded from pinned jsDelivr URLs and require internet on the first OCR use.

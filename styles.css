@@ -257,7 +257,7 @@ body.menu-open { overflow: hidden; touch-action: none; }
 
 @media (max-width: 760px) { .back-btn { top: 68px; width: max-content; } .recipe-filters .button { flex: 1 1 auto; } }
 
-/* v0.8.0 safety, sharing, OCR, and sticky recipe controls */
+/* v0.9.0 safety, sharing, OCR, and sticky recipe controls */
 .detail-sticky-row { position: sticky; top: 66px; z-index: 32; display:flex; align-items:center; min-height:64px; padding:8px 0 10px; background:var(--bg); }
 .detail-sticky-row .back-btn { position:static; margin:0; box-shadow:none; }
 .scale-bar { top: 132px; }
@@ -274,3 +274,10 @@ body.menu-open { overflow: hidden; touch-action: none; }
 @media (max-width:520px) {
   .backup-actions,.share-choice-grid,.ocr-fallback-actions { grid-template-columns:1fr; }
 }
+
+
+.hidden-recipes-list { display: grid; gap: .65rem; margin: 1rem 0; max-height: 55vh; overflow: auto; }
+.hidden-recipe-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem; border: 1px solid var(--border); border-radius: .75rem; }
+.timer-card.done { border-width: 2px; animation: timerPulse 1.2s ease-in-out infinite alternate; }
+.timer-card.done .timer-time { font-weight: 800; font-size: 1.2rem; }
+@keyframes timerPulse { from { transform: scale(1); } to { transform: scale(1.015); } }

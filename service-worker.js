@@ -1,7 +1,7 @@
-const CACHE_NAME = 'kitchen-companion-v0.8.0';
+const CACHE_NAME = 'kitchen-companion-v0.9.0';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.8.0', './kitchen-engine.js?v=0.8.0', './app.js?v=0.8.0',
-  './ocr-service.js?v=0.8.0', './app.webmanifest?v=0.8.0', './icon-180.png?v=0.8.0', './icon-192.png?v=0.8.0', './icon-512.png?v=0.8.0'
+  './', './index.html', './styles.css?v=0.9.0', './kitchen-engine.js?v=0.9.0', './app.js?v=0.9.0',
+  './ocr-service.js?v=0.9.0', './app.webmanifest?v=0.9.0', './icon-180.png?v=0.9.0', './icon-192.png?v=0.9.0', './icon-512.png?v=0.9.0'
 ];
 
 self.addEventListener('install', event => {
@@ -19,18 +19,20 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
 
   event.respondWith((async () => {
     try {
       const response = await fetch(event.request, { cache: 'no-store' });
-      if (response && response.ok) {
+      if (response && response.ok && (url.origin === self.location.origin || ['script','worker','wasm'].includes(event.request.destination))) {
         const cache = await caches.open(CACHE_NAME);
         cache.put(event.request, response.clone());
       }
       return response;
     } catch (error) {
-      return (await caches.match(event.request)) || (await caches.match('./index.html'));
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      if (event.request.mode === 'navigate') return caches.match('./index.html');
+      throw error;
     }
   })());
 });

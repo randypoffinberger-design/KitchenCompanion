@@ -1,4 +1,4 @@
-# Kitchen Companion Engine Architecture — v0.6.0 Preview
+# Kitchen Companion Engine Architecture — v0.9.0
 
 ## Engine responsibilities
 `kitchen-engine.js` owns schema validation, module normalization and installation, personal-module creation, flattened recipe identity, copied-recipe overlays, search indexing/filtering, slug creation, and unique recipe IDs.
@@ -15,7 +15,7 @@
 ## Included next-version UI changes
 Recipe search now appears on the main recipe screen with a Clear button. Module and Category filters can be applied independently or together.
 
-## Next engine extraction targets
+## Future engine extraction targets
 1. Recipe parsing and structured editor services.
 2. Individual recipe import/export envelope.
 3. OCR ingestion adapter and review model.

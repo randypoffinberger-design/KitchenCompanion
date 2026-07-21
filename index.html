@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.8.0">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.8.0">
+  <link rel="manifest" href="app.webmanifest?v=0.9.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.9.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.8.0">
+  <link rel="stylesheet" href="styles.css?v=0.9.0">
 </head>
 <body>
   <div class="app-shell">
@@ -104,7 +104,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.8.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.9.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -125,6 +125,11 @@
         </div>
         <label class="custom-color-row"><span>Custom color</span><input id="accentColorInput" type="color" value="#7b3f00"></label>
       </div>
+      <div class="setting-block">
+        <strong>Hidden recipes</strong>
+        <p>Restore recipes hidden from installed modules.</p>
+        <button type="button" id="hiddenRecipesBtn" class="button secondary">Manage hidden recipes</button>
+      </div>
       <div class="setting-block backup-settings">
         <strong>Backup and restore</strong>
         <p>Protect your personal recipes, notes, favorites, shopping data, and settings.</p>
@@ -138,6 +143,16 @@
       <div class="dialog-actions">
         <button class="button secondary" value="cancel">Close</button>
       </div>
+    </form>
+  </dialog>
+
+
+  <dialog id="hiddenRecipesDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Hidden Recipes</h2>
+      <p>Hidden module recipes remain installed and can be restored at any time.</p>
+      <div id="hiddenRecipesList" class="hidden-recipes-list"></div>
+      <div class="dialog-actions"><button type="button" id="restoreAllHiddenBtn" class="button secondary">Restore All</button><button class="button" value="cancel">Close</button></div>
     </form>
   </dialog>
 
@@ -285,8 +300,8 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.8.0"></script>
-  <script src="app.js?v=0.8.0"></script>
-  <script src="ocr-service.js?v=0.8.0"></script>
+  <script src="kitchen-engine.js?v=0.9.0"></script>
+  <script src="app.js?v=0.9.0"></script>
+  <script src="ocr-service.js?v=0.9.0"></script>
 </body>
 </html>

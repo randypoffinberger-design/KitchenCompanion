@@ -4,6 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
+    static version = '0.9.0';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -108,26 +109,32 @@
     }
 
     parseRecipeText(rawText) {
-      const text = String(rawText || '').replace(/\r/g, '').replace(/[\t ]+$/gm, '').trim();
+      const normalizeFractions = value => String(value || '')
+        .replace(/\b(\d+)\s*\/\s*(\d+)\b/g, '$1/$2')
+        .replace(/\bI\s*\/\s*2\b/gi, '1/2')
+        .replace(/\bI\s*\/\s*4\b/gi, '1/4')
+        .replace(/(\d)\s+([¼½¾⅓⅔⅛⅜⅝⅞])/g, '$1 $2');
+      const text = normalizeFractions(rawText).replace(/\r/g, '').replace(/[\t ]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
       if (!text) throw new Error('No recipe text was provided.');
       const lines = text.split('\n').map(line => line.trim());
       const nonblank = lines.filter(Boolean);
-      const result = { name: '', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], instructions: [], notes: '' };
-      result.name = nonblank[0] || 'Imported Recipe';
-
       const heading = line => line.toLowerCase().replace(/[:：]$/, '').trim();
       const ingredientHeads = new Set(['ingredients', 'ingredient', 'what you need']);
       const instructionHeads = new Set(['instructions', 'directions', 'method', 'steps', 'preparation']);
       const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
-      let section = 'meta';
-      const description = [], notes = [];
-
+      const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use)$/i;
+      const titleCandidates = nonblank.filter(line => !clutter.test(line) && !ingredientHeads.has(heading(line)) && !instructionHeads.has(heading(line)) && !/^(?:prep|cook|total)\s*time\b/i.test(line));
+      const result = { name: titleCandidates[0] || 'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
+      let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
+      const groups = [currentGroup], description = [], notes = [];
       const stripBullet = line => line.replace(/^[-•*▪◦]+\s*/, '').replace(/^\d+[.)]\s*/, '').trim();
-      const looksIngredient = line => /^(?:\d+(?:[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|a|an)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
-      const looksInstruction = line => /^\d+[.)]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|spread|sprinkle)\b/i.test(stripBullet(line));
-
-      lines.forEach((line, index) => {
-        if (!line || (index === lines.findIndex(Boolean))) return;
+      const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|a|an)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
+      const looksInstruction = line => /^\d+[.)]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|spread|sprinkle|bring|reduce|cover|drain)\b/i.test(stripBullet(line));
+      const groupHeading = line => line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i) || (/^[A-Z][A-Za-z &-]{2,30}:$/.test(line) ? [line, line.replace(/:$/, '')] : null);
+      let seenTitle = false;
+      lines.forEach(line => {
+        if (!line || clutter.test(line)) return;
+        if (!seenTitle && line === result.name) { seenTitle = true; return; }
         const h = heading(line);
         if (ingredientHeads.has(h)) { section = 'ingredients'; return; }
         if (instructionHeads.has(h)) { section = 'instructions'; return; }
@@ -139,28 +146,20 @@
         if ((match = line.match(/^(?:yield|serves|servings|makes)\s*[:：-]?\s*(.+)$/i))) { result.yieldText = match[1].trim(); return; }
         if ((match = line.match(/^category\s*[:：-]\s*(.+)$/i))) { result.category = match[1].trim(); return; }
         if ((match = line.match(/^tags?\s*[:：-]\s*(.+)$/i))) { result.tags = match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean); return; }
-
-        if (section === 'ingredients') result.ingredients.push(stripBullet(line));
-        else if (section === 'instructions') result.instructions.push(stripBullet(line));
+        if (section === 'ingredients') {
+          const gh = groupHeading(line);
+          if (gh && !looksIngredient(line)) { currentGroup = { name: gh[1].trim(), ingredients: [] }; groups.push(currentGroup); }
+          else currentGroup.ingredients.push(stripBullet(line));
+        } else if (section === 'instructions') result.instructions.push(stripBullet(line));
         else if (section === 'notes') notes.push(line);
-        else if (looksIngredient(line) && !looksInstruction(line)) { section = 'ingredients'; result.ingredients.push(stripBullet(line)); }
+        else if (looksIngredient(line) && !looksInstruction(line)) { section = 'ingredients'; currentGroup.ingredients.push(stripBullet(line)); }
         else if (looksInstruction(line)) { section = 'instructions'; result.instructions.push(stripBullet(line)); }
         else description.push(line);
       });
-
-      result.description = description.join(' ').trim();
-      result.notes = notes.join('\n').trim();
-      if (!result.ingredients.length || !result.instructions.length) {
-        const blankBlocks = text.split(/\n\s*\n+/).map(block => block.trim()).filter(Boolean);
-        if (!result.ingredients.length && blankBlocks.length >= 2) {
-          const candidate = blankBlocks.find(block => block.split('\n').filter(Boolean).filter(looksIngredient).length >= 2);
-          if (candidate) result.ingredients = candidate.split('\n').map(stripBullet).filter(Boolean).filter(line => !ingredientHeads.has(heading(line)));
-        }
-        if (!result.instructions.length) {
-          const candidate = blankBlocks.find(block => block.split('\n').filter(Boolean).filter(looksInstruction).length >= 2);
-          if (candidate) result.instructions = candidate.split('\n').map(stripBullet).filter(Boolean).filter(line => !instructionHeads.has(heading(line)));
-        }
-      }
+      result.ingredientGroups = groups.filter(group => group.ingredients.length);
+      result.ingredients = result.ingredientGroups.flatMap(group => group.ingredients);
+      result.instructions = result.instructions.flatMap(step => step.split(/(?=\s+\d+[.)]\s+)/)).map(stripBullet).filter(Boolean);
+      result.description = description.join(' ').trim(); result.notes = notes.join('\n').trim();
       return result;
     }
   }
