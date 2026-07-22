@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.9.2">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.9.2">
+  <link rel="manifest" href="app.webmanifest?v=0.10.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.10.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.9.2">
+  <link rel="stylesheet" href="styles.css?v=0.10.0">
 </head>
 <body>
   <div class="app-shell">
@@ -104,7 +104,14 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.9.2</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.10.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+
+      <div class="setting-block">
+        <strong>Profiles</strong>
+        <p>Current profile: <b id="activeProfileName">Primary Profile</b></p>
+        <p class="setting-help">Favorites, notes, hidden recipes, personal recipes, shopping data, and personal settings are kept separately for each profile. Installed recipe modules remain shared on this device.</p>
+        <button type="button" id="manageProfilesBtn" class="button secondary">Manage profiles</button>
+      </div>
       <label class="setting-row">
         <span>Dark mode</span>
         <input id="darkModeToggle" type="checkbox">
@@ -158,6 +165,16 @@
     </form>
   </dialog>
 
+
+
+  <dialog id="profilesDialog">
+    <form method="dialog" class="dialog-card profile-manager-card">
+      <h2>Profiles</h2>
+      <p>Switch between separate local recipe and shopping spaces. Running timers remain available across profiles on this device.</p>
+      <div id="profilesList" class="profiles-list"></div>
+      <div class="dialog-actions"><button type="button" id="addProfileBtn" class="button">Add profile</button><button class="button secondary" value="cancel">Close</button></div>
+    </form>
+  </dialog>
 
   <dialog id="hiddenRecipesDialog">
     <form method="dialog" class="dialog-card">
@@ -312,8 +329,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.9.2"></script>
-  <script src="app.js?v=0.9.2"></script>
-  <script src="ocr-service.js?v=0.9.2"></script>
+  <script src="kitchen-engine.js?v=0.10.0"></script>
+  <script src="profile-storage.js?v=0.10.0"></script>
+  <script src="app.js?v=0.10.0"></script>
+  <script src="ocr-service.js?v=0.10.0"></script>
 </body>
 </html>

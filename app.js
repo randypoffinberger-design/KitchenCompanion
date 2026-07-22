@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.9.2';
+  const ENGINE_VERSION = '0.10.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -76,7 +76,8 @@
     ]
   };
 
-  const state = loadState();
+  const profileStore = new KCProfileStore();
+  const state = profileStore.loadActiveState();
   state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {};
   let currentView = 'all';
   let selectedCategory = null;
@@ -101,7 +102,7 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn')
   };
 
   init();
@@ -110,8 +111,10 @@
     if (!state.modules.length) state.modules.push(builtInModule);
     migrateState();
     ensurePersonalModule();
+    saveState();
     applySettings();
     const versionLabel=document.querySelector('#engineVersionLabel'); if(versionLabel) versionLabel.textContent=ENGINE_VERSION;
+    renderActiveProfile();
     bindEvents();
     refreshAll();
     startTimerTicker();
@@ -128,7 +131,7 @@
     return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true } };
   }
 
-  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function saveState() { profileStore.saveCombinedState(state); }
 
   function bindEvents() {
     els.menuBtn.addEventListener('click', () => toggleSidebar(true));
@@ -146,7 +149,7 @@
     els.browseGithubBtn.addEventListener('click', () => { els.importOptionsDialog.close(); currentView='modules'; showModules(); loadModuleCatalog(); });
     els.importFileBtn.addEventListener('click', () => { els.importOptionsDialog.close(); els.moduleFile.click(); });
     els.moduleFile.addEventListener('change', importModules);
-    els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); renderHiddenRecipes(); els.settingsDialog.showModal(); });
+    els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); renderHiddenRecipes(); renderActiveProfile(); els.settingsDialog.showModal(); });
     els.hiddenRecipesBtn?.addEventListener('click', () => { renderHiddenRecipes(); els.settingsDialog.close(); els.hiddenRecipesDialog.showModal(); });
     els.restoreAllHiddenBtn?.addEventListener('click', restoreAllHiddenRecipes);
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
@@ -155,6 +158,8 @@
     els.alarmSoundToggle?.addEventListener('change', () => { state.settings.alarmSoundEnabled = els.alarmSoundToggle.checked; saveState(); if (!state.settings.alarmSoundEnabled) stopBell(); });
     els.alarmVolume?.addEventListener('input', () => { state.settings.alarmVolume = Number(els.alarmVolume.value); if (bellAudio) bellAudio.volume = state.settings.alarmVolume; saveState(); });
     els.testBellBtn?.addEventListener('click', testBell);
+    els.manageProfilesBtn?.addEventListener('click', () => { renderProfiles(); els.settingsDialog.close(); els.profilesDialog.showModal(); });
+    els.addProfileBtn?.addEventListener('click', createProfile);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') updateWakeLock(); else releaseWakeLock(); });
     window.addEventListener('pageshow', updateWakeLock);
     window.addEventListener('pagehide', releaseWakeLock);
@@ -212,6 +217,70 @@
     }));
   }
 
+
+  function renderActiveProfile() {
+    const profile = profileStore.getActiveProfileMeta();
+    if (els.activeProfileName) els.activeProfileName.textContent = profile?.displayName || 'Primary Profile';
+    const menuLabel = document.querySelector('#menuProfileName');
+    if (menuLabel) menuLabel.textContent = profile?.displayName || 'Primary Profile';
+  }
+
+  function renderProfiles() {
+    if (!els.profilesList) return;
+    const activeId = profileStore.getActiveProfileMeta()?.profileId;
+    els.profilesList.innerHTML = '';
+    profileStore.listProfiles().forEach(profile => {
+      const summary = profileStore.profileSummary(profile.profileId);
+      const row = document.createElement('section');
+      row.className = 'profile-row';
+      row.innerHTML = `<div class="profile-row-main"><strong>${escapeHtml(profile.displayName)}</strong>${profile.profileId===activeId?'<span class="profile-current">Current</span>':''}<small>${summary.personalRecipes} personal recipes · ${summary.favorites} favorites · ${summary.notes} notes</small></div><div class="profile-row-actions"></div>`;
+      const actions = row.querySelector('.profile-row-actions');
+      if (profile.profileId !== activeId) {
+        const switchBtn=document.createElement('button'); switchBtn.type='button'; switchBtn.className='button secondary'; switchBtn.textContent='Switch';
+        switchBtn.addEventListener('click',()=>{ saveState(); profileStore.switchProfile(profile.profileId); location.reload(); }); actions.appendChild(switchBtn);
+      }
+      const renameBtn=document.createElement('button'); renameBtn.type='button'; renameBtn.className='button secondary'; renameBtn.textContent='Rename';
+      renameBtn.addEventListener('click',()=>renameProfile(profile)); actions.appendChild(renameBtn);
+      const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='button secondary'; exportBtn.textContent='Export';
+      exportBtn.addEventListener('click',()=>exportProfile(profile)); actions.appendChild(exportBtn);
+      if (profile.profileId !== activeId) {
+        const deleteBtn=document.createElement('button'); deleteBtn.type='button'; deleteBtn.className='button danger'; deleteBtn.textContent='Delete';
+        deleteBtn.addEventListener('click',()=>deleteProfile(profile)); actions.appendChild(deleteBtn);
+      }
+      els.profilesList.appendChild(row);
+    });
+  }
+
+  function createProfile() {
+    const name = prompt('Name the new profile:');
+    if (!name) return;
+    try { profileStore.createProfile(name); renderProfiles(); }
+    catch (error) { alert(error.message); }
+  }
+
+  function renameProfile(profile) {
+    const name = prompt('Rename profile:', profile.displayName);
+    if (!name || name.trim() === profile.displayName) return;
+    try { profileStore.renameProfile(profile.profileId, name); renderProfiles(); renderActiveProfile(); }
+    catch (error) { alert(error.message); }
+  }
+
+  async function exportProfile(profile) {
+    try {
+      const payload = profileStore.exportProfile(profile.profileId);
+      const filename = `${profile.displayName.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'') || 'Profile'}-${new Date().toISOString().slice(0,10)}.kcprofile`;
+      await deliverFile(filename, JSON.stringify(payload, null, 2));
+    } catch (error) { alert(`Profile export failed: ${error.message}`); }
+  }
+
+  function deleteProfile(profile) {
+    const summary = profileStore.profileSummary(profile.profileId);
+    const confirmation = prompt(`Deleting ${profile.displayName} removes ${summary.personalRecipes} personal recipes, ${summary.favorites} favorites, ${summary.notes} notes, and ${summary.shoppingItems} shopping items from this device.\n\nType the profile name to confirm:`);
+    if (confirmation !== profile.displayName) return;
+    try { profileStore.deleteProfile(profile.profileId); renderProfiles(); }
+    catch (error) { alert(error.message); }
+  }
+
   function toggleSidebar(open) { els.sidebar.classList.toggle('open', open); els.scrim.classList.toggle('show', open); document.body.classList.toggle('menu-open', open); }
 
   function migrateState() {
@@ -246,7 +315,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.9.2').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.10.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -739,7 +808,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.9.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.10.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1153,7 +1222,7 @@ Type a new store name to add it, or type REMOVE: Store Name to remove one.`);
   }
 
   function backupPayload() {
-    return { format:'kitchen-companion-backup', schemaVersion:1, engineVersion:ENGINE_VERSION, createdAt:new Date().toISOString(), state:JSON.parse(JSON.stringify(state)) };
+    return { format:'kitchen-companion-backup', schemaVersion:2, engineVersion:ENGINE_VERSION, createdAt:new Date().toISOString(), activeProfile:profileStore.getActiveProfileMeta(), state:JSON.parse(JSON.stringify(state)) };
   }
 
   async function createFullBackup() { const b=backupPayload(); await deliverFile(`Kitchen-Companion-Backup-${new Date().toISOString().slice(0,10)}.kcbackup`, JSON.stringify(b,null,2)); state.backupMeta.lastManualBackupAt=b.createdAt; saveState(); }
@@ -1174,7 +1243,7 @@ Type a new store name to add it, or type REMOVE: Store Name to remove one.`);
 
   function restoreSelectedBackup(event) {
     event.preventDefault(); if(!pendingBackup)return; const mode=new FormData(els.restoreBackupForm).get('restoreMode');
-    try { localStorage.setItem(`${STORAGE_KEY}.rollback`, JSON.stringify(state)); const restored=mode==='replace'?pendingBackup.state:mergeBackupState(state,pendingBackup.state); if(!Array.isArray(restored.modules))throw new Error('Backup validation failed.'); localStorage.setItem(STORAGE_KEY,JSON.stringify(restored)); pendingBackup=null; els.restoreBackupDialog.close(); alert('Backup restored. Kitchen Companion will reload now.'); location.reload(); } catch(error){ alert(`Restore failed: ${error.message}`); }
+    try { localStorage.setItem(`${STORAGE_KEY}.rollback`, JSON.stringify(state)); const restored=mode==='replace'?pendingBackup.state:mergeBackupState(state,pendingBackup.state); if(!Array.isArray(restored.modules))throw new Error('Backup validation failed.'); Object.keys(state).forEach(key => delete state[key]); Object.assign(state, restored); saveState(); pendingBackup=null; els.restoreBackupDialog.close(); alert('Backup restored into the current profile. Kitchen Companion will reload now.'); location.reload(); } catch(error){ alert(`Restore failed: ${error.message}`); }
   }
 
   function escapeHtml(value) {
