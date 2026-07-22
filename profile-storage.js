@@ -42,6 +42,7 @@
         const shared = JSON.parse(localStorage.getItem(SHARED_KEY));
         if (device?.profiles?.length && shared) {
           this.device = device;
+          this.normalizeProfileMetadata();
           this.shared = shared;
           this.activeProfile = this.readProfile(device.activeProfileId) || this.defaultProfileData(device.activeProfileId);
           this.persistAll();
@@ -49,6 +50,18 @@
         }
       } catch (error) { console.warn('Profile storage could not be loaded.', error); }
       this.migrateLegacy();
+    }
+
+    normalizeProfileMetadata() {
+      const palette = ['#7b3f00','#2563eb','#15803d','#7e22ce','#be123c','#0f766e'];
+      let changed = false;
+      (this.device?.profiles || []).forEach((profile, index) => {
+        if (!profile.color) { profile.color = palette[index % palette.length]; changed = true; }
+        if (!profile.kind) { profile.kind = 'personal'; changed = true; }
+        if (profile.setupComplete === undefined) { profile.setupComplete = profile.migrationStatus !== 'migrated-from-v0.9'; changed = true; }
+        if (profile.displayName === 'Primary Profile') { profile.displayName = 'My Profile'; changed = true; }
+      });
+      if (changed) localStorage.setItem(DEVICE_KEY, JSON.stringify(this.device));
     }
 
     migrateLegacy() {
@@ -59,7 +72,7 @@
       this.device = {
         schemaVersion:1,
         activeProfileId:profileId,
-        profiles:[{ profileId, displayName:'Primary Profile', createdAt, updatedAt:createdAt, migrationStatus: legacy ? 'migrated-from-v0.9' : 'local-only' }],
+        profiles:[{ profileId, displayName:'My Profile', color:'#7b3f00', kind:'personal', setupComplete:!legacy, createdAt, updatedAt:createdAt, migrationStatus: legacy ? 'migrated-from-v0.9' : 'local-only' }],
         migration:{ id:'single-state-to-profiles-v1', migratedAt:createdAt, sourceKey:LEGACY_KEY, legacyFound:!!legacy }
       };
       this.shared = this.defaultShared();
@@ -126,15 +139,36 @@
     getActiveProfileMeta() { return clone(this.device.profiles.find(p => p.profileId === this.device.activeProfileId)); }
     listProfiles() { return clone(this.device.profiles); }
 
-    createProfile(displayName) {
+    createProfile(displayName, options = {}) {
       const name = String(displayName || '').trim();
       if (!name) throw new Error('Enter a profile name.');
       const profileId = uuid(); const createdAt = now();
-      const meta = { profileId, displayName:name, createdAt, updatedAt:createdAt, migrationStatus:'local-only' };
+      const palette = ['#7b3f00','#2563eb','#15803d','#7e22ce','#be123c','#0f766e'];
+      const meta = { profileId, displayName:name, color:options.color || palette[this.device.profiles.length % palette.length], kind:options.kind || 'personal', setupComplete:true, createdAt, updatedAt:createdAt, migrationStatus:'local-only' };
       const data = this.defaultProfileData(profileId);
       localStorage.setItem(PROFILE_PREFIX + profileId, JSON.stringify(data));
       this.device.profiles.push(meta); this.persistAll();
       return clone(meta);
+    }
+
+    duplicateProfile(profileId, displayName) {
+      const sourceMeta = this.device.profiles.find(p => p.profileId === profileId);
+      const sourceData = profileId === this.activeProfile.profileId ? this.activeProfile : this.readProfile(profileId);
+      if (!sourceMeta || !sourceData) throw new Error('Profile not found.');
+      const copy = this.createProfile(displayName || `${sourceMeta.displayName} Copy`, { color:sourceMeta.color, kind:'personal' });
+      const data = clone(sourceData);
+      data.profileId = copy.profileId; data.createdAt = now(); data.updatedAt = data.createdAt;
+      localStorage.setItem(PROFILE_PREFIX + copy.profileId, JSON.stringify(data));
+      this.persistAll();
+      return copy;
+    }
+
+    completeProfileSetup(profileId, displayName) {
+      const meta = this.device.profiles.find(p => p.profileId === profileId);
+      if (!meta) throw new Error('Profile not found.');
+      const name = String(displayName || '').trim();
+      if (name) meta.displayName = name;
+      meta.setupComplete = true; meta.updatedAt = now(); this.persistAll();
     }
 
     renameProfile(profileId, displayName) {
@@ -165,7 +199,7 @@
 
     profileSummary(profileId) {
       const data = profileId === this.activeProfile.profileId ? this.activeProfile : this.readProfile(profileId);
-      return { personalRecipes:data?.personalModule?.recipes?.length || 0, favorites:data?.favorites?.length || 0, notes:Object.keys(data?.recipeNotes || {}).length, shoppingItems:data?.shoppingList?.length || 0 };
+      return { personalRecipes:data?.personalModule?.recipes?.length || 0, favorites:data?.favorites?.length || 0, notes:Object.keys(data?.recipeNotes || {}).length, hidden:data?.hiddenRecipes?.length || 0, ratings:Object.keys(data?.ratings || {}).length, shoppingItems:data?.shoppingList?.length || 0, stores:(data?.stores || []).filter(x => x && x !== 'Unassigned').length };
     }
 
     async mirrorToIndexedDB() {

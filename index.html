@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.10.0">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.10.0">
+  <link rel="manifest" href="app.webmanifest?v=0.10.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.10.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.10.0">
+  <link rel="stylesheet" href="styles.css?v=0.10.1">
 </head>
 <body>
   <div class="app-shell">
@@ -104,11 +104,11 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.10.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.10.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
-        <p>Current profile: <b id="activeProfileName">Primary Profile</b></p>
+        <p>Current profile: <b id="activeProfileName">My Profile</b></p>
         <p class="setting-help">Favorites, notes, hidden recipes, personal recipes, shopping data, and personal settings are kept separately for each profile. Installed recipe modules remain shared on this device.</p>
         <button type="button" id="manageProfilesBtn" class="button secondary">Manage profiles</button>
       </div>
@@ -169,10 +169,24 @@
 
   <dialog id="profilesDialog">
     <form method="dialog" class="dialog-card profile-manager-card">
-      <h2>Profiles</h2>
-      <p>Switch between separate local recipe and shopping spaces. Running timers remain available across profiles on this device.</p>
+      <h2>Who’s cooking?</h2>
+      <p>Choose a local profile. Public modules and running timers stay shared on this device; personal recipes, favorites, notes, and shopping data switch with the profile.</p>
       <div id="profilesList" class="profiles-list"></div>
-      <div class="dialog-actions"><button type="button" id="addProfileBtn" class="button">Add profile</button><button class="button secondary" value="cancel">Close</button></div>
+      <div class="profile-manager-actions">
+        <button type="button" id="addProfileBtn" class="button">Add profile</button>
+        <button type="button" id="addKitchenProfileBtn" class="button secondary">Add household Kitchen profile</button>
+      </div>
+      <p class="setting-help">Profiles are stored only on this device unless you export them.</p>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Close</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="profileSetupDialog">
+    <form id="profileSetupForm" class="dialog-card">
+      <h2>Welcome to profiles</h2>
+      <p>Your existing Kitchen Companion data is now in its own local profile. Give it a name so you always know whose favorites, notes, and shopping list are open.</p>
+      <label>Profile name<input id="profileSetupName" required maxlength="40" value="My Profile"></label>
+      <div class="dialog-actions"><button type="submit" class="button">Continue</button></div>
     </form>
   </dialog>
 
@@ -329,9 +343,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.10.0"></script>
-  <script src="profile-storage.js?v=0.10.0"></script>
-  <script src="app.js?v=0.10.0"></script>
-  <script src="ocr-service.js?v=0.10.0"></script>
+  <script src="kitchen-engine.js?v=0.10.1"></script>
+  <script src="profile-storage.js?v=0.10.1"></script>
+  <script src="app.js?v=0.10.1"></script>
+  <script src="ocr-service.js?v=0.10.1"></script>
 </body>
 </html>
