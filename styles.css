@@ -378,3 +378,16 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .profile-color-choice { width:2.35rem; height:2.35rem; border-radius:50%; border:3px solid transparent; background:var(--choice-color); cursor:pointer; box-shadow:0 0 0 1px var(--border); }
 .profile-color-choice.selected { border-color:var(--panel); box-shadow:0 0 0 3px var(--choice-color); }
 @media (max-width:480px) { .profile-edit-preview-row { grid-template-columns:4.25rem minmax(0,1fr); } .profile-edit-preview { width:4.25rem; height:4.25rem; } }
+
+/* v0.11.0 Shopping List 2.0 */
+.shopping-store-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.25rem}
+.shopping-store-heading h2{margin:0}
+.shopping-store-heading span{color:var(--muted);font-size:.86rem;font-weight:700}
+.shopping-entry-lines{display:grid;gap:.18rem;margin-top:.22rem}
+.shopping-entry-lines small{display:block;color:var(--muted);font-size:.82rem;line-height:1.3}
+.shopping-entry-lines small span{display:inline;color:var(--text);font-weight:650}
+.shopping-row-actions{grid-template-columns:minmax(120px,1fr) auto auto;align-items:center}
+.regular-item-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.shopping-row-new{animation:shoppingAdded 1.5s ease-out}
+@keyframes shoppingAdded{0%,35%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}100%{box-shadow:none;background:transparent}}
+@media(max-width:720px){.shopping-row-actions{grid-template-columns:1fr auto auto}.regular-item-row{align-items:flex-start}.regular-item-actions{max-width:55%}}
