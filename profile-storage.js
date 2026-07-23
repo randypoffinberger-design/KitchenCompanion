@@ -22,9 +22,9 @@
 
     defaultProfileData(profileId) {
       return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         profileId,
-        personalModule: null,
+        personalRecipes: [],
         favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [],
         shoppingList: [], regularItems: [], stores: ['Unassigned', 'Costco', 'Walmart'],
         settings: { darkMode:false, metricHelpers:false, accentColor:'#7b3f00', wakeLockMode:'recipes-and-timers', alarmVolume:0.85, alarmSoundEnabled:true },
@@ -44,7 +44,8 @@
           this.device = device;
           this.normalizeProfileMetadata();
           this.shared = shared;
-          this.activeProfile = this.readProfile(device.activeProfileId) || this.defaultProfileData(device.activeProfileId);
+          this.activeProfile = this.normalizeProfileData(this.readProfile(device.activeProfileId) || this.defaultProfileData(device.activeProfileId));
+          this.markProfileUsed(device.activeProfileId);
           this.persistAll();
           return;
         }
@@ -62,6 +63,21 @@
         if (profile.displayName === 'Primary Profile') { profile.displayName = 'My Profile'; changed = true; }
       });
       if (changed) localStorage.setItem(DEVICE_KEY, JSON.stringify(this.device));
+    }
+
+    normalizeProfileData(data) {
+      const normalized = data || this.defaultProfileData(this.device?.activeProfileId || uuid());
+      if (!Array.isArray(normalized.personalRecipes)) {
+        normalized.personalRecipes = clone(normalized.personalModule?.recipes || []);
+      }
+      delete normalized.personalModule;
+      normalized.schemaVersion = 2;
+      return normalized;
+    }
+
+    markProfileUsed(profileId) {
+      const meta = this.device?.profiles?.find(profile => profile.profileId === profileId);
+      if (meta) meta.lastUsedAt = now();
     }
 
     migrateLegacy() {
@@ -83,7 +99,7 @@
         this.shared.moduleSources = clone(legacy.moduleSources || {});
         this.shared.timers = clone((legacy.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || profileId })));
         this.shared.backupMeta = clone(legacy.backupMeta || {});
-        this.activeProfile.personalModule = clone(legacy.modules.find(module => module.moduleId === 'my-recipes') || null);
+        this.activeProfile.personalRecipes = clone(legacy.modules.find(module => module.moduleId === 'my-recipes')?.recipes || []);
         for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences']) {
           if (legacy[key] !== undefined) this.activeProfile[key] = clone(legacy[key]);
         }
@@ -105,9 +121,10 @@
     }
 
     loadActiveState() {
-      const personal = this.activeProfile.personalModule;
+      const personalRecipes = clone(this.activeProfile.personalRecipes || []);
+      const personal = personalRecipes.length ? { schemaVersion:1, moduleId:'my-recipes', name:'My Recipes', publisher:'Kitchen Companion user', version:'1.0.0', description:'Recipes created or edited in Kitchen Companion.', license:'Personal', enabled:true, recipes:personalRecipes } : null;
       return {
-        modules: [...clone(this.shared.modules || []), ...(personal ? [clone(personal)] : [])],
+        modules: [...clone(this.shared.modules || []), ...(personal ? [personal] : [])],
         favorites: clone(this.activeProfile.favorites || []),
         recipeNotes: clone(this.activeProfile.recipeNotes || {}),
         hiddenRecipes: clone(this.activeProfile.hiddenRecipes || []),
@@ -129,7 +146,7 @@
       this.shared.moduleSources = clone(state.moduleSources || {});
       this.shared.timers = clone((state.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || this.device.activeProfileId })));
       this.shared.backupMeta = clone(state.backupMeta || {});
-      this.activeProfile.personalModule = clone((state.modules || []).find(module => module.moduleId === 'my-recipes') || null);
+      this.activeProfile.personalRecipes = clone((state.modules || []).find(module => module.moduleId === 'my-recipes')?.recipes || []);
       for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences']) {
         this.activeProfile[key] = clone(state[key] ?? this.activeProfile[key]);
       }
@@ -144,7 +161,7 @@
       if (!name) throw new Error('Enter a profile name.');
       const profileId = uuid(); const createdAt = now();
       const palette = ['#7b3f00','#2563eb','#15803d','#7e22ce','#be123c','#0f766e'];
-      const meta = { profileId, displayName:name, color:options.color || palette[this.device.profiles.length % palette.length], kind:options.kind || 'personal', setupComplete:true, createdAt, updatedAt:createdAt, migrationStatus:'local-only' };
+      const meta = { profileId, displayName:name, color:options.color || palette[this.device.profiles.length % palette.length], kind:options.kind || 'personal', setupComplete:true, createdAt, updatedAt:createdAt, migrationStatus:'local-only', lastUsedAt:createdAt };
       const data = this.defaultProfileData(profileId);
       localStorage.setItem(PROFILE_PREFIX + profileId, JSON.stringify(data));
       this.device.profiles.push(meta); this.persistAll();
@@ -156,7 +173,7 @@
       const sourceData = profileId === this.activeProfile.profileId ? this.activeProfile : this.readProfile(profileId);
       if (!sourceMeta || !sourceData) throw new Error('Profile not found.');
       const copy = this.createProfile(displayName || `${sourceMeta.displayName} Copy`, { color:sourceMeta.color, kind:'personal' });
-      const data = clone(sourceData);
+      const data = this.normalizeProfileData(clone(sourceData));
       data.profileId = copy.profileId; data.createdAt = now(); data.updatedAt = data.createdAt;
       localStorage.setItem(PROFILE_PREFIX + copy.profileId, JSON.stringify(data));
       this.persistAll();
@@ -180,6 +197,7 @@
     switchProfile(profileId) {
       if (!this.device.profiles.some(p => p.profileId === profileId)) throw new Error('Profile not found.');
       this.device.activeProfileId = profileId;
+      this.markProfileUsed(profileId);
       localStorage.setItem(DEVICE_KEY, JSON.stringify(this.device));
     }
 
@@ -194,12 +212,38 @@
       const meta = this.device.profiles.find(p => p.profileId === profileId);
       const data = profileId === this.activeProfile.profileId ? this.activeProfile : this.readProfile(profileId);
       if (!meta || !data) throw new Error('Profile not found.');
-      return { format:'kitchen-companion-profile', schemaVersion:1, exportedAt:now(), profile:clone(meta), data:clone(data) };
+      return { format:'kitchen-companion-profile', schemaVersion:2, exportedAt:now(), profile:clone(meta), data:this.normalizeProfileData(clone(data)) };
+    }
+
+    importProfile(payload, mode = 'add-copy') {
+      if (!payload || payload.format !== 'kitchen-companion-profile' || !payload.profile || !payload.data) throw new Error('This is not a valid Kitchen Companion profile export.');
+      const incomingData = this.normalizeProfileData(clone(payload.data));
+      const existing = this.device.profiles.find(profile => profile.profileId === payload.profile.profileId);
+      if (existing && mode === 'replace') {
+        const wasActive = existing.profileId === this.device.activeProfileId;
+        existing.displayName = String(payload.profile.displayName || existing.displayName).trim() || existing.displayName;
+        existing.color = payload.profile.color || existing.color;
+        existing.kind = payload.profile.kind || existing.kind;
+        existing.updatedAt = now();
+        incomingData.profileId = existing.profileId;
+        incomingData.updatedAt = now();
+        localStorage.setItem(PROFILE_PREFIX + existing.profileId, JSON.stringify(incomingData));
+        if (wasActive) this.activeProfile = incomingData;
+        this.persistAll();
+        return clone(existing);
+      }
+      const importedName = String(payload.profile.displayName || 'Imported Profile').trim() || 'Imported Profile';
+      const meta = this.createProfile(existing ? `${importedName} Imported` : importedName, { color:payload.profile.color, kind:payload.profile.kind || 'personal' });
+      incomingData.profileId = meta.profileId;
+      incomingData.createdAt = now(); incomingData.updatedAt = incomingData.createdAt;
+      localStorage.setItem(PROFILE_PREFIX + meta.profileId, JSON.stringify(incomingData));
+      this.persistAll();
+      return meta;
     }
 
     profileSummary(profileId) {
       const data = profileId === this.activeProfile.profileId ? this.activeProfile : this.readProfile(profileId);
-      return { personalRecipes:data?.personalModule?.recipes?.length || 0, favorites:data?.favorites?.length || 0, notes:Object.keys(data?.recipeNotes || {}).length, hidden:data?.hiddenRecipes?.length || 0, ratings:Object.keys(data?.ratings || {}).length, shoppingItems:data?.shoppingList?.length || 0, stores:(data?.stores || []).filter(x => x && x !== 'Unassigned').length };
+      return { personalRecipes:(data?.personalRecipes || data?.personalModule?.recipes || []).length, favorites:data?.favorites?.length || 0, notes:Object.keys(data?.recipeNotes || {}).length, hidden:data?.hiddenRecipes?.length || 0, ratings:Object.keys(data?.ratings || {}).length, shoppingItems:data?.shoppingList?.length || 0, stores:(data?.stores || []).filter(x => x && x !== 'Unassigned').length };
     }
 
     async mirrorToIndexedDB() {
