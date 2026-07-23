@@ -423,3 +423,21 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .compact-dialog select{width:100%}
 @media(max-width:720px){.shopping-bulk-bar{top:3.9rem}.shopping-toolbar{margin-bottom:.6rem}.row-store-pill{max-width:7rem}}
 @media(max-width:430px){.shopping-bulk-actions{grid-template-columns:auto minmax(68px,1fr) auto auto auto}.shopping-bar-button{padding:.28rem .35rem;font-size:.82rem}.shopping-bulk-actions strong{font-size:.82rem}.row-store-pill{max-width:5.8rem;font-size:.72rem}.shopping-row-mainline{gap:.32rem}}
+
+
+/* v0.11.4 shopping selection responsiveness and inline store creation */
+#shoppingSelectBtn[hidden],.shopping-bulk-actions[hidden],.new-store-fields[hidden],.form-error[hidden]{display:none!important}
+#shoppingSelectBtn{max-width:100%}
+.new-store-fields{margin-top:.75rem}
+.new-store-fields input{width:100%}
+.form-error{margin:.35rem 0 0;color:var(--danger);font-size:.82rem;font-weight:650}
+@media(max-width:520px){
+  .shopping-bulk-actions{grid-template-columns:repeat(6,minmax(0,1fr));gap:.2rem .3rem}
+  #shoppingSelectionCancel{grid-column:span 2}
+  #shoppingSelectedCount{grid-column:span 2}
+  #shoppingSelectAll{grid-column:span 2}
+  #shoppingBulkMove{grid-column:span 3;background:var(--surface-2)}
+  #shoppingBulkDelete{grid-column:span 3;background:var(--surface-2)}
+  .shopping-bulk-bar{padding:.3rem .4rem}
+  .shopping-bar-button{width:100%;padding:.3rem .25rem;font-size:.82rem}
+}

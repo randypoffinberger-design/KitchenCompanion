@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.11.3';
+  const ENGINE_VERSION = '0.11.4';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -225,6 +225,8 @@
     document.querySelector('#shoppingBulkDelete')?.addEventListener('click', deleteSelectedShoppingItems);
     document.querySelector('#shoppingMoveCancel')?.addEventListener('click', () => document.querySelector('#shoppingMoveDialog')?.close());
     document.querySelector('#shoppingMoveConfirm')?.addEventListener('click', confirmShoppingMove);
+    document.querySelector('#shoppingMoveStore')?.addEventListener('change', updateShoppingMoveNewStoreFields);
+    document.querySelector('#shoppingMoveNewStoreName')?.addEventListener('input', clearShoppingMoveStoreError);
     document.querySelector('#shoppingUndoBtn')?.addEventListener('click', undoShoppingBulkAction);
     window.addEventListener('keydown', event => { if(event.key==='Escape' && shoppingSelectionMode) cancelShoppingSelection(); });
     els.addShoppingItemBtn.addEventListener('click', openShoppingItemDialog);
@@ -690,7 +692,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.11.3').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.11.4').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1183,7 +1185,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.11.3');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.11.4');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1458,6 +1460,26 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     renderCounts();
   }
 
+  function clearShoppingMoveStoreError() {
+    const error = document.querySelector('#shoppingMoveStoreError');
+    if (!error) return;
+    error.hidden = true;
+    error.textContent = '';
+  }
+
+  function updateShoppingMoveNewStoreFields() {
+    const select = document.querySelector('#shoppingMoveStore');
+    const fields = document.querySelector('#shoppingMoveNewStoreFields');
+    const input = document.querySelector('#shoppingMoveNewStoreName');
+    const confirmButton = document.querySelector('#shoppingMoveConfirm');
+    if (!select || !fields || !confirmButton) return;
+    const addingStore = select.value === '__new_store__';
+    fields.hidden = !addingStore;
+    confirmButton.textContent = addingStore ? 'Add & Move' : 'Move';
+    clearShoppingMoveStoreError();
+    if (addingStore) setTimeout(() => input?.focus(), 0);
+  }
+
   function openShoppingMoveDialog(ids, title) {
     shoppingMoveTargetIds = [...ids];
     if (!shoppingMoveTargetIds.length) return;
@@ -1465,9 +1487,12 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const dialog = document.querySelector('#shoppingMoveDialog');
     const heading = document.querySelector('#shoppingMoveDialogTitle');
     const select = document.querySelector('#shoppingMoveStore');
+    const input = document.querySelector('#shoppingMoveNewStoreName');
     heading.textContent = title || `Move ${shoppingMoveTargetIds.length} item${shoppingMoveTargetIds.length===1?'':'s'}`;
+    if (input) input.value = '';
     const first = state.shoppingList.find(item => item.id === shoppingMoveTargetIds[0]);
     if (first && [...select.options].some(option => option.value === normalizeStore(first.store))) select.value = normalizeStore(first.store);
+    updateShoppingMoveNewStoreFields();
     dialog.showModal();
   }
 
@@ -1478,13 +1503,38 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function confirmShoppingMove() {
     const selected = [...shoppingMoveTargetIds];
     if (!selected.length) return;
-    const destination = normalizeStore(document.querySelector('#shoppingMoveStore').value);
+    const select = document.querySelector('#shoppingMoveStore');
+    let destination;
+    if (select.value === '__new_store__') {
+      const input = document.querySelector('#shoppingMoveNewStoreName');
+      const error = document.querySelector('#shoppingMoveStoreError');
+      const proposed = (input?.value || '').trim();
+      if (!proposed) {
+        error.textContent = 'Enter a store name.';
+        error.hidden = false;
+        input?.focus();
+        return;
+      }
+      const existing = (state.stores || []).find(store => store.toLowerCase() === proposed.toLowerCase());
+      if (existing) {
+        error.textContent = `${existing} already exists. Choose it from the list instead.`;
+        error.hidden = false;
+        input?.focus();
+        return;
+      }
+      destination = proposed;
+      state.stores ||= [];
+      state.stores.push(destination);
+    } else {
+      destination = normalizeStore(select.value);
+    }
     const snapshot = JSON.parse(JSON.stringify(state.shoppingList));
     const now = new Date().toISOString();
     state.shoppingList.forEach(item => { if (selected.includes(item.id)) { item.store = destination; item.updatedAt = now; } });
     saveState();
     document.querySelector('#shoppingMoveDialog').close();
     shoppingMoveTargetIds = [];
+    populateStoreSelects();
     if (shoppingSelectionMode) cancelShoppingSelection(); else renderShoppingList();
     showShoppingUndo(`${selected.length} item${selected.length===1?'':'s'} moved to ${destination}.`, snapshot);
   }
@@ -1512,7 +1562,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const stores=[...new Set(['Unassigned',...(state.stores||[]),...state.shoppingList.map(x=>normalizeStore(x.store))])];
     state.stores=stores;
     const fill=(select,all=false)=>{ const current=select.value; select.innerHTML=all?'<option value="all">All stores</option>':''; stores.forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;select.append(o)}); if([...select.options].some(o=>o.value===current))select.value=current; };
-    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const moveStore=document.querySelector('#shoppingMoveStore'); if(moveStore) fill(moveStore);
+    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const moveStore=document.querySelector('#shoppingMoveStore'); if(moveStore) { fill(moveStore); const addOption=document.createElement('option'); addOption.value='__new_store__'; addOption.textContent='＋ New store…'; moveStore.append(addOption); }
   }
 
   function addShoppingEntry({name, quantity='', store='Unassigned', source='Manual', recipeKey=''}) {

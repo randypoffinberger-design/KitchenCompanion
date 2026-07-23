@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.11.3">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.11.3">
+  <link rel="manifest" href="app.webmanifest?v=0.11.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.11.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.11.3">
+  <link rel="stylesheet" href="styles.css?v=0.11.0">
 </head>
 <body>
   <div class="app-shell">
@@ -127,13 +127,17 @@
     <form method="dialog" class="dialog-card compact-dialog">
       <h2 id="shoppingMoveDialogTitle">Move selected items</h2>
       <label>Store<select id="shoppingMoveStore"></select></label>
+      <div id="shoppingMoveNewStoreFields" class="new-store-fields" hidden>
+        <label>New store name<input id="shoppingMoveNewStoreName" type="text" maxlength="60" autocomplete="organization" placeholder="Aldi"></label>
+        <p id="shoppingMoveStoreError" class="form-error" role="alert" hidden></p>
+      </div>
       <div class="dialog-actions"><button id="shoppingMoveCancel" type="button" class="button secondary">Cancel</button><button id="shoppingMoveConfirm" type="button" class="button">Move</button></div>
     </form>
   </dialog>
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.11.3</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.11.4</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -404,9 +408,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.11.3"></script>
-  <script src="profile-storage.js?v=0.11.3"></script>
-  <script src="app.js?v=0.11.3"></script>
-  <script src="ocr-service.js?v=0.11.3"></script>
+  <script src="kitchen-engine.js?v=0.11.0"></script>
+  <script src="profile-storage.js?v=0.11.0"></script>
+  <script src="app.js?v=0.11.0"></script>
+  <script src="ocr-service.js?v=0.11.0"></script>
 </body>
 </html>
