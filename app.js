@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.10.3';
+  const ENGINE_VERSION = '0.10.5';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -140,10 +140,16 @@
       toggleProfileQuickMenu();
     });
     els.profileQuickMenu?.addEventListener('click', event => event.stopPropagation());
-    document.addEventListener('click', event => {
-      if (!event.target.closest('.profile-more')) closeProfileMoreMenus();
-      if (!event.target.closest('.header-profile-wrap')) closeProfileQuickMenu();
-    });
+    const closeOpenProfileMenusFromOutsidePress = event => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target?.closest('.profile-more')) closeProfileMoreMenus();
+      if (!target?.closest('.header-profile-wrap')) closeProfileQuickMenu();
+    };
+    // Capture the initial press before Safari/dialog/form handlers can swallow it.
+    // This makes tapping anywhere outside an open More menu close it immediately.
+    document.addEventListener('pointerdown', closeOpenProfileMenusFromOutsidePress, true);
+    if (!window.PointerEvent) document.addEventListener('touchstart', closeOpenProfileMenusFromOutsidePress, true);
+    document.addEventListener('click', closeOpenProfileMenusFromOutsidePress);
     document.addEventListener('keydown', event => {
       if (event.key !== 'Escape') return;
       closeProfileMoreMenus();
@@ -345,8 +351,23 @@
         switchBtn.addEventListener('click',()=>{ saveState(); profileStore.switchProfile(profile.profileId); location.reload(); }); actions.appendChild(switchBtn);
       }
       const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='button secondary'; exportBtn.textContent='Export profile'; exportBtn.addEventListener('click',()=>exportProfile(profile)); actions.appendChild(exportBtn);
-      const more=document.createElement('details'); more.className='profile-more'; more.innerHTML='<summary class="button secondary">More</summary><div class="profile-more-menu"></div>';
-      more.addEventListener('toggle', () => { if (more.open) { closeProfileMoreMenus(more); closeProfileQuickMenu(); } });
+      const more=document.createElement('details'); more.className='profile-more'; more.innerHTML='<summary class="button secondary" aria-haspopup="menu" aria-expanded="false">More</summary><div class="profile-more-menu" role="menu"></div>';
+      const moreSummary = more.querySelector('summary');
+      moreSummary.addEventListener('click', event => {
+        // Safari can be inconsistent when a dynamically-created <details> sits inside a modal.
+        // Toggle it explicitly so tapping More a second time always closes the menu.
+        event.preventDefault();
+        event.stopPropagation();
+        const willOpen = !more.open;
+        closeProfileMoreMenus(willOpen ? more : null);
+        closeProfileQuickMenu();
+        more.open = willOpen;
+        moreSummary.setAttribute('aria-expanded', String(willOpen));
+      });
+      more.addEventListener('toggle', () => {
+        moreSummary.setAttribute('aria-expanded', String(more.open));
+        if (more.open) { closeProfileMoreMenus(more); closeProfileQuickMenu(); }
+      });
       const menu=more.querySelector('.profile-more-menu');
       const renameBtn=document.createElement('button'); renameBtn.type='button'; renameBtn.className='button secondary'; renameBtn.textContent='Rename'; renameBtn.addEventListener('click',()=>renameProfile(profile)); menu.appendChild(renameBtn);
       const duplicateBtn=document.createElement('button'); duplicateBtn.type='button'; duplicateBtn.className='button secondary'; duplicateBtn.textContent='Duplicate'; duplicateBtn.addEventListener('click',()=>duplicateProfile(profile)); menu.appendChild(duplicateBtn);
@@ -462,7 +483,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.10.3').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.10.5').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -955,7 +976,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.10.3');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.10.5');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
