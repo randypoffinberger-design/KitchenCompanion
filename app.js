@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.11.0';
+  const ENGINE_VERSION = '0.11.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -583,11 +583,29 @@
 
   function shoppingId() { return crypto.randomUUID ? crypto.randomUUID() : `shopping-${Date.now()}-${Math.random()}`; }
   function normalizeShoppingName(name) {
-    return String(name || '')
+    let value = String(name || '')
       .replace(/^of\s+/i, '')
-      .replace(/,\s*(?:divided|chopped|diced|minced|sliced|shredded|grated|softened|melted|to taste|for serving|for garnish).*$/i, '')
+      .replace(/[–—]/g, '-')
       .replace(/\s+/g, ' ')
       .trim();
+
+    // Remove trailing preparation, usage, and purchase notes. These belong to
+    // the recipe-source line, not the identity used for shopping-list grouping.
+    const trailingNote = /(?:,|\s)\s*(?:divided|chopped|finely chopped|roughly chopped|diced|minced|sliced|thinly sliced|shredded|grated|softened|melted|beaten|crushed|peeled|seeded|drained|rinsed|at room temperature|room temperature|to taste|as needed|if needed|optional|for cooking|for frying|for sauteing|for sautéing|for greasing|for brushing|for serving|for garnish|for garnishing|plus more|plus extra|extra for serving|more as needed)(?:\s+.*)?$/i;
+    const parentheticalNote = /\s*\((?:[^)]*\b(?:divided|chopped|diced|minced|sliced|shredded|grated|softened|melted|to taste|as needed|optional|for cooking|for frying|for serving|for garnish|plus more|plus extra)\b[^)]*)\)\s*$/i;
+
+    let previous;
+    do {
+      previous = value;
+      value = value.replace(parentheticalNote, '').replace(trailingNote, '').trim();
+    } while (value && value !== previous);
+
+    return value.replace(/[,:;]+$/, '').trim();
+  }
+
+  function displayShoppingName(name) {
+    const value = normalizeShoppingName(name);
+    return value ? value.charAt(0).toUpperCase() + value.slice(1) : '';
   }
   function shoppingNameKey(name) {
     return normalizeShoppingName(name)
@@ -623,13 +641,27 @@
   }
   function migrateState() {
     let changed = false;
-    state.shoppingList = (state.shoppingList || []).map(item => {
-      const normalized = normalizeShoppingItem(item);
-      if (!Array.isArray(item.entries) || item.normalizedName !== normalized.normalizedName || item.name !== normalized.name || item.store !== normalized.store) changed = true;
-      return normalized;
+    const grouped = new Map();
+
+    (state.shoppingList || []).forEach(original => {
+      const item = normalizeShoppingItem(original);
+      item.name = displayShoppingName(item.name);
+      item.normalizedName = shoppingNameKey(item.name);
+      const mergeKey = `${item.checked ? 'checked' : 'open'}|${normalizeStore(item.store).toLowerCase()}|${item.normalizedName}`;
+      const existing = grouped.get(mergeKey);
+      if (existing) {
+        existing.entries.push(...item.entries);
+        existing.updatedAt = [existing.updatedAt, item.updatedAt].filter(Boolean).sort().at(-1) || new Date().toISOString();
+        changed = true;
+      } else {
+        grouped.set(mergeKey, item);
+      }
+      if (!Array.isArray(original.entries) || original.normalizedName !== item.normalizedName || original.name !== item.name || original.store !== item.store) changed = true;
     });
+
+    state.shoppingList = [...grouped.values()];
     state.regularItems = (state.regularItems || []).map(item => ({
-      id:item.id || shoppingId(), name:normalizeShoppingName(item.name), normalizedName:shoppingNameKey(item.normalizedName || item.name), quantity:String(item.quantity || '').trim(), store:normalizeStore(item.store)
+      id:item.id || shoppingId(), name:displayShoppingName(item.name), normalizedName:shoppingNameKey(item.normalizedName || item.name), quantity:String(item.quantity || '').trim(), store:normalizeStore(item.store)
     }));
     if (changed) saveState();
   }
@@ -649,7 +681,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.11.0').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.11.1').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1142,7 +1174,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.11.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.11.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1357,7 +1389,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
   function addShoppingEntry({name, quantity='', store='Unassigned', source='Manual', recipeKey=''}) {
-    const cleanName=normalizeShoppingName(name); if(!cleanName)return null;
+    const cleanName=displayShoppingName(name); if(!cleanName)return null;
     const normalizedName=shoppingNameKey(cleanName); const normalizedStore=normalizeStore(store);
     let item=state.shoppingList.find(x=>!x.checked && shoppingNameKey(x.normalizedName||x.name)===normalizedName && normalizeStore(x.store)===normalizedStore);
     const entry=normalizeShoppingEntry({quantity,source,recipeKey});
@@ -1380,7 +1412,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       const box=section.querySelector('.shopping-items');
       list.forEach(item=>{
         const row=document.createElement('div');row.className=`shopping-row ${item.checked?'checked':''} ${item.id===highlightId?'shopping-row-new':''}`; row.dataset.shoppingId=item.id;
-        const entries=(item.entries||[]).map(entry=>`<small><span>${escapeHtml(entry.quantity||'No quantity')}</span>${entry.source?` · ${escapeHtml(entry.source)}`:''}</small>`).join('');
+        const entries=(item.entries||[]).map(entry=>{ const quantity=String(entry.quantity||'').trim(); const source=String(entry.source||'').trim(); const label=quantity&&source?`<span>${escapeHtml(quantity)}</span> · ${escapeHtml(source)}`:quantity?`<span>${escapeHtml(quantity)}</span>`:source==='Manual'?'Manual item':source||''; return label?`<small>${label}</small>`:''; }).join('');
         row.innerHTML=`<label class="shopping-check"><input type="checkbox" ${item.checked?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><span class="shopping-entry-lines">${entries}</span></span></label><div class="shopping-row-actions"><select class="row-store" aria-label="Store for ${escapeHtml(item.name)}"></select><button class="text-button edit-shopping">Edit</button><button class="text-button remove-shopping">Remove</button></div>`;
         const storeSelect=row.querySelector('.row-store');
         (state.stores||[]).forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;storeSelect.append(o)});
@@ -1410,8 +1442,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     event.preventDefault(); const name=document.querySelector('#shoppingItemName').value.trim(); const quantity=document.querySelector('#shoppingItemQuantity').value.trim(); const store=normalizeStore(els.shoppingItemStore.value); if(!name)return;
     const editId=els.shoppingItemEditId.value;
     let item;
-    if(editId){ item=state.shoppingList.find(x=>x.id===editId); if(!item)return; item.name=normalizeShoppingName(name); item.normalizedName=shoppingNameKey(name); item.store=store; if((item.entries||[]).length<=1)item.entries=[normalizeShoppingEntry({quantity,source:item.entries?.[0]?.source||'Manual',recipeKey:item.entries?.[0]?.recipeKey||''})]; item.updatedAt=new Date().toISOString(); }
-    else { item=addShoppingEntry({name,quantity,store,source:'Manual'}); if(document.querySelector('#saveRegularItem').checked&&!state.regularItems.some(x=>shoppingNameKey(x.name)===shoppingNameKey(name)))state.regularItems.push({id:shoppingId(),name:normalizeShoppingName(name),normalizedName:shoppingNameKey(name),quantity,store}); }
+    if(editId){ item=state.shoppingList.find(x=>x.id===editId); if(!item)return; item.name=displayShoppingName(name); item.normalizedName=shoppingNameKey(name); item.store=store; if((item.entries||[]).length<=1)item.entries=[normalizeShoppingEntry({quantity,source:item.entries?.[0]?.source||'Manual',recipeKey:item.entries?.[0]?.recipeKey||''})]; item.updatedAt=new Date().toISOString(); }
+    else { item=addShoppingEntry({name,quantity,store,source:'Manual'}); if(document.querySelector('#saveRegularItem').checked&&!state.regularItems.some(x=>shoppingNameKey(x.name)===shoppingNameKey(name)))state.regularItems.push({id:shoppingId(),name:displayShoppingName(name),normalizedName:shoppingNameKey(name),quantity,store}); }
     saveState(); els.shoppingItemDialog.close(); renderShoppingList(item.id); renderCounts();
   }
 
@@ -1422,7 +1454,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       const row=document.createElement('div');row.className='regular-item-row';
       row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(item.store||'Unassigned')}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
       row.querySelector('.add-regular').addEventListener('click',e=>{const added=addShoppingEntry({name:item.name,quantity:item.quantity,store:item.store,source:'Regular item'});saveState();renderShoppingList(added.id);renderCounts();e.currentTarget.textContent='Added ✓';setTimeout(()=>e.currentTarget.textContent='Add',1000);});
-      row.querySelector('.edit-regular').addEventListener('click',()=>{const name=prompt('Regular item name:',item.name);if(!name)return;const quantity=prompt('Default quantity or note:',item.quantity||'')??item.quantity;const store=prompt(`Default store:\n${state.stores.join('\n')}`,item.store||'Unassigned')||item.store;item.name=normalizeShoppingName(name);item.normalizedName=shoppingNameKey(name);item.quantity=quantity.trim();item.store=normalizeStore(store);saveState();showRegularItems();});
+      row.querySelector('.edit-regular').addEventListener('click',()=>{const name=prompt('Regular item name:',item.name);if(!name)return;const quantity=prompt('Default quantity or note:',item.quantity||'')??item.quantity;const store=prompt(`Default store:\n${state.stores.join('\n')}`,item.store||'Unassigned')||item.store;item.name=displayShoppingName(name);item.normalizedName=shoppingNameKey(name);item.quantity=quantity.trim();item.store=normalizeStore(store);saveState();showRegularItems();});
       row.querySelector('.remove-regular').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from regular items?`))return;state.regularItems=state.regularItems.filter(x=>x.id!==item.id);saveState();showRegularItems();});
       els.regularItemsList.append(row)
     });
