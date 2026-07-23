@@ -8,18 +8,28 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.10.2">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.10.2">
+  <link rel="manifest" href="app.webmanifest?v=0.10.3">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.10.3">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.10.2">
+  <link rel="stylesheet" href="styles.css?v=0.10.3">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <button id="menuBtn" class="icon-btn mobile-only" aria-label="Open navigation">☰</button>
-      <div class="brand">
-        <strong>Kitchen Companion</strong>
-        <span id="moduleCount">0 modules</span>
+      <div class="brand-wrap">
+        <div class="brand">
+          <strong>Kitchen Companion</strong>
+          <span id="moduleCount">0 modules</span>
+        </div>
+        <div class="header-profile-wrap">
+          <button id="headerProfileBtn" type="button" class="header-profile-button" aria-haspopup="menu" aria-expanded="false" aria-label="Switch profile">
+            <span id="headerProfileAvatar" class="header-profile-avatar">M</span>
+            <span id="headerProfileName">My Profile</span>
+            <span class="header-profile-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="profileQuickMenu" class="profile-quick-menu" role="menu" hidden></div>
+        </div>
       </div>
       <div class="top-actions">
         <input id="moduleFile" type="file" hidden multiple>
@@ -104,7 +114,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.10.2</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.10.3</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -345,9 +355,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.10.2"></script>
-  <script src="profile-storage.js?v=0.10.2"></script>
-  <script src="app.js?v=0.10.2"></script>
-  <script src="ocr-service.js?v=0.10.2"></script>
+  <script src="kitchen-engine.js?v=0.10.3"></script>
+  <script src="profile-storage.js?v=0.10.3"></script>
+  <script src="app.js?v=0.10.3"></script>
+  <script src="ocr-service.js?v=0.10.3"></script>
 </body>
 </html>

@@ -332,3 +332,32 @@ body.menu-open { overflow: hidden; touch-action: none; }
   .profile-row-actions { display:grid; grid-template-columns:1fr auto; }
   .profile-row-actions > .button { width:100%; }
 }
+
+/* v0.10.3 active-profile header and quick switching */
+.brand-wrap { display:flex; align-items:center; gap:14px; min-width:0; }
+.header-profile-wrap { position:relative; }
+.header-profile-button { display:inline-flex; align-items:center; gap:.45rem; max-width:14rem; min-height:38px; padding:.35rem .6rem; border:1px solid var(--border); border-radius:999px; background:var(--panel-2); color:var(--text); cursor:pointer; font-weight:750; }
+.header-profile-button:hover, .header-profile-button[aria-expanded="true"] { border-color:var(--accent); }
+.header-profile-avatar, .profile-quick-avatar { flex:0 0 auto; width:1.75rem; height:1.75rem; border-radius:50%; display:grid; place-items:center; background:var(--profile-color); color:#fff; font-weight:850; font-size:.78rem; }
+#headerProfileName { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.header-profile-chevron { color:var(--muted); font-size:.72rem; }
+.profile-quick-menu { position:absolute; z-index:90; left:0; top:calc(100% + .45rem); width:min(19rem,calc(100vw - 2rem)); padding:.45rem; border:1px solid var(--border); border-radius:14px; background:var(--panel); box-shadow:0 16px 40px rgba(0,0,0,.3); }
+.profile-quick-menu[hidden] { display:none; }
+.profile-quick-item, .profile-quick-manage { width:100%; border:0; border-radius:10px; background:transparent; color:var(--text); cursor:pointer; text-align:left; }
+.profile-quick-item { display:grid; grid-template-columns:1.75rem minmax(0,1fr) auto; align-items:center; gap:.6rem; padding:.6rem; }
+.profile-quick-item:hover, .profile-quick-item.active, .profile-quick-manage:hover { background:var(--panel-2); }
+.profile-quick-check { color:var(--accent); font-weight:900; }
+.profile-quick-divider { height:1px; margin:.35rem .25rem; background:var(--border); }
+.profile-quick-manage { padding:.7rem .75rem; font-weight:750; }
+
+@media (max-width: 600px) {
+  .topbar { gap:8px; padding-inline:10px; }
+  .brand-wrap { gap:7px; flex:1; min-width:0; }
+  .brand { min-width:0; }
+  .brand strong { font-size:1rem; line-height:1.02; }
+  .brand span { display:none; }
+  .header-profile-button { max-width:8.5rem; min-height:36px; padding:.3rem .48rem; gap:.35rem; }
+  .header-profile-avatar { width:1.55rem; height:1.55rem; font-size:.7rem; }
+  #headerProfileName { font-size:.82rem; }
+  .profile-quick-menu { left:auto; right:0; }
+}

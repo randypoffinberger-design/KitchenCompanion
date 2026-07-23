@@ -1,4 +1,4 @@
-# Kitchen Companion Engine Architecture — v0.10.2
+# Kitchen Companion Engine Architecture — v0.10.3
 
 ## Engine responsibilities
 `kitchen-engine.js` owns schema validation, module normalization and installation, personal-module creation, flattened recipe identity, copied-recipe overlays, search indexing/filtering, slug creation, and unique recipe IDs.
