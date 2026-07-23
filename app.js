@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.11.2';
+  const ENGINE_VERSION = '0.11.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -221,8 +221,10 @@
     document.querySelector('#shoppingSelectBtn')?.addEventListener('click', beginShoppingSelection);
     document.querySelector('#shoppingSelectionCancel')?.addEventListener('click', cancelShoppingSelection);
     document.querySelector('#shoppingSelectAll')?.addEventListener('click', selectAllVisibleShopping);
-    document.querySelector('#shoppingBulkMove')?.addEventListener('click', moveSelectedShoppingItems);
+    document.querySelector('#shoppingBulkMove')?.addEventListener('click', openBulkShoppingMoveDialog);
     document.querySelector('#shoppingBulkDelete')?.addEventListener('click', deleteSelectedShoppingItems);
+    document.querySelector('#shoppingMoveCancel')?.addEventListener('click', () => document.querySelector('#shoppingMoveDialog')?.close());
+    document.querySelector('#shoppingMoveConfirm')?.addEventListener('click', confirmShoppingMove);
     document.querySelector('#shoppingUndoBtn')?.addEventListener('click', undoShoppingBulkAction);
     window.addEventListener('keydown', event => { if(event.key==='Escape' && shoppingSelectionMode) cancelShoppingSelection(); });
     els.addShoppingItemBtn.addEventListener('click', openShoppingItemDialog);
@@ -688,7 +690,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.11.1').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.11.3').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1181,7 +1183,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.11.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.11.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1385,6 +1387,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   const shoppingSelectedIds = new Set();
   let shoppingUndoSnapshot = null;
   let shoppingUndoTimer = null;
+  let shoppingMoveTargetIds = [];
 
   function visibleShoppingItems() {
     const filter = els.shoppingStoreFilter.value || 'all';
@@ -1404,6 +1407,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     count.textContent = `${n} selected`;
     move.disabled = n === 0;
     del.disabled = n === 0;
+    const allButton = document.querySelector('#shoppingSelectAll');
+    const visible = visibleShoppingItems();
+    const allSelected = visible.length > 0 && visible.every(item => shoppingSelectedIds.has(item.id));
+    if (allButton) {
+      allButton.textContent = allSelected ? 'None' : 'All';
+      allButton.setAttribute('aria-label', allSelected ? 'Clear all visible selections' : 'Select all visible items');
+    }
   }
 
   function beginShoppingSelection() {
@@ -1448,15 +1458,34 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     renderCounts();
   }
 
-  function moveSelectedShoppingItems() {
-    const selected = [...shoppingSelectedIds];
+  function openShoppingMoveDialog(ids, title) {
+    shoppingMoveTargetIds = [...ids];
+    if (!shoppingMoveTargetIds.length) return;
+    populateStoreSelects();
+    const dialog = document.querySelector('#shoppingMoveDialog');
+    const heading = document.querySelector('#shoppingMoveDialogTitle');
+    const select = document.querySelector('#shoppingMoveStore');
+    heading.textContent = title || `Move ${shoppingMoveTargetIds.length} item${shoppingMoveTargetIds.length===1?'':'s'}`;
+    const first = state.shoppingList.find(item => item.id === shoppingMoveTargetIds[0]);
+    if (first && [...select.options].some(option => option.value === normalizeStore(first.store))) select.value = normalizeStore(first.store);
+    dialog.showModal();
+  }
+
+  function openBulkShoppingMoveDialog() {
+    openShoppingMoveDialog([...shoppingSelectedIds]);
+  }
+
+  function confirmShoppingMove() {
+    const selected = [...shoppingMoveTargetIds];
     if (!selected.length) return;
-    const destination = normalizeStore(document.querySelector('#shoppingBulkStore').value);
+    const destination = normalizeStore(document.querySelector('#shoppingMoveStore').value);
     const snapshot = JSON.parse(JSON.stringify(state.shoppingList));
     const now = new Date().toISOString();
-    state.shoppingList.forEach(item => { if (shoppingSelectedIds.has(item.id)) { item.store = destination; item.updatedAt = now; } });
+    state.shoppingList.forEach(item => { if (selected.includes(item.id)) { item.store = destination; item.updatedAt = now; } });
     saveState();
-    cancelShoppingSelection();
+    document.querySelector('#shoppingMoveDialog').close();
+    shoppingMoveTargetIds = [];
+    if (shoppingSelectionMode) cancelShoppingSelection(); else renderShoppingList();
     showShoppingUndo(`${selected.length} item${selected.length===1?'':'s'} moved to ${destination}.`, snapshot);
   }
 
@@ -1483,7 +1512,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const stores=[...new Set(['Unassigned',...(state.stores||[]),...state.shoppingList.map(x=>normalizeStore(x.store))])];
     state.stores=stores;
     const fill=(select,all=false)=>{ const current=select.value; select.innerHTML=all?'<option value="all">All stores</option>':''; stores.forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;select.append(o)}); if([...select.options].some(o=>o.value===current))select.value=current; };
-    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const bulkStore=document.querySelector('#shoppingBulkStore'); if(bulkStore) fill(bulkStore);
+    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const moveStore=document.querySelector('#shoppingMoveStore'); if(moveStore) fill(moveStore);
   }
 
   function addShoppingEntry({name, quantity='', store='Unassigned', source='Manual', recipeKey=''}) {
@@ -1521,23 +1550,24 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const leading=shoppingSelectionMode
           ? `<label class="bulk-select-control" aria-label="Select ${escapeHtml(item.name)}"><input class="bulk-select-check" type="checkbox" ${shoppingSelectedIds.has(item.id)?'checked':''}></label>`
           : `<label class="shopping-check" aria-label="Mark ${escapeHtml(item.name)} purchased"><input class="purchase-check" type="checkbox" ${item.checked?'checked':''}></label>`;
-        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong><span class="shopping-details-chevron">⌄</span></button><select class="row-store" aria-label="Store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}></select></div><div class="shopping-row-details" hidden>${details}<div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
-        const storeSelect=row.querySelector('.row-store');
-        (state.stores||[]).forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;storeSelect.append(o)});
-        storeSelect.value=normalizeStore(item.store);
-        storeSelect.addEventListener('change',()=>{item.store=normalizeStore(storeSelect.value);item.updatedAt=new Date().toISOString();saveState();renderShoppingList();});
+        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong></button><button type="button" class="row-store-pill" aria-label="Change store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(normalizeStore(item.store))}</button><button type="button" class="shopping-detail-toggle" aria-label="Show details for ${escapeHtml(item.name)}" aria-expanded="false"><span class="shopping-details-chevron">⌄</span></button></div><div class="shopping-row-details" hidden>${details}<div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
+        const storeButton=row.querySelector('.row-store-pill');
+        storeButton.addEventListener('click',()=>openShoppingMoveDialog([item.id],`Move ${item.name}`));
         const purchase=row.querySelector('.purchase-check');
         purchase?.addEventListener('change',e=>{item.checked=e.target.checked;item.updatedAt=new Date().toISOString();saveState();renderShoppingList();renderCounts()});
         const bulk=row.querySelector('.bulk-select-check');
         bulk?.addEventListener('change',e=>{e.target.checked?shoppingSelectedIds.add(item.id):shoppingSelectedIds.delete(item.id);row.classList.toggle('bulk-selected',e.target.checked);updateShoppingBulkBar();});
-        const toggle=row.querySelector('.shopping-name-toggle');
-        toggle.addEventListener('click',()=>{
+        const nameToggle=row.querySelector('.shopping-name-toggle');
+        const detailToggle=row.querySelector('.shopping-detail-toggle');
+        const toggleDetails=()=>{
           if(shoppingSelectionMode){bulk.checked=!bulk.checked;bulk.dispatchEvent(new Event('change',{bubbles:true}));return;}
           const panel=row.querySelector('.shopping-row-details');
           panel.hidden=!panel.hidden;
-          toggle.setAttribute('aria-expanded',String(!panel.hidden));
+          detailToggle.setAttribute('aria-expanded',String(!panel.hidden));
           row.querySelector('.shopping-details-chevron').textContent=panel.hidden?'⌄':'⌃';
-        });
+        };
+        nameToggle.addEventListener('click',toggleDetails);
+        detailToggle.addEventListener('click',toggleDetails);
         row.querySelector('.edit-shopping').addEventListener('click',()=>openShoppingItemDialog(item));
         row.querySelector('.remove-shopping').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from the shopping list?`))return;state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});
         box.append(row);
