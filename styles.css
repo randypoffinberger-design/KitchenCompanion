@@ -391,3 +391,31 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .shopping-row-new{animation:shoppingAdded 1.5s ease-out}
 @keyframes shoppingAdded{0%,35%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}100%{box-shadow:none;background:transparent}}
 @media(max-width:720px){.shopping-row-actions{grid-template-columns:1fr auto auto}.regular-item-row{align-items:flex-start}.regular-item-actions{max-width:55%}}
+
+
+/* v0.11.2 compact shopping rows and bulk actions */
+.shopping-bulk-bar{position:sticky;top:4.2rem;z-index:8;display:flex;align-items:center;gap:.65rem;padding:.65rem;margin:0 0 1rem;border:1px solid var(--border);border-radius:1rem;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(10px)}
+.shopping-bulk-actions{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;width:100%}
+.shopping-bulk-actions strong{margin-right:auto;white-space:nowrap}
+.shopping-bulk-actions select{min-width:130px;padding:.55rem .65rem;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text)}
+.button.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.shopping-row-compact{display:block;padding:.72rem 0}
+.shopping-row-mainline{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(115px,155px);align-items:center;gap:.65rem}
+.shopping-name-toggle{display:flex;align-items:center;justify-content:space-between;gap:.5rem;width:100%;padding:.4rem .2rem;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer;font:inherit}
+.shopping-name-toggle strong{overflow-wrap:anywhere}
+.shopping-details-chevron{color:var(--muted);font-size:1.05rem}
+.shopping-row-details{margin:.45rem 0 .2rem 2.25rem;padding:.7rem .8rem;border-left:3px solid color-mix(in srgb,var(--accent) 45%,var(--border));background:var(--surface-2);border-radius:0 .8rem .8rem 0}
+.shopping-detail-entry{display:grid;gap:.08rem;padding:.35rem 0;border-bottom:1px dashed var(--border)}
+.shopping-detail-entry:last-of-type{border-bottom:0}
+.shopping-detail-entry span,.shopping-detail-entry small{color:var(--muted)}
+.shopping-detail-entry small{font-size:.8rem}
+.shopping-detail-actions{display:flex;justify-content:flex-end;gap:.9rem;padding-top:.55rem}
+.danger-text{color:var(--danger)!important}
+.bulk-select-control,.shopping-check{display:flex;align-items:center;justify-content:center;margin:0}
+.bulk-select-control input,.shopping-check input{width:1.25rem;height:1.25rem;margin:0}
+.shopping-row.bulk-selected{background:color-mix(in srgb,var(--accent) 9%,transparent);border-radius:.75rem;padding-left:.45rem;padding-right:.45rem}
+.shopping-undo-toast{position:fixed;left:50%;bottom:calc(1rem + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:1rem;max-width:calc(100vw - 2rem);padding:.75rem 1rem;border:1px solid var(--border);border-radius:999px;background:var(--text);color:var(--bg);box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.shopping-undo-toast[hidden]{display:none}
+.shopping-undo-toast .text-button{color:inherit;font-weight:800;margin:0}
+@media(max-width:720px){.shopping-bulk-bar{top:3.9rem}.shopping-bulk-actions{display:grid;grid-template-columns:auto 1fr auto auto;gap:.45rem}.shopping-bulk-actions strong{text-align:center;margin:0}.shopping-bulk-actions select{grid-column:1/3;width:100%}.shopping-bulk-actions #shoppingBulkMove{grid-column:3}.shopping-bulk-actions #shoppingBulkDelete{grid-column:4}.shopping-row-mainline{grid-template-columns:auto minmax(0,1fr) minmax(105px,130px)}.shopping-row-details{margin-left:1.9rem}.shopping-toolbar{margin-bottom:.75rem}}
+@media(max-width:430px){.shopping-row-mainline{grid-template-columns:auto minmax(0,1fr);}.shopping-row-mainline .row-store{grid-column:2;width:100%;}.shopping-bulk-actions{grid-template-columns:1fr 1fr}.shopping-bulk-actions strong{grid-column:1/3;grid-row:1}.shopping-bulk-actions #shoppingSelectionCancel{grid-column:1}.shopping-bulk-actions #shoppingSelectAll{grid-column:2}.shopping-bulk-actions select{grid-column:1/3}.shopping-bulk-actions #shoppingBulkMove{grid-column:1}.shopping-bulk-actions #shoppingBulkDelete{grid-column:2}}

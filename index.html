@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.11.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.11.1">
+  <link rel="manifest" href="app.webmanifest?v=0.11.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.11.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.11.1">
+  <link rel="stylesheet" href="styles.css?v=0.11.0">
 </head>
 <body>
   <div class="app-shell">
@@ -107,14 +107,26 @@
           <button id="shareShoppingBtn" class="button secondary">Share</button>
           <button id="clearCheckedBtn" class="button secondary">Clear checked</button>
         </div>
+        <div id="shoppingBulkBar" class="shopping-bulk-bar" aria-live="polite">
+          <button id="shoppingSelectBtn" type="button" class="button secondary">Select</button>
+          <div id="shoppingBulkActions" class="shopping-bulk-actions" hidden>
+            <button id="shoppingSelectionCancel" type="button" class="button secondary">Cancel</button>
+            <strong id="shoppingSelectedCount">0 selected</strong>
+            <button id="shoppingSelectAll" type="button" class="button secondary">Select all visible</button>
+            <select id="shoppingBulkStore" aria-label="Store for selected items"></select>
+            <button id="shoppingBulkMove" type="button" class="button secondary" disabled>Move</button>
+            <button id="shoppingBulkDelete" type="button" class="button danger" disabled>Delete</button>
+          </div>
+        </div>
         <div id="shoppingGroups"></div>
+        <div id="shoppingUndoToast" class="shopping-undo-toast" hidden><span id="shoppingUndoMessage"></span><button id="shoppingUndoBtn" type="button" class="text-button">Undo</button></div>
       </section>
     </main>
   </div>
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.11.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.11.2</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -385,9 +397,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.11.1"></script>
-  <script src="profile-storage.js?v=0.11.1"></script>
-  <script src="app.js?v=0.11.1"></script>
-  <script src="ocr-service.js?v=0.11.1"></script>
+  <script src="kitchen-engine.js?v=0.11.0"></script>
+  <script src="profile-storage.js?v=0.11.0"></script>
+  <script src="app.js?v=0.11.0"></script>
+  <script src="ocr-service.js?v=0.11.0"></script>
 </body>
 </html>

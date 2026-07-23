@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.11.1';
+  const ENGINE_VERSION = '0.11.2';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -217,7 +217,14 @@
     els.closeTimerDock.addEventListener('click', () => { els.timerDock.hidden = true; });
     els.addCustomCategory.addEventListener('click', () => { els.customCategoryInput.hidden = !els.customCategoryInput.hidden; if (!els.customCategoryInput.hidden) els.customCategoryInput.focus(); });
     document.querySelectorAll('.color-swatch').forEach(button => button.addEventListener('click', () => setAccentColor(button.dataset.color)));
-    els.shoppingStoreFilter.addEventListener('change', renderShoppingList);
+    els.shoppingStoreFilter.addEventListener('change', () => { shoppingSelectedIds.clear(); updateShoppingBulkBar(); renderShoppingList(); });
+    document.querySelector('#shoppingSelectBtn')?.addEventListener('click', beginShoppingSelection);
+    document.querySelector('#shoppingSelectionCancel')?.addEventListener('click', cancelShoppingSelection);
+    document.querySelector('#shoppingSelectAll')?.addEventListener('click', selectAllVisibleShopping);
+    document.querySelector('#shoppingBulkMove')?.addEventListener('click', moveSelectedShoppingItems);
+    document.querySelector('#shoppingBulkDelete')?.addEventListener('click', deleteSelectedShoppingItems);
+    document.querySelector('#shoppingUndoBtn')?.addEventListener('click', undoShoppingBulkAction);
+    window.addEventListener('keydown', event => { if(event.key==='Escape' && shoppingSelectionMode) cancelShoppingSelection(); });
     els.addShoppingItemBtn.addEventListener('click', openShoppingItemDialog);
     document.querySelector('#cancelShoppingItem').addEventListener('click', () => els.shoppingItemDialog.close());
     els.shoppingItemForm.addEventListener('submit', addManualShoppingItem);
@@ -1374,10 +1381,101 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
 
+  let shoppingSelectionMode = false;
+  const shoppingSelectedIds = new Set();
+  let shoppingUndoSnapshot = null;
+  let shoppingUndoTimer = null;
+
+  function visibleShoppingItems() {
+    const filter = els.shoppingStoreFilter.value || 'all';
+    return state.shoppingList.filter(item => filter === 'all' || normalizeStore(item.store) === filter);
+  }
+
+  function updateShoppingBulkBar() {
+    const normal = document.querySelector('#shoppingSelectBtn');
+    const actions = document.querySelector('#shoppingBulkActions');
+    const count = document.querySelector('#shoppingSelectedCount');
+    const move = document.querySelector('#shoppingBulkMove');
+    const del = document.querySelector('#shoppingBulkDelete');
+    if (!normal || !actions) return;
+    normal.hidden = shoppingSelectionMode;
+    actions.hidden = !shoppingSelectionMode;
+    const n = shoppingSelectedIds.size;
+    count.textContent = `${n} selected`;
+    move.disabled = n === 0;
+    del.disabled = n === 0;
+  }
+
+  function beginShoppingSelection() {
+    shoppingSelectionMode = true;
+    shoppingSelectedIds.clear();
+    updateShoppingBulkBar();
+    renderShoppingList();
+  }
+
+  function cancelShoppingSelection() {
+    shoppingSelectionMode = false;
+    shoppingSelectedIds.clear();
+    updateShoppingBulkBar();
+    renderShoppingList();
+  }
+
+  function selectAllVisibleShopping() {
+    const visible = visibleShoppingItems();
+    const allSelected = visible.length > 0 && visible.every(item => shoppingSelectedIds.has(item.id));
+    visible.forEach(item => allSelected ? shoppingSelectedIds.delete(item.id) : shoppingSelectedIds.add(item.id));
+    updateShoppingBulkBar();
+    renderShoppingList();
+  }
+
+  function showShoppingUndo(message, snapshot) {
+    shoppingUndoSnapshot = snapshot;
+    clearTimeout(shoppingUndoTimer);
+    const toast = document.querySelector('#shoppingUndoToast');
+    document.querySelector('#shoppingUndoMessage').textContent = message;
+    toast.hidden = false;
+    shoppingUndoTimer = setTimeout(() => { toast.hidden = true; shoppingUndoSnapshot = null; }, 7000);
+  }
+
+  function undoShoppingBulkAction() {
+    if (!shoppingUndoSnapshot) return;
+    state.shoppingList = shoppingUndoSnapshot;
+    shoppingUndoSnapshot = null;
+    clearTimeout(shoppingUndoTimer);
+    document.querySelector('#shoppingUndoToast').hidden = true;
+    saveState();
+    renderShoppingList();
+    renderCounts();
+  }
+
+  function moveSelectedShoppingItems() {
+    const selected = [...shoppingSelectedIds];
+    if (!selected.length) return;
+    const destination = normalizeStore(document.querySelector('#shoppingBulkStore').value);
+    const snapshot = JSON.parse(JSON.stringify(state.shoppingList));
+    const now = new Date().toISOString();
+    state.shoppingList.forEach(item => { if (shoppingSelectedIds.has(item.id)) { item.store = destination; item.updatedAt = now; } });
+    saveState();
+    cancelShoppingSelection();
+    showShoppingUndo(`${selected.length} item${selected.length===1?'':'s'} moved to ${destination}.`, snapshot);
+  }
+
+  function deleteSelectedShoppingItems() {
+    const selected = [...shoppingSelectedIds];
+    if (!selected.length) return;
+    if (!confirm(`Remove ${selected.length} selected item${selected.length===1?'':'s'} from the shopping list?`)) return;
+    const snapshot = JSON.parse(JSON.stringify(state.shoppingList));
+    state.shoppingList = state.shoppingList.filter(item => !shoppingSelectedIds.has(item.id));
+    saveState();
+    cancelShoppingSelection();
+    renderCounts();
+    showShoppingUndo(`${selected.length} item${selected.length===1?'':'s'} removed.`, snapshot);
+  }
+
   function showShopping() {
     selectedRecipeKey = null;
     els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false;
-    populateStoreSelects(); renderShoppingList(); updateWakeLock(); window.scrollTo({top:0,behavior:'smooth'});
+    shoppingSelectionMode=false; shoppingSelectedIds.clear(); populateStoreSelects(); updateShoppingBulkBar(); renderShoppingList(); updateWakeLock(); window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function normalizeStore(store) { return store && store.trim() ? store.trim() : 'Unassigned'; }
@@ -1385,7 +1483,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const stores=[...new Set(['Unassigned',...(state.stores||[]),...state.shoppingList.map(x=>normalizeStore(x.store))])];
     state.stores=stores;
     const fill=(select,all=false)=>{ const current=select.value; select.innerHTML=all?'<option value="all">All stores</option>':''; stores.forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;select.append(o)}); if([...select.options].some(o=>o.value===current))select.value=current; };
-    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect);
+    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const bulkStore=document.querySelector('#shoppingBulkStore'); if(bulkStore) fill(bulkStore);
   }
 
   function addShoppingEntry({name, quantity='', store='Unassigned', source='Manual', recipeKey=''}) {
@@ -1400,8 +1498,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function renderShoppingList(highlightId='') {
     populateStoreSelects();
-    const filter=els.shoppingStoreFilter.value||'all';
-    const items=state.shoppingList.filter(x=>filter==='all'||normalizeStore(x.store)===filter);
+    updateShoppingBulkBar();
+    const items=visibleShoppingItems();
     els.shoppingGroups.innerHTML='';
     if(!items.length){els.shoppingGroups.innerHTML='<div class="empty-state"><h2>Your list is empty</h2><p>Add items manually, from regular items, or from a recipe.</p></div>';return;}
     const groups={}; items.forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));
@@ -1411,17 +1509,38 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       section.innerHTML=`<div class="shopping-store-heading"><h2>${escapeHtml(store)}</h2><span>${remaining} remaining</span></div><div class="shopping-items"></div>`;
       const box=section.querySelector('.shopping-items');
       list.forEach(item=>{
-        const row=document.createElement('div');row.className=`shopping-row ${item.checked?'checked':''} ${item.id===highlightId?'shopping-row-new':''}`; row.dataset.shoppingId=item.id;
-        const entries=(item.entries||[]).map(entry=>{ const quantity=String(entry.quantity||'').trim(); const source=String(entry.source||'').trim(); const label=quantity&&source?`<span>${escapeHtml(quantity)}</span> · ${escapeHtml(source)}`:quantity?`<span>${escapeHtml(quantity)}</span>`:source==='Manual'?'Manual item':source||''; return label?`<small>${label}</small>`:''; }).join('');
-        row.innerHTML=`<label class="shopping-check"><input type="checkbox" ${item.checked?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><span class="shopping-entry-lines">${entries}</span></span></label><div class="shopping-row-actions"><select class="row-store" aria-label="Store for ${escapeHtml(item.name)}"></select><button class="text-button edit-shopping">Edit</button><button class="text-button remove-shopping">Remove</button></div>`;
+        const row=document.createElement('div');
+        row.className=`shopping-row shopping-row-compact ${item.checked?'checked':''} ${item.id===highlightId?'shopping-row-new':''} ${shoppingSelectedIds.has(item.id)?'bulk-selected':''}`;
+        row.dataset.shoppingId=item.id;
+        const details=(item.entries||[]).map(entry=>{
+          const quantity=String(entry.quantity||'').trim();
+          const source=String(entry.source||'').trim();
+          const reason=String(entry.reason||entry.note||'').trim();
+          return `<div class="shopping-detail-entry">${quantity?`<strong>${escapeHtml(quantity)}</strong>`:''}${source?`<span>${escapeHtml(source)}</span>`:''}${reason?`<small>${escapeHtml(reason)}</small>`:''}</div>`;
+        }).join('') || '<div class="shopping-detail-entry"><span>No additional details</span></div>';
+        const leading=shoppingSelectionMode
+          ? `<label class="bulk-select-control" aria-label="Select ${escapeHtml(item.name)}"><input class="bulk-select-check" type="checkbox" ${shoppingSelectedIds.has(item.id)?'checked':''}></label>`
+          : `<label class="shopping-check" aria-label="Mark ${escapeHtml(item.name)} purchased"><input class="purchase-check" type="checkbox" ${item.checked?'checked':''}></label>`;
+        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong><span class="shopping-details-chevron">⌄</span></button><select class="row-store" aria-label="Store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}></select></div><div class="shopping-row-details" hidden>${details}<div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
         const storeSelect=row.querySelector('.row-store');
         (state.stores||[]).forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;storeSelect.append(o)});
         storeSelect.value=normalizeStore(item.store);
         storeSelect.addEventListener('change',()=>{item.store=normalizeStore(storeSelect.value);item.updatedAt=new Date().toISOString();saveState();renderShoppingList();});
-        row.querySelector('input').addEventListener('change',e=>{item.checked=e.target.checked;item.updatedAt=new Date().toISOString();saveState();renderShoppingList();renderCounts()});
+        const purchase=row.querySelector('.purchase-check');
+        purchase?.addEventListener('change',e=>{item.checked=e.target.checked;item.updatedAt=new Date().toISOString();saveState();renderShoppingList();renderCounts()});
+        const bulk=row.querySelector('.bulk-select-check');
+        bulk?.addEventListener('change',e=>{e.target.checked?shoppingSelectedIds.add(item.id):shoppingSelectedIds.delete(item.id);row.classList.toggle('bulk-selected',e.target.checked);updateShoppingBulkBar();});
+        const toggle=row.querySelector('.shopping-name-toggle');
+        toggle.addEventListener('click',()=>{
+          if(shoppingSelectionMode){bulk.checked=!bulk.checked;bulk.dispatchEvent(new Event('change',{bubbles:true}));return;}
+          const panel=row.querySelector('.shopping-row-details');
+          panel.hidden=!panel.hidden;
+          toggle.setAttribute('aria-expanded',String(!panel.hidden));
+          row.querySelector('.shopping-details-chevron').textContent=panel.hidden?'⌄':'⌃';
+        });
         row.querySelector('.edit-shopping').addEventListener('click',()=>openShoppingItemDialog(item));
-        row.querySelector('.remove-shopping').addEventListener('click',()=>{state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});
-        box.append(row)
+        row.querySelector('.remove-shopping').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from the shopping list?`))return;state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});
+        box.append(row);
       });
       els.shoppingGroups.append(section);
     });

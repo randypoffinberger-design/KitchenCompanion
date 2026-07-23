@@ -1,4 +1,4 @@
-# Kitchen Companion v0.11.1
+# Kitchen Companion v0.11.2
 
 Kitchen Companion is a static, installable recipe application for GitHub Pages. It supports recipe modules, personal recipes, recipe editing, scaling, timers, favorites, notes, shopping lists, sharing, backup/restore, pasted-text importing, and screenshot/photo OCR.
 
@@ -39,6 +39,6 @@ After uploading v0.9.2, open the GitHub Pages site in Safari and use **Settings 
 
 Personal recipes support permanent deletion. Module recipes support persistent hiding and can be restored from Settings → Hidden Recipes. Timers use persistent finished states with dismissible repeating alarms, and scaled cup amounts favor practical kitchen measurements.
 
-## v0.11.1 local profiles
+## v0.11.0 local profiles
 
 Kitchen Companion now separates device-wide modules from profile-owned personal data. Existing v0.9.x installations are migrated automatically into a Primary Profile. Profiles use permanent UUIDs and can be exported individually, creating a migration path toward future server-backed accounts without storing transferable plaintext passwords.
