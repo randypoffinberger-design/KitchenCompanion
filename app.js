@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.10.5';
+  const ENGINE_VERSION = '0.10.6';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -142,14 +142,16 @@
     els.profileQuickMenu?.addEventListener('click', event => event.stopPropagation());
     const closeOpenProfileMenusFromOutsidePress = event => {
       const target = event.target instanceof Element ? event.target : null;
-      if (!target?.closest('.profile-more')) closeProfileMoreMenus();
+      if (!target?.closest('.profile-more-wrap')) closeProfileMoreMenus();
       if (!target?.closest('.header-profile-wrap')) closeProfileQuickMenu();
     };
-    // Capture the initial press before Safari/dialog/form handlers can swallow it.
-    // This makes tapping anywhere outside an open More menu close it immediately.
+    // Use capture-phase listeners so iPhone Safari cannot swallow the outside press.
     document.addEventListener('pointerdown', closeOpenProfileMenusFromOutsidePress, true);
-    if (!window.PointerEvent) document.addEventListener('touchstart', closeOpenProfileMenusFromOutsidePress, true);
-    document.addEventListener('click', closeOpenProfileMenusFromOutsidePress);
+    document.addEventListener('touchstart', closeOpenProfileMenusFromOutsidePress, true);
+    document.addEventListener('click', closeOpenProfileMenusFromOutsidePress, true);
+    els.profilesDialog?.addEventListener('pointerdown', closeOpenProfileMenusFromOutsidePress, true);
+    els.profilesDialog?.addEventListener('touchstart', closeOpenProfileMenusFromOutsidePress, true);
+    els.profilesDialog?.addEventListener('click', closeOpenProfileMenusFromOutsidePress, true);
     document.addEventListener('keydown', event => {
       if (event.key !== 'Escape') return;
       closeProfileMoreMenus();
@@ -313,8 +315,13 @@
   }
 
   function closeProfileMoreMenus(except = null) {
-    document.querySelectorAll('details.profile-more[open]').forEach(details => {
-      if (details !== except) details.open = false;
+    document.querySelectorAll('.profile-more-wrap.is-open').forEach(wrapper => {
+      if (wrapper === except) return;
+      wrapper.classList.remove('is-open');
+      const button = wrapper.querySelector('.profile-more-button');
+      const menu = wrapper.querySelector('.profile-more-menu');
+      button?.setAttribute('aria-expanded', 'false');
+      if (menu) menu.hidden = true;
     });
   }
 
@@ -351,24 +358,22 @@
         switchBtn.addEventListener('click',()=>{ saveState(); profileStore.switchProfile(profile.profileId); location.reload(); }); actions.appendChild(switchBtn);
       }
       const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='button secondary'; exportBtn.textContent='Export profile'; exportBtn.addEventListener('click',()=>exportProfile(profile)); actions.appendChild(exportBtn);
-      const more=document.createElement('details'); more.className='profile-more'; more.innerHTML='<summary class="button secondary" aria-haspopup="menu" aria-expanded="false">More</summary><div class="profile-more-menu" role="menu"></div>';
-      const moreSummary = more.querySelector('summary');
-      moreSummary.addEventListener('click', event => {
-        // Safari can be inconsistent when a dynamically-created <details> sits inside a modal.
-        // Toggle it explicitly so tapping More a second time always closes the menu.
+      const more=document.createElement('div');
+      more.className='profile-more-wrap';
+      more.innerHTML='<button type="button" class="button secondary profile-more-button" aria-haspopup="menu" aria-expanded="false">More</button><div class="profile-more-menu" role="menu" hidden></div>';
+      const moreButton = more.querySelector('.profile-more-button');
+      const menu=more.querySelector('.profile-more-menu');
+      moreButton.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
-        const willOpen = !more.open;
+        const willOpen = !more.classList.contains('is-open');
         closeProfileMoreMenus(willOpen ? more : null);
         closeProfileQuickMenu();
-        more.open = willOpen;
-        moreSummary.setAttribute('aria-expanded', String(willOpen));
+        more.classList.toggle('is-open', willOpen);
+        moreButton.setAttribute('aria-expanded', String(willOpen));
+        menu.hidden = !willOpen;
       });
-      more.addEventListener('toggle', () => {
-        moreSummary.setAttribute('aria-expanded', String(more.open));
-        if (more.open) { closeProfileMoreMenus(more); closeProfileQuickMenu(); }
-      });
-      const menu=more.querySelector('.profile-more-menu');
+      menu.addEventListener('click', event => event.stopPropagation());
       const renameBtn=document.createElement('button'); renameBtn.type='button'; renameBtn.className='button secondary'; renameBtn.textContent='Rename'; renameBtn.addEventListener('click',()=>renameProfile(profile)); menu.appendChild(renameBtn);
       const duplicateBtn=document.createElement('button'); duplicateBtn.type='button'; duplicateBtn.className='button secondary'; duplicateBtn.textContent='Duplicate'; duplicateBtn.addEventListener('click',()=>duplicateProfile(profile)); menu.appendChild(duplicateBtn);
       if (profile.profileId !== activeId) { const deleteBtn=document.createElement('button'); deleteBtn.type='button'; deleteBtn.className='button danger'; deleteBtn.textContent='Delete'; deleteBtn.addEventListener('click',()=>deleteProfile(profile)); menu.appendChild(deleteBtn); }
@@ -483,7 +488,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.10.5').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.10.6').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -976,7 +981,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.10.5');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.10.6');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
