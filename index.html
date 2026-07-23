@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.10.4">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.10.4">
+  <link rel="manifest" href="app.webmanifest?v=0.10.7">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.10.7">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.10.4">
+  <link rel="stylesheet" href="styles.css?v=0.10.7">
 </head>
 <body>
   <div class="app-shell">
@@ -114,7 +114,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.10.6</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.10.7</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -190,6 +190,36 @@
       </div>
       <div id="profileStorageSummary" class="profile-storage-summary"></div><p class="setting-help">Profiles are stored only on this device unless you export or import them. Cloud backup is not connected.</p>
       <div class="dialog-actions"><button class="button secondary" value="cancel">Close</button></div>
+    </form>
+  </dialog>
+
+
+  <dialog id="profileEditDialog">
+    <form id="profileEditForm" class="dialog-card profile-edit-card">
+      <h2>Edit profile</h2>
+      <div class="profile-edit-preview-row">
+        <div id="profileEditPreview" class="profile-edit-preview">?</div>
+        <label>Profile name<input id="profileEditName" required maxlength="40"></label>
+      </div>
+      <fieldset class="profile-edit-section">
+        <legend>Emoji</legend>
+        <p class="setting-help">Type or paste any emoji from your keyboard. Combined emojis, skin tones, and imported Unicode emojis are supported.</p>
+        <input id="profileEditEmoji" class="profile-emoji-input" maxlength="32" placeholder="👨‍🍳">
+      </fieldset>
+      <fieldset class="profile-edit-section">
+        <legend>Image or custom emoji artwork</legend>
+        <p class="setting-help">Choose a photo, PNG, WebP, JPEG, GIF, or downloaded emoji image. It is centered, cropped square, and resized on this device.</p>
+        <div class="profile-image-actions">
+          <button type="button" id="profileEditImageBtn" class="button secondary">Choose image</button>
+          <button type="button" id="profileEditRemoveImageBtn" class="button secondary" hidden>Remove image</button>
+          <input id="profileEditImageInput" type="file" accept="image/*" hidden>
+        </div>
+      </fieldset>
+      <fieldset class="profile-edit-section">
+        <legend>Profile color</legend>
+        <div id="profileEditColorChoices" class="profile-color-choices"></div>
+      </fieldset>
+      <div class="dialog-actions"><button type="button" id="cancelProfileEdit" class="button secondary">Cancel</button><button type="submit" class="button">Save changes</button></div>
     </form>
   </dialog>
 
@@ -355,9 +385,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.10.4"></script>
-  <script src="profile-storage.js?v=0.10.4"></script>
-  <script src="app.js?v=0.10.4"></script>
-  <script src="ocr-service.js?v=0.10.4"></script>
+  <script src="kitchen-engine.js?v=0.10.7"></script>
+  <script src="profile-storage.js?v=0.10.7"></script>
+  <script src="app.js?v=0.10.7"></script>
+  <script src="ocr-service.js?v=0.10.7"></script>
 </body>
 </html>

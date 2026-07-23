@@ -59,6 +59,8 @@
       (this.device?.profiles || []).forEach((profile, index) => {
         if (!profile.color) { profile.color = palette[index % palette.length]; changed = true; }
         if (!profile.kind) { profile.kind = 'personal'; changed = true; }
+        if (!profile.avatarType) { profile.avatarType = profile.kind === 'household' ? 'emoji' : 'initials'; changed = true; }
+        if (profile.avatarValue === undefined) { profile.avatarValue = profile.kind === 'household' ? '🏠' : ''; changed = true; }
         if (profile.setupComplete === undefined) { profile.setupComplete = profile.migrationStatus !== 'migrated-from-v0.9'; changed = true; }
         if (profile.displayName === 'Primary Profile') { profile.displayName = 'My Profile'; changed = true; }
       });
@@ -88,7 +90,7 @@
       this.device = {
         schemaVersion:1,
         activeProfileId:profileId,
-        profiles:[{ profileId, displayName:'My Profile', color:'#7b3f00', kind:'personal', setupComplete:!legacy, createdAt, updatedAt:createdAt, migrationStatus: legacy ? 'migrated-from-v0.9' : 'local-only' }],
+        profiles:[{ profileId, displayName:'My Profile', color:'#7b3f00', kind:'personal', setupComplete:!legacy, createdAt, updatedAt:createdAt, migrationStatus: legacy ? 'migrated-from-v0.9' : 'local-only', avatarType:'initials', avatarValue:'' }],
         migration:{ id:'single-state-to-profiles-v1', migratedAt:createdAt, sourceKey:LEGACY_KEY, legacyFound:!!legacy }
       };
       this.shared = this.defaultShared();
@@ -161,7 +163,8 @@
       if (!name) throw new Error('Enter a profile name.');
       const profileId = uuid(); const createdAt = now();
       const palette = ['#7b3f00','#2563eb','#15803d','#7e22ce','#be123c','#0f766e'];
-      const meta = { profileId, displayName:name, color:options.color || palette[this.device.profiles.length % palette.length], kind:options.kind || 'personal', setupComplete:true, createdAt, updatedAt:createdAt, migrationStatus:'local-only', lastUsedAt:createdAt };
+      const kind = options.kind || 'personal';
+      const meta = { profileId, displayName:name, color:options.color || palette[this.device.profiles.length % palette.length], kind, avatarType:options.avatarType || (kind === 'household' ? 'emoji' : 'initials'), avatarValue:options.avatarValue ?? (kind === 'household' ? '🏠' : ''), setupComplete:true, createdAt, updatedAt:createdAt, migrationStatus:'local-only', lastUsedAt:createdAt };
       const data = this.defaultProfileData(profileId);
       localStorage.setItem(PROFILE_PREFIX + profileId, JSON.stringify(data));
       this.device.profiles.push(meta); this.persistAll();
@@ -172,7 +175,7 @@
       const sourceMeta = this.device.profiles.find(p => p.profileId === profileId);
       const sourceData = profileId === this.activeProfile.profileId ? this.activeProfile : this.readProfile(profileId);
       if (!sourceMeta || !sourceData) throw new Error('Profile not found.');
-      const copy = this.createProfile(displayName || `${sourceMeta.displayName} Copy`, { color:sourceMeta.color, kind:'personal' });
+      const copy = this.createProfile(displayName || `${sourceMeta.displayName} Copy`, { color:sourceMeta.color, kind:'personal', avatarType:sourceMeta.avatarType, avatarValue:sourceMeta.avatarValue });
       const data = this.normalizeProfileData(clone(sourceData));
       data.profileId = copy.profileId; data.createdAt = now(); data.updatedAt = data.createdAt;
       localStorage.setItem(PROFILE_PREFIX + copy.profileId, JSON.stringify(data));
@@ -192,6 +195,21 @@
       const name = String(displayName || '').trim(); if (!name) throw new Error('Enter a profile name.');
       const meta = this.device.profiles.find(p => p.profileId === profileId); if (!meta) throw new Error('Profile not found.');
       meta.displayName = name; meta.updatedAt = now(); this.persistAll();
+    }
+
+
+    updateProfile(profileId, changes = {}) {
+      const meta = this.device.profiles.find(p => p.profileId === profileId);
+      if (!meta) throw new Error('Profile not found.');
+      const name = String(changes.displayName ?? meta.displayName).trim();
+      if (!name) throw new Error('Enter a profile name.');
+      meta.displayName = name;
+      if (changes.color) meta.color = String(changes.color);
+      if (['initials','emoji','image'].includes(changes.avatarType)) meta.avatarType = changes.avatarType;
+      meta.avatarValue = changes.avatarValue == null ? '' : String(changes.avatarValue);
+      meta.updatedAt = now();
+      this.persistAll();
+      return clone(meta);
     }
 
     switchProfile(profileId) {
@@ -224,6 +242,8 @@
         existing.displayName = String(payload.profile.displayName || existing.displayName).trim() || existing.displayName;
         existing.color = payload.profile.color || existing.color;
         existing.kind = payload.profile.kind || existing.kind;
+        existing.avatarType = payload.profile.avatarType || existing.avatarType || 'initials';
+        existing.avatarValue = payload.profile.avatarValue ?? existing.avatarValue ?? '';
         existing.updatedAt = now();
         incomingData.profileId = existing.profileId;
         incomingData.updatedAt = now();
@@ -233,7 +253,7 @@
         return clone(existing);
       }
       const importedName = String(payload.profile.displayName || 'Imported Profile').trim() || 'Imported Profile';
-      const meta = this.createProfile(existing ? `${importedName} Imported` : importedName, { color:payload.profile.color, kind:payload.profile.kind || 'personal' });
+      const meta = this.createProfile(existing ? `${importedName} Imported` : importedName, { color:payload.profile.color, kind:payload.profile.kind || 'personal', avatarType:payload.profile.avatarType, avatarValue:payload.profile.avatarValue });
       incomingData.profileId = meta.profileId;
       incomingData.createdAt = now(); incomingData.updatedAt = incomingData.createdAt;
       localStorage.setItem(PROFILE_PREFIX + meta.profileId, JSON.stringify(incomingData));
