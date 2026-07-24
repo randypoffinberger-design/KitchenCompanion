@@ -441,3 +441,8 @@ body.menu-open { overflow: hidden; touch-action: none; }
   .shopping-bulk-bar{padding:.3rem .4rem}
   .shopping-bar-button{width:100%;padding:.3rem .25rem;font-size:.82rem}
 }
+
+/* v0.12.0 smart shopping groups */
+.shopping-group-control { margin-top:.55rem; padding-top:.55rem; border-top:1px solid var(--border-color, #ddd); }
+.shopping-group-control label { display:grid; gap:.3rem; font-size:.88rem; font-weight:600; }
+.shopping-group-control select { width:100%; }

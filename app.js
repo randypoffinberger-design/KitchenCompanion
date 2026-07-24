@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.11.4';
+  const ENGINE_VERSION = '0.12.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -78,7 +78,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {};
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.ingredientPreferences ||= {}; state.storeGroupOrders ||= {}; state.moduleSources ||= {}; state.backupMeta ||= {};
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -129,7 +129,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true } };
+    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], ingredientPreferences: {}, storeGroupOrders: {}, moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true } };
   }
 
   function saveState() { profileStore.saveCombinedState(state); }
@@ -625,6 +625,52 @@
       .replace(/[^a-z0-9]+/g, ' ')
       .trim();
   }
+  const SHOPPING_GROUPS = [
+    ['produce','Produce'], ['meat','Meat & Seafood'], ['dairy','Dairy & Eggs'], ['bakery','Bakery'],
+    ['pantry','Pantry'], ['spices','Spices & Seasonings'], ['frozen','Frozen'], ['beverages','Beverages'],
+    ['household','Household'], ['other','Other']
+  ];
+  const DEFAULT_GROUP_ORDER = SHOPPING_GROUPS.map(([id]) => id);
+  const SHOPPING_GROUP_LABELS = Object.fromEntries(SHOPPING_GROUPS);
+  const GROUP_RULES = [
+    ['frozen', /\bfrozen\b|ice cream|popsicle|pizza rolls|french fries/],
+    ['produce', /apple|apricot|avocado|banana|berry|blueberr|blackberr|raspberr|strawberr|cherr|grape|grapefruit|lemon|lime|mango|melon|orange|peach|pear|pineapple|plum|watermelon|tomato|potato|onion|garlic|shallot|pepper|jalapeno|zucchini|squash|cucumber|lettuce|romaine|spinach|kale|cabbage|carrot|celery|broccoli|cauliflower|asparagus|mushroom|corn|green bean|pea|fresh basil|fresh parsley|fresh cilantro|scallion|green onion|ginger|herb/],
+    ['meat', /beef|steak|sirloin|roast|ground chuck|hamburger|chicken|turkey|pork|ham|bacon|sausage|lamb|veal|salmon|tuna|shrimp|crab|lobster|fish|anchov|prosciutto|pepperoni/],
+    ['dairy', /milk|cream|butter|cheese|mozzarella|parmesan|romano|cheddar|feta|yogurt|egg|sour cream|half and half|ricotta|mascarpone/],
+    ['bakery', /bread|bun|roll|bagel|tortilla|pita|croissant|cake|pie crust|pizza crust/],
+    ['spices', /paprika|cumin|coriander|turmeric|cinnamon|nutmeg|clove|allspice|oregano|thyme|rosemary|sage|bay leaf|chili powder|garlic powder|onion powder|seasoning|peppercorn|kosher salt|sea salt|table salt|vanilla extract|extract/],
+    ['beverages', /coffee|tea|juice|soda|water|lemonade|drink mix/],
+    ['household', /paper towel|toilet paper|foil|plastic wrap|parchment|trash bag|dish soap|detergent|cleaner|sponge|napkin|storage bag/],
+    ['pantry', /flour|sugar|oil|vinegar|rice|pasta|noodle|cereal|oat|bean|lentil|broth|stock|sauce|ketchup|mustard|mayonnaise|honey|syrup|jam|jelly|peanut butter|tomato paste|canned|can of|baking powder|baking soda|cornstarch|breadcrumbs|cracker|chip|chocolate|cocoa|yeast|nut|seed/]
+  ];
+  function normalizeShoppingGroup(group) { return SHOPPING_GROUP_LABELS[group] ? group : 'other'; }
+  function inferShoppingGroup(name) {
+    const key = shoppingNameKey(name);
+    const learned = state.ingredientPreferences?.[key]?.shoppingGroup;
+    if (SHOPPING_GROUP_LABELS[learned]) return learned;
+    for (const [group, pattern] of GROUP_RULES) if (pattern.test(key)) return group;
+    return 'other';
+  }
+  function preferredStoreFor(name, fallback='Unassigned') {
+    const learned = state.ingredientPreferences?.[shoppingNameKey(name)]?.preferredStore;
+    return learned ? normalizeStore(learned) : normalizeStore(fallback);
+  }
+  function rememberIngredientPreference(name, changes={}) {
+    const key = shoppingNameKey(name); if (!key) return;
+    state.ingredientPreferences ||= {};
+    state.ingredientPreferences[key] = {...(state.ingredientPreferences[key]||{}), ...changes};
+  }
+  function groupOrderForStore(store) {
+    const custom = state.storeGroupOrders?.[normalizeStore(store)];
+    return Array.isArray(custom) ? [...custom.filter(x=>SHOPPING_GROUP_LABELS[x]), ...DEFAULT_GROUP_ORDER.filter(x=>!custom.includes(x))] : DEFAULT_GROUP_ORDER;
+  }
+  function shoppingSort(store) {
+    const order = groupOrderForStore(store);
+    return (a,b) => Number(a.checked)-Number(b.checked)
+      || order.indexOf(normalizeShoppingGroup(a.shoppingGroup))-order.indexOf(normalizeShoppingGroup(b.shoppingGroup))
+      || a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+  }
+
   function normalizeShoppingEntry(entry = {}) {
     return {
       id: entry.id || shoppingId(),
@@ -644,6 +690,7 @@
       name,
       normalizedName: shoppingNameKey(item.normalizedName || name),
       store: normalizeStore(item.store),
+      shoppingGroup: normalizeShoppingGroup(item.shoppingGroup || inferShoppingGroup(name)),
       checked: !!item.checked,
       entries,
       createdAt: item.createdAt || new Date().toISOString(),
@@ -667,12 +714,12 @@
       } else {
         grouped.set(mergeKey, item);
       }
-      if (!Array.isArray(original.entries) || original.normalizedName !== item.normalizedName || original.name !== item.name || original.store !== item.store) changed = true;
+      if (!Array.isArray(original.entries) || original.normalizedName !== item.normalizedName || original.name !== item.name || original.store !== item.store || original.shoppingGroup !== item.shoppingGroup) changed = true;
     });
 
     state.shoppingList = [...grouped.values()];
     state.regularItems = (state.regularItems || []).map(item => ({
-      id:item.id || shoppingId(), name:displayShoppingName(item.name), normalizedName:shoppingNameKey(item.normalizedName || item.name), quantity:String(item.quantity || '').trim(), store:normalizeStore(item.store)
+      id:item.id || shoppingId(), name:displayShoppingName(item.name), normalizedName:shoppingNameKey(item.normalizedName || item.name), quantity:String(item.quantity || '').trim(), store:normalizeStore(item.store), shoppingGroup:normalizeShoppingGroup(item.shoppingGroup || inferShoppingGroup(item.name))
     }));
     if (changed) saveState();
   }
@@ -692,7 +739,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.11.4').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1185,7 +1232,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.11.4');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1530,7 +1577,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     }
     const snapshot = JSON.parse(JSON.stringify(state.shoppingList));
     const now = new Date().toISOString();
-    state.shoppingList.forEach(item => { if (selected.includes(item.id)) { item.store = destination; item.updatedAt = now; } });
+    state.shoppingList.forEach(item => { if (selected.includes(item.id)) { item.store = destination; item.updatedAt = now; rememberIngredientPreference(item.name,{preferredStore:destination}); } });
     saveState();
     document.querySelector('#shoppingMoveDialog').close();
     shoppingMoveTargetIds = [];
@@ -1565,13 +1612,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const moveStore=document.querySelector('#shoppingMoveStore'); if(moveStore) { fill(moveStore); const addOption=document.createElement('option'); addOption.value='__new_store__'; addOption.textContent='＋ New store…'; moveStore.append(addOption); }
   }
 
-  function addShoppingEntry({name, quantity='', store='Unassigned', source='Manual', recipeKey=''}) {
+  function addShoppingEntry({name, quantity='', store='Unassigned', source='Manual', recipeKey='', usePreference=true}) {
     const cleanName=displayShoppingName(name); if(!cleanName)return null;
-    const normalizedName=shoppingNameKey(cleanName); const normalizedStore=normalizeStore(store);
+    const normalizedName=shoppingNameKey(cleanName); const normalizedStore=usePreference ? preferredStoreFor(cleanName, store) : normalizeStore(store);
     let item=state.shoppingList.find(x=>!x.checked && shoppingNameKey(x.normalizedName||x.name)===normalizedName && normalizeStore(x.store)===normalizedStore);
     const entry=normalizeShoppingEntry({quantity,source,recipeKey});
     if(item){ item.entries ||= []; item.entries.push(entry); item.updatedAt=new Date().toISOString(); }
-    else { item=normalizeShoppingItem({id:shoppingId(),name:cleanName,normalizedName,store:normalizedStore,checked:false,entries:[entry]}); state.shoppingList.push(item); }
+    else { item=normalizeShoppingItem({id:shoppingId(),name:cleanName,normalizedName,store:normalizedStore,shoppingGroup:inferShoppingGroup(cleanName),checked:false,entries:[entry]}); state.shoppingList.push(item); }
     return item;
   }
 
@@ -1581,7 +1628,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const items=visibleShoppingItems();
     els.shoppingGroups.innerHTML='';
     if(!items.length){els.shoppingGroups.innerHTML='<div class="empty-state"><h2>Your list is empty</h2><p>Add items manually, from regular items, or from a recipe.</p></div>';return;}
-    const groups={}; items.forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));
+    const groups={}; items.forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x)); Object.entries(groups).forEach(([store,list])=>list.sort(shoppingSort(store)));
     Object.entries(groups).forEach(([store,list])=>{
       const remaining=list.filter(x=>!x.checked).length;
       const section=document.createElement('section');section.className='shopping-store-card';
@@ -1600,13 +1647,15 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const leading=shoppingSelectionMode
           ? `<label class="bulk-select-control" aria-label="Select ${escapeHtml(item.name)}"><input class="bulk-select-check" type="checkbox" ${shoppingSelectedIds.has(item.id)?'checked':''}></label>`
           : `<label class="shopping-check" aria-label="Mark ${escapeHtml(item.name)} purchased"><input class="purchase-check" type="checkbox" ${item.checked?'checked':''}></label>`;
-        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong></button><button type="button" class="row-store-pill" aria-label="Change store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(normalizeStore(item.store))}</button><button type="button" class="shopping-detail-toggle" aria-label="Show details for ${escapeHtml(item.name)}" aria-expanded="false"><span class="shopping-details-chevron">⌄</span></button></div><div class="shopping-row-details" hidden>${details}<div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
+        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong></button><button type="button" class="row-store-pill" aria-label="Change store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(normalizeStore(item.store))}</button><button type="button" class="shopping-detail-toggle" aria-label="Show details for ${escapeHtml(item.name)}" aria-expanded="false"><span class="shopping-details-chevron">⌄</span></button></div><div class="shopping-row-details" hidden>${details}<div class="shopping-group-control"><label>Shopping group<select class="shopping-group-select">${SHOPPING_GROUPS.map(([id,label])=>`<option value="${id}" ${normalizeShoppingGroup(item.shoppingGroup)===id?'selected':''}>${label}</option>`).join('')}</select></label></div><div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
         const storeButton=row.querySelector('.row-store-pill');
         storeButton.addEventListener('click',()=>openShoppingMoveDialog([item.id],`Move ${item.name}`));
         const purchase=row.querySelector('.purchase-check');
         purchase?.addEventListener('change',e=>{item.checked=e.target.checked;item.updatedAt=new Date().toISOString();saveState();renderShoppingList();renderCounts()});
         const bulk=row.querySelector('.bulk-select-check');
         bulk?.addEventListener('change',e=>{e.target.checked?shoppingSelectedIds.add(item.id):shoppingSelectedIds.delete(item.id);row.classList.toggle('bulk-selected',e.target.checked);updateShoppingBulkBar();});
+        const groupSelect=row.querySelector('.shopping-group-select');
+        groupSelect?.addEventListener('change',e=>{item.shoppingGroup=normalizeShoppingGroup(e.target.value);item.updatedAt=new Date().toISOString();rememberIngredientPreference(item.name,{shoppingGroup:item.shoppingGroup});saveState();renderShoppingList();});
         const nameToggle=row.querySelector('.shopping-name-toggle');
         const detailToggle=row.querySelector('.shopping-detail-toggle');
         const toggleDetails=()=>{
@@ -1627,6 +1676,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if(highlightId){requestAnimationFrame(()=>{const row=els.shoppingGroups.querySelector(`[data-shopping-id="${CSS.escape(highlightId)}"]`);row?.scrollIntoView({block:'nearest',behavior:'smooth'});setTimeout(()=>row?.classList.remove('shopping-row-new'),1500);});}
   }
 
+  function populateShoppingGroupSelect() {
+    const select=document.querySelector('#shoppingItemGroup'); if(!select)return;
+    select.innerHTML=SHOPPING_GROUPS.map(([id,label])=>`<option value="${id}">${label}</option>`).join('');
+  }
+
   function openShoppingItemDialog(item=null) {
     populateStoreSelects(); els.shoppingItemForm.reset();
     els.shoppingItemEditId.value=item?.id||'';
@@ -1634,15 +1688,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     els.shoppingItemSubmitBtn.textContent=item?'Save changes':'Add item';
     document.querySelector('#saveRegularItem').closest('label').hidden=!!item;
     const quantityInput=document.querySelector('#shoppingItemQuantity'); quantityInput.disabled=false; quantityInput.placeholder='1 gallon, 2 boxes, etc.';
-    if(item){ const entries=item.entries||[]; document.querySelector('#shoppingItemName').value=item.name; quantityInput.value=entries.length===1?(entries[0].quantity||''):''; if(entries.length>1){quantityInput.disabled=true;quantityInput.placeholder='Multiple recipe quantities are listed separately';} els.shoppingItemStore.value=normalizeStore(item.store); }
+    populateShoppingGroupSelect();
+    if(item){ const entries=item.entries||[]; document.querySelector('#shoppingItemName').value=item.name; quantityInput.value=entries.length===1?(entries[0].quantity||''):''; if(entries.length>1){quantityInput.disabled=true;quantityInput.placeholder='Multiple recipe quantities are listed separately';} els.shoppingItemStore.value=normalizeStore(item.store); document.querySelector('#shoppingItemGroup').value=normalizeShoppingGroup(item.shoppingGroup); } else { document.querySelector('#shoppingItemGroup').value='other'; }
     els.shoppingItemDialog.showModal();
   }
   function addManualShoppingItem(event){
     event.preventDefault(); const name=document.querySelector('#shoppingItemName').value.trim(); const quantity=document.querySelector('#shoppingItemQuantity').value.trim(); const store=normalizeStore(els.shoppingItemStore.value); if(!name)return;
-    const editId=els.shoppingItemEditId.value;
+    const shoppingGroup=normalizeShoppingGroup(document.querySelector('#shoppingItemGroup').value); const editId=els.shoppingItemEditId.value;
     let item;
-    if(editId){ item=state.shoppingList.find(x=>x.id===editId); if(!item)return; item.name=displayShoppingName(name); item.normalizedName=shoppingNameKey(name); item.store=store; if((item.entries||[]).length<=1)item.entries=[normalizeShoppingEntry({quantity,source:item.entries?.[0]?.source||'Manual',recipeKey:item.entries?.[0]?.recipeKey||''})]; item.updatedAt=new Date().toISOString(); }
-    else { item=addShoppingEntry({name,quantity,store,source:'Manual'}); if(document.querySelector('#saveRegularItem').checked&&!state.regularItems.some(x=>shoppingNameKey(x.name)===shoppingNameKey(name)))state.regularItems.push({id:shoppingId(),name:displayShoppingName(name),normalizedName:shoppingNameKey(name),quantity,store}); }
+    if(editId){ item=state.shoppingList.find(x=>x.id===editId); if(!item)return; item.name=displayShoppingName(name); item.normalizedName=shoppingNameKey(name); item.store=store; item.shoppingGroup=shoppingGroup; rememberIngredientPreference(item.name,{preferredStore:store,shoppingGroup}); if((item.entries||[]).length<=1)item.entries=[normalizeShoppingEntry({quantity,source:item.entries?.[0]?.source||'Manual',recipeKey:item.entries?.[0]?.recipeKey||''})]; item.updatedAt=new Date().toISOString(); }
+    else { item=addShoppingEntry({name,quantity,store,source:'Manual',usePreference:false}); item.shoppingGroup=shoppingGroup==='other'?inferShoppingGroup(name):shoppingGroup; rememberIngredientPreference(item.name,{preferredStore:item.store,shoppingGroup:item.shoppingGroup}); if(document.querySelector('#saveRegularItem').checked&&!state.regularItems.some(x=>shoppingNameKey(x.name)===shoppingNameKey(name)))state.regularItems.push({id:shoppingId(),name:displayShoppingName(name),normalizedName:shoppingNameKey(name),quantity,store,shoppingGroup:item.shoppingGroup}); }
     saveState(); els.shoppingItemDialog.close(); renderShoppingList(item.id); renderCounts();
   }
 
@@ -1652,7 +1707,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     state.regularItems.forEach(item=>{
       const row=document.createElement('div');row.className='regular-item-row';
       row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(item.store||'Unassigned')}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
-      row.querySelector('.add-regular').addEventListener('click',e=>{const added=addShoppingEntry({name:item.name,quantity:item.quantity,store:item.store,source:'Regular item'});saveState();renderShoppingList(added.id);renderCounts();e.currentTarget.textContent='Added ✓';setTimeout(()=>e.currentTarget.textContent='Add',1000);});
+      row.querySelector('.add-regular').addEventListener('click',e=>{const added=addShoppingEntry({name:item.name,quantity:item.quantity,store:item.store,source:'Regular item',usePreference:false});saveState();renderShoppingList(added.id);renderCounts();e.currentTarget.textContent='Added ✓';setTimeout(()=>e.currentTarget.textContent='Add',1000);});
       row.querySelector('.edit-regular').addEventListener('click',()=>{const name=prompt('Regular item name:',item.name);if(!name)return;const quantity=prompt('Default quantity or note:',item.quantity||'')??item.quantity;const store=prompt(`Default store:\n${state.stores.join('\n')}`,item.store||'Unassigned')||item.store;item.name=displayShoppingName(name);item.normalizedName=shoppingNameKey(name);item.quantity=quantity.trim();item.store=normalizeStore(store);saveState();showRegularItems();});
       row.querySelector('.remove-regular').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from regular items?`))return;state.regularItems=state.regularItems.filter(x=>x.id!==item.id);saveState();showRegularItems();});
       els.regularItemsList.append(row)

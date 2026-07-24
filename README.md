@@ -1,4 +1,4 @@
-# Kitchen Companion v0.11.4
+# Kitchen Companion v0.12.0
 
 Kitchen Companion is a static, installable recipe application for GitHub Pages. It supports recipe modules, personal recipes, recipe editing, scaling, timers, favorites, notes, shopping lists, sharing, backup/restore, pasted-text importing, and screenshot/photo OCR.
 
