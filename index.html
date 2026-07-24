@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.11.0">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.11.0">
+  <link rel="manifest" href="app.webmanifest?v=0.11.5">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.11.5">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.11.0">
+  <link rel="stylesheet" href="styles.css?v=0.11.5">
 </head>
 <body>
   <div class="app-shell">
@@ -137,7 +137,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.11.4</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.11.5</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -191,6 +191,16 @@
           <button type="button" id="exportPersonalRecipesBtn" class="button secondary">Export my recipes</button>
           <button type="button" id="importRecipeBtn" class="button secondary">Import shared recipe</button>
         </div>
+      </div>
+      <div class="setting-block developer-safeguards">
+        <strong>Data safeguards</strong>
+        <p id="safeguardStatus" class="setting-help">Loading backup and storage status…</p>
+        <div id="safetyBackupList" class="safety-backup-list"></div>
+        <div class="backup-actions">
+          <button type="button" id="createSafetyBackupBtn" class="button secondary">Create safety checkpoint</button>
+          <button type="button" id="runDiagnosticsBtn" class="button secondary">Run diagnostics</button>
+        </div>
+        <pre id="diagnosticsOutput" class="diagnostics-output" hidden></pre>
       </div>
       <div class="dialog-actions">
         <button class="button secondary" value="cancel">Close</button>
@@ -408,9 +418,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.11.0"></script>
-  <script src="profile-storage.js?v=0.11.0"></script>
-  <script src="app.js?v=0.11.0"></script>
-  <script src="ocr-service.js?v=0.11.0"></script>
+  <script src="kitchen-engine.js?v=0.11.5"></script>
+  <script src="profile-storage.js?v=0.11.5"></script>
+  <script src="app.js?v=0.11.5"></script>
+  <script src="ocr-service.js?v=0.11.5"></script>
 </body>
 </html>

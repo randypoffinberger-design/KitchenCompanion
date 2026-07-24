@@ -441,3 +441,8 @@ body.menu-open { overflow: hidden; touch-action: none; }
   .shopping-bulk-bar{padding:.3rem .4rem}
   .shopping-bar-button{width:100%;padding:.3rem .25rem;font-size:.82rem}
 }
+
+.safety-backup-list { display:grid; gap:.5rem; margin:.75rem 0; }
+.safety-backup-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.65rem .75rem; border:1px solid var(--border); border-radius:12px; background:var(--panel-2); font-size:.85rem; }
+.safety-backup-row .button { flex:0 0 auto; padding:.45rem .7rem; }
+.diagnostics-output { white-space:pre-wrap; overflow:auto; max-height:18rem; padding:.8rem; border-radius:12px; background:var(--panel-2); border:1px solid var(--border); font-size:.78rem; }

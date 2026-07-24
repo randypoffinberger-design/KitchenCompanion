@@ -7,6 +7,9 @@
   const LEGACY_KEY = 'recipeEngineState.v1';
   const DB_NAME = 'kitchen-companion';
   const DB_VERSION = 1;
+  const BACKUP_KEY = 'kitchenCompanion.safetyBackups.v1';
+  const MAX_SAFETY_BACKUPS = 5;
+  const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
   const uuid = () => globalThis.crypto?.randomUUID?.() || `profile-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -36,7 +39,49 @@
       return { schemaVersion:1, modules:[], moduleSources:{}, timers:[], backupMeta:{}, createdAt:now(), updatedAt:now() };
     }
 
+
+    collectStorageSnapshot() {
+      const values = {};
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('kitchenCompanion.') || key === LEGACY_KEY) && key !== BACKUP_KEY) values[key] = localStorage.getItem(key);
+      }
+      return values;
+    }
+
+    createSafetyBackup(reason = 'startup') {
+      try {
+        const snapshot = this.collectStorageSnapshot();
+        if (!Object.keys(snapshot).length) return null;
+        const fingerprint = JSON.stringify(snapshot);
+        const backups = this.getSafetyBackups();
+        if (backups[0]?.fingerprint === fingerprint) return backups[0];
+        const backup = { id:uuid(), createdAt:now(), reason, schemaVersion:STORAGE_SCHEMA_VERSION, fingerprint, snapshot };
+        backups.unshift(backup);
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(backups.slice(0, MAX_SAFETY_BACKUPS)));
+        return backup;
+      } catch (error) { console.warn('Safety backup failed.', error); return null; }
+    }
+
+    getSafetyBackups() {
+      try { return JSON.parse(localStorage.getItem(BACKUP_KEY)) || []; } catch { return []; }
+    }
+
+    restoreSafetyBackup(backupId) {
+      const backup = this.getSafetyBackups().find(item => item.id === backupId);
+      if (!backup?.snapshot) throw new Error('Safety backup not found.');
+      this.createSafetyBackup('before-restore');
+      Object.keys(backup.snapshot).forEach(key => localStorage.setItem(key, backup.snapshot[key]));
+      return true;
+    }
+
+    getDiagnostics() {
+      const backups = this.getSafetyBackups();
+      return { storageSchemaVersion:STORAGE_SCHEMA_VERSION, activeProfileId:this.activeProfile?.profileId || this.device?.activeProfileId || '', profileCount:this.device?.profiles?.length || 0, moduleCount:this.shared?.modules?.length || 0, lastBackupAt:backups[0]?.createdAt || null, backupCount:backups.length, migration:this.device?.migration || null };
+    }
+
     initialize() {
+      this.createSafetyBackup('startup');
       try {
         const device = JSON.parse(localStorage.getItem(DEVICE_KEY));
         const shared = JSON.parse(localStorage.getItem(SHARED_KEY));
