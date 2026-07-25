@@ -1,7 +1,7 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.11.5.2
+0.11.5.3
 
 ## Current task
 Smart checkpoint spacing and data-loss prevention safeguards.
@@ -12,7 +12,7 @@ Smart checkpoint spacing and data-loss prevention safeguards.
 - Manual checkpoint and restore controls in Settings.
 - Storage schema and migration status diagnostics.
 - Built-in regression smoke checks.
-- Consistent 0.11.5.2 cache-busting and service-worker versioning.
+- Consistent 0.11.5.3 cache-busting and service-worker versioning.
 - Previous release remains untouched as the rollback build.
 
 ## Release checklist
@@ -29,3 +29,11 @@ Smart checkpoint spacing and data-loss prevention safeguards.
 3. Create a checkpoint before storage migrations or restores.
 4. Run diagnostics and the release checklist before handoff.
 5. Avoid unrelated architecture changes.
+
+
+## v0.11.5.3 checkpoint policy
+- Manual and automatic checkpoints have separate retention limits.
+- Manual: up to 10; automatic: up to 5.
+- Startup: only after an engine update, or after 24 hours when meaningful data changed.
+- Automatic recovery points are created before imports, module updates/uninstalls, recipe deletion, bulk deletion, and restores.
+- Volatile timestamps are ignored when checking whether data truly changed.

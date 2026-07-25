@@ -1,4 +1,4 @@
-# Kitchen Companion v0.11.5.2
+# Kitchen Companion v0.11.5.3
 
 Kitchen Companion is a static, installable recipe application for GitHub Pages. It supports recipe modules, personal recipes, recipe editing, scaling, timers, favorites, notes, shopping lists, sharing, backup/restore, pasted-text importing, and screenshot/photo OCR.
 
@@ -42,3 +42,8 @@ Personal recipes support permanent deletion. Module recipes support persistent h
 ## v0.11.0 local profiles
 
 Kitchen Companion now separates device-wide modules from profile-owned personal data. Existing v0.9.x installations are migrated automatically into a Primary Profile. Profiles use permanent UUIDs and can be exported individually, creating a migration path toward future server-backed accounts without storing transferable plaintext passwords.
+
+
+## Smart safety checkpoints (v0.11.5.3)
+
+Kitchen Companion keeps manual checkpoints separately from automatic recovery points. It retains up to 10 manual checkpoints and 5 automatic checkpoints. Automatic checkpoints are created only for meaningful events such as an engine update, changed daily data, imports, updates, restores, uninstalls, and destructive deletes.

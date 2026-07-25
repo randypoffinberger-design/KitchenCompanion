@@ -8,8 +8,10 @@
   const DB_NAME = 'kitchen-companion';
   const DB_VERSION = 1;
   const BACKUP_KEY = 'kitchenCompanion.safetyBackups.v1';
-  const MAX_SAFETY_BACKUPS = 5;
+  const MAX_AUTOMATIC_BACKUPS = 5;
+  const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+  const APP_VERSION = '0.11.5.3';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -50,43 +52,97 @@
       return values;
     }
 
+    semanticFingerprint(snapshot) {
+      const stripVolatile = value => {
+        if (Array.isArray(value)) return value.map(stripVolatile);
+        if (!value || typeof value !== 'object') return value;
+        const output = {};
+        Object.keys(value).sort().forEach(key => {
+          if (['updatedAt','lastUsedAt','lastOpenedAt','lastSavedAt'].includes(key)) return;
+          output[key] = stripVolatile(value[key]);
+        });
+        return output;
+      };
+      const normalized = {};
+      Object.keys(snapshot).sort().forEach(key => {
+        const raw = snapshot[key];
+        try { normalized[key] = stripVolatile(JSON.parse(raw)); }
+        catch { normalized[key] = raw; }
+      });
+      return JSON.stringify(normalized);
+    }
+
+    backupKind(reason) {
+      return reason === 'manual-checkpoint' ? 'manual' : 'automatic';
+    }
+
+    normalizeSafetyBackups(backups = this.getSafetyBackups()) {
+      return backups.filter(item => item?.snapshot && item?.createdAt).map(item => ({
+        ...item,
+        kind: item.kind || this.backupKind(item.reason),
+        appVersion: item.appVersion || '0.11.5.2',
+        fingerprint: item.fingerprint || this.semanticFingerprint(item.snapshot)
+      })).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    }
+
+    retainSafetyBackups(backups) {
+      const normalized = this.normalizeSafetyBackups(backups);
+      const manual = normalized.filter(item => item.kind === 'manual').slice(0, MAX_MANUAL_BACKUPS);
+      const automatic = normalized.filter(item => item.kind !== 'manual').slice(0, MAX_AUTOMATIC_BACKUPS);
+      return [...manual, ...automatic].sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    }
+
     createSafetyBackup(reason = 'startup', options = {}) {
       try {
         const snapshot = this.collectStorageSnapshot();
         if (!Object.keys(snapshot).length) return null;
-        const fingerprint = JSON.stringify(snapshot);
-        const backups = this.getSafetyBackups();
-        if (!options.force && backups[0]?.fingerprint === fingerprint) return backups[0];
-        const backup = { id:uuid(), createdAt:now(), reason, schemaVersion:STORAGE_SCHEMA_VERSION, fingerprint, snapshot };
-        backups.unshift(backup);
-        localStorage.setItem(BACKUP_KEY, JSON.stringify(backups.slice(0, MAX_SAFETY_BACKUPS)));
+        const fingerprint = this.semanticFingerprint(snapshot);
+        const backups = this.normalizeSafetyBackups();
+        const kind = options.kind || this.backupKind(reason);
+        const comparable = backups.find(item => item.kind === kind);
+        if (!options.force && comparable?.fingerprint === fingerprint) return comparable;
+        const backup = { id:uuid(), createdAt:now(), reason, kind, appVersion:APP_VERSION, schemaVersion:STORAGE_SCHEMA_VERSION, fingerprint, snapshot };
+        const retained = this.retainSafetyBackups([backup, ...backups]);
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(retained));
         return backup;
       } catch (error) { console.warn('Safety backup failed.', error); return null; }
     }
 
     compactSafetyBackups() {
-      const backups = this.getSafetyBackups();
+      const backups = this.normalizeSafetyBackups();
       const compacted = [];
       let newestStartupTime = null;
+      const seenAutomaticFingerprints = new Set();
       for (const backup of backups) {
-        if (backup?.reason === 'startup') {
+        if (backup.reason === 'startup') {
           const backupTime = Date.parse(backup.createdAt);
           if (Number.isFinite(backupTime) && newestStartupTime !== null && newestStartupTime - backupTime < STARTUP_BACKUP_INTERVAL_MS) continue;
           if (Number.isFinite(backupTime)) newestStartupTime = backupTime;
         }
+        if (backup.kind !== 'manual') {
+          const duplicateKey = `${backup.reason}:${backup.fingerprint}`;
+          if (seenAutomaticFingerprints.has(duplicateKey)) continue;
+          seenAutomaticFingerprints.add(duplicateKey);
+        }
         compacted.push(backup);
-        if (compacted.length >= MAX_SAFETY_BACKUPS) break;
       }
-      if (JSON.stringify(compacted) !== JSON.stringify(backups)) localStorage.setItem(BACKUP_KEY, JSON.stringify(compacted));
-      return compacted;
+      const retained = this.retainSafetyBackups(compacted);
+      if (JSON.stringify(retained) !== JSON.stringify(this.getSafetyBackups())) localStorage.setItem(BACKUP_KEY, JSON.stringify(retained));
+      return retained;
     }
 
     createStartupSafetyBackup() {
       const backups = this.compactSafetyBackups();
-      const latestStartup = backups.find(backup => backup?.reason === 'startup');
-      const latestStartupTime = latestStartup ? Date.parse(latestStartup.createdAt) : NaN;
-      if (Number.isFinite(latestStartupTime) && Date.now() - latestStartupTime < STARTUP_BACKUP_INTERVAL_MS) return latestStartup;
-      return this.createSafetyBackup('startup');
+      const latestLifecycle = backups.find(backup => backup.reason === 'startup' || backup.reason === 'engine-update');
+      const snapshot = this.collectStorageSnapshot();
+      if (!Object.keys(snapshot).length) return null;
+      const fingerprint = this.semanticFingerprint(snapshot);
+      if (!latestLifecycle) return this.createSafetyBackup('startup', { force:true });
+      if (latestLifecycle.appVersion !== APP_VERSION) return this.createSafetyBackup('engine-update', { force:true });
+      const latestLifecycleTime = Date.parse(latestLifecycle.createdAt);
+      const due = !Number.isFinite(latestLifecycleTime) || Date.now() - latestLifecycleTime >= STARTUP_BACKUP_INTERVAL_MS;
+      if (due && latestLifecycle.fingerprint !== fingerprint) return this.createSafetyBackup('startup', { force:true });
+      return latestLifecycle;
     }
 
     getSafetyBackups() {
@@ -96,14 +152,14 @@
     restoreSafetyBackup(backupId) {
       const backup = this.getSafetyBackups().find(item => item.id === backupId);
       if (!backup?.snapshot) throw new Error('Safety backup not found.');
-      this.createSafetyBackup('before-restore');
+      this.createSafetyBackup('before-restore', { force:true });
       Object.keys(backup.snapshot).forEach(key => localStorage.setItem(key, backup.snapshot[key]));
       return true;
     }
 
     getDiagnostics() {
-      const backups = this.getSafetyBackups();
-      return { storageSchemaVersion:STORAGE_SCHEMA_VERSION, activeProfileId:this.activeProfile?.profileId || this.device?.activeProfileId || '', profileCount:this.device?.profiles?.length || 0, moduleCount:this.shared?.modules?.length || 0, lastBackupAt:backups[0]?.createdAt || null, backupCount:backups.length, migration:this.device?.migration || null };
+      const backups = this.compactSafetyBackups();
+      return { storageSchemaVersion:STORAGE_SCHEMA_VERSION, activeProfileId:this.activeProfile?.profileId || this.device?.activeProfileId || '', profileCount:this.device?.profiles?.length || 0, moduleCount:this.shared?.modules?.length || 0, lastBackupAt:backups[0]?.createdAt || null, backupCount:backups.length, manualBackupCount:backups.filter(item => item.kind === 'manual').length, automaticBackupCount:backups.filter(item => item.kind !== 'manual').length, migration:this.device?.migration || null };
     }
 
     initialize() {

@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.11.5.2';
+  const ENGINE_VERSION = '0.11.5.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -235,7 +235,7 @@
     els.shoppingItemForm.addEventListener('submit', addManualShoppingItem);
     els.regularItemsBtn.addEventListener('click', showRegularItems);
     els.shareShoppingBtn.addEventListener('click', shareShoppingList);
-    els.clearCheckedBtn.addEventListener('click', () => { state.shoppingList = state.shoppingList.filter(x => !x.checked); saveState(); renderShoppingList(); renderCounts(); });
+    els.clearCheckedBtn.addEventListener('click', () => { if (state.shoppingList.some(x => x.checked)) profileStore.createSafetyBackup('before-bulk-delete'); state.shoppingList = state.shoppingList.filter(x => !x.checked); saveState(); renderShoppingList(); renderCounts(); });
     els.confirmIngredientAdd.addEventListener('click', confirmAddIngredients);
     els.catalogRefreshBtn.addEventListener('click', loadModuleCatalog);
     els.manageStoresBtn.addEventListener('click', manageStores);
@@ -711,7 +711,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.11.5.2').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.11.5.3').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -723,12 +723,21 @@
   function renderSafeguards() {
     if (!els.safeguardStatus) return;
     const info = profileStore.getDiagnostics();
-    els.safeguardStatus.textContent = `Storage schema ${info.storageSchemaVersion} • ${info.backupCount} safety backup${info.backupCount === 1 ? '' : 's'} • Last checkpoint ${info.lastBackupAt ? new Date(info.lastBackupAt).toLocaleString() : 'not yet created'}.`;
+    els.safeguardStatus.textContent = `Storage schema ${info.storageSchemaVersion} • ${info.manualBackupCount} manual • ${info.automaticBackupCount} automatic • Last checkpoint ${info.lastBackupAt ? new Date(info.lastBackupAt).toLocaleString() : 'not yet created'}.`;
     if (!els.safetyBackupList) return;
     els.safetyBackupList.innerHTML = '';
-    profileStore.getSafetyBackups().forEach((backup, index) => {
+    const reasonLabels = {
+      'manual-checkpoint':'Manual checkpoint', 'startup':'Daily startup', 'engine-update':'Before engine update',
+      'before-restore':'Before checkpoint restore', 'before-full-backup-restore':'Before full backup restore',
+      'before-module-import':'Before module import', 'before-module-update':'Before module update',
+      'before-module-uninstall':'Before module uninstall', 'before-recipe-import':'Before recipe import',
+      'before-recipe-delete':'Before recipe deletion', 'before-bulk-delete':'Before bulk deletion'
+    };
+    profileStore.compactSafetyBackups().forEach(backup => {
       const row = document.createElement('div'); row.className = 'safety-backup-row';
-      const label = document.createElement('span'); label.textContent = `${new Date(backup.createdAt).toLocaleString()} — ${backup.reason}`;
+      const label = document.createElement('span');
+      const type = backup.kind === 'manual' ? 'Manual' : 'Automatic';
+      label.textContent = `${type}: ${reasonLabels[backup.reason] || backup.reason} • ${new Date(backup.createdAt).toLocaleString()}`;
       const button = document.createElement('button'); button.type='button'; button.className='button secondary'; button.textContent='Restore';
       button.addEventListener('click', () => { if (!confirm(`Restore checkpoint from ${new Date(backup.createdAt).toLocaleString()}? A fresh checkpoint will be created first.`)) return; profileStore.restoreSafetyBackup(backup.id); location.reload(); });
       row.append(label, button); els.safetyBackupList.append(row);
@@ -1032,6 +1041,7 @@
     if (!confirm(`Permanently delete “${recipe.name}”?
 
 This removes the recipe, its favorite status, notes, and related personal metadata from this device.`)) return;
+    profileStore.createSafetyBackup('before-recipe-delete');
     const personal = ensurePersonalModule();
     personal.recipes = personal.recipes.filter(item => item.id !== recipe.id);
     cleanupRecipeReferences(recipe.key);
@@ -1235,7 +1245,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.11.5.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.11.5.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1377,12 +1387,14 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   async function importModules(event) {
     const files = [...event.target.files];
+    let backupCreated = false;
     for (const file of files) {
       try {
         const module = JSON.parse(await file.text());
         const report = validateModule(module);
         if (report.warnings.length) console.warn(`Imported ${file.name} with warnings:`, report.warnings);
         module.enabled = module.enabled !== false;
+        if (!backupCreated) { profileStore.createSafetyBackup('before-module-import'); backupCreated = true; }
         const existingIndex = state.modules.findIndex(m => m.moduleId === module.moduleId);
         if (existingIndex >= 0) {
           const replace = confirm(`${module.name} is already installed. Replace version ${state.modules[existingIndex].version} with ${module.version}?`);
@@ -1417,6 +1429,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       card.querySelector('.update-module')?.addEventListener('click', () => updateModuleFromSource(module));
       card.querySelector('.remove-module')?.addEventListener('click', () => {
         if (!confirm(`Uninstall ${module.name}?\n\nThis removes all ${module.recipes.length} imported recipes from this device. User-created recipes and copied personal variations are not part of the module and will remain. Favorites that point to this module will be cleaned up.`)) return;
+        profileStore.createSafetyBackup('before-module-uninstall');
         state.modules = state.modules.filter(m => m.moduleId !== module.moduleId); delete state.moduleSources[module.moduleId];
         state.favorites = state.favorites.filter(key => !key.startsWith(`${module.moduleId}:`));
         state.hiddenRecipes = state.hiddenRecipes.filter(key => !key.startsWith(`${module.moduleId}:`));
@@ -1787,6 +1800,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       const module=await res.json();validateModule(module);
       if(entry.moduleId&&module.moduleId!==entry.moduleId)throw new Error(`Catalog expects moduleId ${entry.moduleId}, but the downloaded file contains ${module.moduleId}. Update catalog.json or the module file so they match.`);
       if(entry.version&&String(module.version)!==String(entry.version))throw new Error(`Catalog lists version ${entry.version}, but the downloaded file contains version ${module.version}. Update catalog.json so both versions match.`);
+      profileStore.createSafetyBackup('before-module-update');
       const replacedIds=replacementIds(entry,module).filter(id=>id!==module.moduleId);
       const oldFavorites=new Set(state.favorites);
       state.modules=state.modules.filter(m=>!replacedIds.includes(m.moduleId));
@@ -1866,7 +1880,9 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   async function importSharedRecipe(event) {
     const file = event.target.files[0]; event.target.value=''; if (!file) return;
-    try { const payload=JSON.parse(await file.text()); const recipe=payload.format==='kitchen-companion-recipe'?payload.recipe:payload.recipe || payload; if (!recipe?.name || !Array.isArray(recipe.instructions)) throw new Error('This is not a valid shared recipe file.');
+    try {
+      const payload=JSON.parse(await file.text()); const recipe=payload.format==='kitchen-companion-recipe'?payload.recipe:payload.recipe || payload; if (!recipe?.name || !Array.isArray(recipe.instructions)) throw new Error('This is not a valid shared recipe file.');
+      profileStore.createSafetyBackup('before-recipe-import');
       const personal=ensurePersonalModule(); const copy={...recipe,id:uniqueRecipeId(slugify(recipe.name),personal.recipes),copiedFrom:null}; personal.recipes.push(copy); saveState(); refreshAll(); alert(`${copy.name} was imported into My Recipes.`);
     } catch(error){ alert(`Could not import recipe: ${error.message}`); }
   }
@@ -1893,7 +1909,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function restoreSelectedBackup(event) {
     event.preventDefault(); if(!pendingBackup)return; const mode=new FormData(els.restoreBackupForm).get('restoreMode');
-    try { localStorage.setItem(`${STORAGE_KEY}.rollback`, JSON.stringify(state)); const restored=mode==='replace'?pendingBackup.state:mergeBackupState(state,pendingBackup.state); if(!Array.isArray(restored.modules))throw new Error('Backup validation failed.'); Object.keys(state).forEach(key => delete state[key]); Object.assign(state, restored); saveState(); pendingBackup=null; els.restoreBackupDialog.close(); alert('Backup restored into the current profile. Kitchen Companion will reload now.'); location.reload(); } catch(error){ alert(`Restore failed: ${error.message}`); }
+    try { profileStore.createSafetyBackup('before-full-backup-restore', { force:true }); localStorage.setItem(`${STORAGE_KEY}.rollback`, JSON.stringify(state)); const restored=mode==='replace'?pendingBackup.state:mergeBackupState(state,pendingBackup.state); if(!Array.isArray(restored.modules))throw new Error('Backup validation failed.'); Object.keys(state).forEach(key => delete state[key]); Object.assign(state, restored); saveState(); pendingBackup=null; els.restoreBackupDialog.close(); alert('Backup restored into the current profile. Kitchen Companion will reload now.'); location.reload(); } catch(error){ alert(`Restore failed: ${error.message}`); }
   }
 
   function escapeHtml(value) {
