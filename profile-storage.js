@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.12.0';
+  const APP_VERSION = '0.12.1';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -43,13 +43,57 @@
     }
 
 
-    collectStorageSnapshot() {
+    collectStorageSnapshot(options = {}) {
+      const includeModules = !!options.includeModules;
       const values = {};
       for (let i = 0; i < localStorage.length; i += 1) {
         const key = localStorage.key(i);
-        if (key && (key.startsWith('kitchenCompanion.') || key === LEGACY_KEY) && key !== BACKUP_KEY) values[key] = localStorage.getItem(key);
+        if (!key || !key.startsWith('kitchenCompanion.') || key === BACKUP_KEY) continue;
+        const raw = localStorage.getItem(key);
+        if (key === SHARED_KEY && !includeModules) {
+          try {
+            const shared = JSON.parse(raw);
+            shared.modules = [];
+            shared.checkpointModulesOmitted = true;
+            values[key] = JSON.stringify(shared);
+          } catch { values[key] = raw; }
+        } else values[key] = raw;
       }
       return values;
+    }
+
+    fullSnapshotReason(reason) {
+      return ['before-module-import','before-module-update','before-module-uninstall'].includes(reason);
+    }
+
+    compactSnapshot(snapshot) {
+      const compact = {};
+      Object.entries(snapshot || {}).forEach(([key, raw]) => {
+        if (key === LEGACY_KEY || key.startsWith(`${LEGACY_KEY}.`)) return;
+        if (key === SHARED_KEY) {
+          try {
+            const shared = JSON.parse(raw);
+            shared.modules = [];
+            shared.checkpointModulesOmitted = true;
+            compact[key] = JSON.stringify(shared);
+          } catch { compact[key] = raw; }
+        } else compact[key] = raw;
+      });
+      return compact;
+    }
+
+    hydrateSnapshot(backup) {
+      const snapshot = clone(backup.snapshot);
+      if (backup.snapshotMode !== 'compact') return snapshot;
+      if (snapshot[SHARED_KEY]) {
+        const savedShared = JSON.parse(snapshot[SHARED_KEY]);
+        let currentModules = [];
+        try { currentModules = JSON.parse(localStorage.getItem(SHARED_KEY))?.modules || []; } catch {}
+        savedShared.modules = currentModules;
+        delete savedShared.checkpointModulesOmitted;
+        snapshot[SHARED_KEY] = JSON.stringify(savedShared);
+      }
+      return snapshot;
     }
 
     validateStorageSnapshot(snapshot) {
@@ -98,30 +142,51 @@
         ...item,
         kind: item.kind || this.backupKind(item.reason),
         appVersion: item.appVersion || '0.11.5.2',
+        snapshotMode: item.snapshotMode || 'full',
         fingerprint: item.fingerprint || this.semanticFingerprint(item.snapshot)
       })).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
     }
 
+    compactBackup(backup) {
+      if (backup.snapshotMode === 'compact') return backup;
+      const snapshot = this.compactSnapshot(backup.snapshot);
+      return { ...backup, snapshotMode:'compact', snapshot, fingerprint:this.semanticFingerprint(snapshot) };
+    }
+
     retainSafetyBackups(backups) {
       const normalized = this.normalizeSafetyBackups(backups);
-      const manual = normalized.filter(item => item.kind === 'manual').slice(0, MAX_MANUAL_BACKUPS);
-      const automatic = normalized.filter(item => item.kind !== 'manual').slice(0, MAX_AUTOMATIC_BACKUPS);
+      const manual = normalized.filter(item => item.kind === 'manual').slice(0, MAX_MANUAL_BACKUPS).map(item => this.compactBackup(item));
+      let keptFull = false;
+      const automatic = normalized.filter(item => item.kind !== 'manual').slice(0, MAX_AUTOMATIC_BACKUPS).map(item => {
+        if (item.snapshotMode === 'full' && !keptFull) { keptFull = true; return item; }
+        return this.compactBackup(item);
+      });
       return [...manual, ...automatic].sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    }
+
+    saveSafetyBackups(backups) {
+      const encoded = JSON.stringify(backups);
+      try { this.writeAndVerify(BACKUP_KEY, encoded); }
+      catch (error) {
+        if (error?.name !== 'QuotaExceededError' && !/quota/i.test(error?.message || '')) throw error;
+        localStorage.removeItem(BACKUP_KEY);
+        this.writeAndVerify(BACKUP_KEY, encoded);
+      }
     }
 
     createSafetyBackup(reason = 'startup', options = {}) {
       try {
-        const snapshot = this.collectStorageSnapshot();
+        const snapshotMode = this.fullSnapshotReason(reason) ? 'full' : 'compact';
+        const snapshot = this.collectStorageSnapshot({ includeModules:snapshotMode === 'full' });
         this.validateStorageSnapshot(snapshot);
         const fingerprint = this.semanticFingerprint(snapshot);
         const backups = this.normalizeSafetyBackups();
         const kind = options.kind || this.backupKind(reason);
         const comparable = backups.find(item => item.kind === kind);
         if (!options.force && comparable?.fingerprint === fingerprint) return comparable;
-        const backup = { id:uuid(), createdAt:now(), reason, kind, appVersion:APP_VERSION, schemaVersion:STORAGE_SCHEMA_VERSION, fingerprint, snapshot };
+        const backup = { id:uuid(), createdAt:now(), reason, kind, appVersion:APP_VERSION, schemaVersion:STORAGE_SCHEMA_VERSION, snapshotMode, fingerprint, snapshot };
         const retained = this.retainSafetyBackups([backup, ...backups]);
-        const encoded = JSON.stringify(retained);
-        this.writeAndVerify(BACKUP_KEY, encoded);
+        this.saveSafetyBackups(retained);
         const saved = this.getSafetyBackups().find(item => item.id === backup.id);
         if (!saved || saved.fingerprint !== fingerprint) throw new Error('Checkpoint verification failed.');
         return backup;
@@ -151,7 +216,7 @@
         compacted.push(backup);
       }
       const retained = this.retainSafetyBackups(compacted);
-      if (JSON.stringify(retained) !== JSON.stringify(this.getSafetyBackups())) localStorage.setItem(BACKUP_KEY, JSON.stringify(retained));
+      if (JSON.stringify(retained) !== JSON.stringify(this.getSafetyBackups())) this.saveSafetyBackups(retained);
       return retained;
     }
 
@@ -178,10 +243,11 @@
       if (!backup?.snapshot) throw new Error('Safety backup not found.');
       this.validateStorageSnapshot(backup.snapshot);
       this.createSafetyBackup('before-restore', { force:true, required:true });
-      const current = this.collectStorageSnapshot();
+      const restoredSnapshot = this.hydrateSnapshot({ ...backup, snapshotMode:backup.snapshotMode || 'full' });
+      const current = this.collectStorageSnapshot({ includeModules:true });
       try {
-        Object.keys(current).filter(key => !(key in backup.snapshot)).forEach(key => localStorage.removeItem(key));
-        Object.keys(backup.snapshot).forEach(key => this.writeAndVerify(key, backup.snapshot[key]));
+        Object.keys(current).filter(key => !(key in restoredSnapshot)).forEach(key => localStorage.removeItem(key));
+        Object.keys(restoredSnapshot).forEach(key => this.writeAndVerify(key, restoredSnapshot[key]));
       } catch (error) {
         Object.keys(this.collectStorageSnapshot()).forEach(key => localStorage.removeItem(key));
         Object.keys(current).forEach(key => localStorage.setItem(key, current[key]));
@@ -195,7 +261,8 @@
       const validBackupCount = backups.filter(backup => {
         try { return this.validateStorageSnapshot(backup.snapshot); } catch { return false; }
       }).length;
-      return { storageSchemaVersion:STORAGE_SCHEMA_VERSION, activeProfileId:this.activeProfile?.profileId || this.device?.activeProfileId || '', profileCount:this.device?.profiles?.length || 0, moduleCount:this.shared?.modules?.length || 0, lastBackupAt:backups[0]?.createdAt || null, backupCount:backups.length, validBackupCount, manualBackupCount:backups.filter(item => item.kind === 'manual').length, automaticBackupCount:backups.filter(item => item.kind !== 'manual').length, recoveredAt:sessionStorage.getItem('kitchenCompanion.recoveredCheckpoint'), migration:this.device?.migration || null };
+      const storageBytes = this.getDiagnosticsStorageBytes();
+      return { storageSchemaVersion:STORAGE_SCHEMA_VERSION, activeProfileId:this.activeProfile?.profileId || this.device?.activeProfileId || '', profileCount:this.device?.profiles?.length || 0, moduleCount:this.shared?.modules?.length || 0, lastBackupAt:backups[0]?.createdAt || null, backupCount:backups.length, validBackupCount, manualBackupCount:backups.filter(item => item.kind === 'manual').length, automaticBackupCount:backups.filter(item => item.kind !== 'manual').length, fullBackupCount:backups.filter(item => item.snapshotMode === 'full').length, storageBytes, recoveredAt:sessionStorage.getItem('kitchenCompanion.recoveredCheckpoint'), migration:this.device?.migration || null };
     }
 
     loadCurrentStorage() {
@@ -212,12 +279,13 @@
     }
 
     recoverLatestValidCheckpoint() {
-      const original = this.collectStorageSnapshot();
+      const original = this.collectStorageSnapshot({ includeModules:true });
       for (const backup of this.normalizeSafetyBackups()) {
         try {
           this.validateStorageSnapshot(backup.snapshot);
+          const restoredSnapshot = this.hydrateSnapshot(backup);
           Object.keys(this.collectStorageSnapshot()).forEach(key => localStorage.removeItem(key));
-          Object.keys(backup.snapshot).forEach(key => this.writeAndVerify(key, backup.snapshot[key]));
+          Object.keys(restoredSnapshot).forEach(key => this.writeAndVerify(key, restoredSnapshot[key]));
           if (this.loadCurrentStorage()) return backup;
         } catch (error) {
           console.warn('A recovery checkpoint could not be used.', error);
@@ -230,10 +298,30 @@
       return null;
     }
 
+    optimizeStorage() {
+      const before = this.getDiagnosticsStorageBytes();
+      const backups = this.compactSafetyBackups();
+      const hasVerifiedCheckpoint = backups.some(backup => {
+        try { return this.validateStorageSnapshot(backup.snapshot); } catch { return false; }
+      });
+      if (hasVerifiedCheckpoint) {
+        [LEGACY_KEY, `${LEGACY_KEY}.preProfiles`, `${LEGACY_KEY}.preUpdate`, `${LEGACY_KEY}.rollback`].forEach(key => localStorage.removeItem(key));
+      }
+      const after = this.getDiagnosticsStorageBytes();
+      return { beforeBytes:before, afterBytes:after, freedBytes:Math.max(0, before-after), backupCount:backups.length };
+    }
+
+    getDiagnosticsStorageBytes() {
+      return Array.from({length:localStorage.length}, (_, index) => {
+        const key = localStorage.key(index) || '';
+        return (key.length + (localStorage.getItem(key) || '').length) * 2;
+      }).reduce((sum, bytes) => sum + bytes, 0);
+    }
+
     initialize() {
       this.createStartupSafetyBackup();
       try {
-        if (this.loadCurrentStorage()) return;
+        if (this.loadCurrentStorage()) { this.optimizeStorage(); return; }
       } catch (error) { console.warn('Profile storage could not be loaded.', error); }
       try {
         const recovered = this.recoverLatestValidCheckpoint();
@@ -288,7 +376,6 @@
       this.shared = this.defaultShared();
       this.activeProfile = this.defaultProfileData(profileId);
       if (legacy?.modules) {
-        localStorage.setItem(`${LEGACY_KEY}.preProfiles`, JSON.stringify(legacy));
         this.shared.modules = clone(legacy.modules.filter(module => module.moduleId !== 'my-recipes'));
         this.shared.moduleSources = clone(legacy.moduleSources || {});
         this.shared.timers = clone((legacy.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || profileId })));
@@ -299,6 +386,8 @@
         }
       }
       this.persistAll();
+      this.createSafetyBackup('engine-update', { force:true });
+      this.optimizeStorage();
     }
 
     readProfile(profileId) {

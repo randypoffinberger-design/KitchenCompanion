@@ -1,10 +1,10 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.12.0
+0.12.1
 
 ## Current task
-Smart shopping-list grouping, merging, and learned preferences.
+Storage quota recovery and compact checkpoint migration.
 
 ## Completed
 - Rolling automatic local safety checkpoints (maximum five).
@@ -12,7 +12,7 @@ Smart shopping-list grouping, merging, and learned preferences.
 - Manual checkpoint and restore controls in Settings.
 - Storage schema and migration status diagnostics.
 - Built-in regression smoke checks.
-- Consistent 0.12.0 cache-busting and service-worker versioning.
+- Consistent 0.12.1 cache-busting and service-worker versioning.
 - Previous release remains untouched as the rollback build.
 
 ## Release checklist
