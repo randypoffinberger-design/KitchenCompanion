@@ -3,12 +3,12 @@
   "modules": [
     {
       "moduleId": "kc-rndy1",
-      "name": recipes-to-fill-the-stomach-and-heart-editorial",
+      "name": "Recipes to Fill the Stomach and Heart",
       "publisher": "Randy & Family",
       "version": "1.0.9",
       "recipeCount": 112,
       "description": "Family recipes and recipes developed together.",
-      "url": "./Kitchen-Companion-Recipes-to-Fill-the-Stomach-and-Heart.json"
+      "url": "./recipes-to-fill-the-stomach-and-heart-editorial.json"
     },
     {
       "moduleId": "starter-kitchen",
