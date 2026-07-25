@@ -1,17 +1,18 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.11.5.1
+0.11.5.2
 
 ## Current task
-Data-loss prevention and release safeguards.
+Smart checkpoint spacing and data-loss prevention safeguards.
 
 ## Completed
 - Rolling automatic local safety checkpoints (maximum five).
+- Startup checkpoints limited to one per 24 hours; rapid duplicates compact automatically.
 - Manual checkpoint and restore controls in Settings.
 - Storage schema and migration status diagnostics.
 - Built-in regression smoke checks.
-- Consistent 0.11.5.1 cache-busting and service-worker versioning.
+- Consistent 0.11.5.2 cache-busting and service-worker versioning.
 - Previous release remains untouched as the rollback build.
 
 ## Release checklist

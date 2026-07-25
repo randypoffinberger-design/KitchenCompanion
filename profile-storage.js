@@ -9,6 +9,7 @@
   const DB_VERSION = 1;
   const BACKUP_KEY = 'kitchenCompanion.safetyBackups.v1';
   const MAX_SAFETY_BACKUPS = 5;
+  const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -63,6 +64,31 @@
       } catch (error) { console.warn('Safety backup failed.', error); return null; }
     }
 
+    compactSafetyBackups() {
+      const backups = this.getSafetyBackups();
+      const compacted = [];
+      let newestStartupTime = null;
+      for (const backup of backups) {
+        if (backup?.reason === 'startup') {
+          const backupTime = Date.parse(backup.createdAt);
+          if (Number.isFinite(backupTime) && newestStartupTime !== null && newestStartupTime - backupTime < STARTUP_BACKUP_INTERVAL_MS) continue;
+          if (Number.isFinite(backupTime)) newestStartupTime = backupTime;
+        }
+        compacted.push(backup);
+        if (compacted.length >= MAX_SAFETY_BACKUPS) break;
+      }
+      if (JSON.stringify(compacted) !== JSON.stringify(backups)) localStorage.setItem(BACKUP_KEY, JSON.stringify(compacted));
+      return compacted;
+    }
+
+    createStartupSafetyBackup() {
+      const backups = this.compactSafetyBackups();
+      const latestStartup = backups.find(backup => backup?.reason === 'startup');
+      const latestStartupTime = latestStartup ? Date.parse(latestStartup.createdAt) : NaN;
+      if (Number.isFinite(latestStartupTime) && Date.now() - latestStartupTime < STARTUP_BACKUP_INTERVAL_MS) return latestStartup;
+      return this.createSafetyBackup('startup');
+    }
+
     getSafetyBackups() {
       try { return JSON.parse(localStorage.getItem(BACKUP_KEY)) || []; } catch { return []; }
     }
@@ -81,7 +107,7 @@
     }
 
     initialize() {
-      this.createSafetyBackup('startup');
+      this.createStartupSafetyBackup();
       try {
         const device = JSON.parse(localStorage.getItem(DEVICE_KEY));
         const shared = JSON.parse(localStorage.getItem(SHARED_KEY));
