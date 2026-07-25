@@ -1,7 +1,7 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.11.5
+0.11.5.1
 
 ## Current task
 Data-loss prevention and release safeguards.
@@ -11,7 +11,7 @@ Data-loss prevention and release safeguards.
 - Manual checkpoint and restore controls in Settings.
 - Storage schema and migration status diagnostics.
 - Built-in regression smoke checks.
-- Consistent 0.11.5 cache-busting and service-worker versioning.
+- Consistent 0.11.5.1 cache-busting and service-worker versioning.
 - Previous release remains untouched as the rollback build.
 
 ## Release checklist

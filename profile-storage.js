@@ -49,13 +49,13 @@
       return values;
     }
 
-    createSafetyBackup(reason = 'startup') {
+    createSafetyBackup(reason = 'startup', options = {}) {
       try {
         const snapshot = this.collectStorageSnapshot();
         if (!Object.keys(snapshot).length) return null;
         const fingerprint = JSON.stringify(snapshot);
         const backups = this.getSafetyBackups();
-        if (backups[0]?.fingerprint === fingerprint) return backups[0];
+        if (!options.force && backups[0]?.fingerprint === fingerprint) return backups[0];
         const backup = { id:uuid(), createdAt:now(), reason, schemaVersion:STORAGE_SCHEMA_VERSION, fingerprint, snapshot };
         backups.unshift(backup);
         localStorage.setItem(BACKUP_KEY, JSON.stringify(backups.slice(0, MAX_SAFETY_BACKUPS)));
