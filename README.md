@@ -1,4 +1,4 @@
-# Kitchen Companion v0.11.5.4
+# Kitchen Companion v0.12.0
 
 Kitchen Companion is a static, installable recipe application for GitHub Pages. It supports recipe modules, personal recipes, recipe editing, scaling, timers, favorites, notes, shopping lists, sharing, backup/restore, pasted-text importing, and screenshot/photo OCR.
 
@@ -49,3 +49,7 @@ Kitchen Companion now separates device-wide modules from profile-owned personal 
 Kitchen Companion keeps manual checkpoints separately from automatic recovery points. It retains up to 10 manual checkpoints and 5 automatic checkpoints. Automatic checkpoints are created only for meaningful events such as an engine update, changed daily data, imports, updates, restores, uninstalls, and destructive deletes.
 
 In v0.11.5.4, required checkpoints and saves are read-back verified. Risky actions stop if protection cannot be verified, failed writes roll back, imported backups receive structural validation before restore, and damaged primary storage can recover from the newest valid checkpoint at startup.
+
+## Smart shopping list (v0.12.0)
+
+Shopping items use a clean ingredient name with separate quantity and recipe-source lines. Matching open ingredients combine into one item, store lists are divided into practical shopping groups, checked items move to the bottom, manual group corrections are remembered, and a preferred store is learned after the same ingredient is assigned there three times.

@@ -1,18 +1,13 @@
 # Kitchen Companion v0.12.0
 
-## Smart Shopping List
+## Smart shopping list
 
-- Checked items automatically move below unchecked items within the same store.
-- Unchecking an item returns it to the active portion of the list.
-- Ingredients are automatically assigned to practical shopping groups such as Produce, Meat & Seafood, Dairy & Eggs, Pantry, Spices & Seasonings, Frozen, and Household.
-- Shopping groups control sorting but remain visually unobtrusive.
-- Each item’s expanded details now includes a Shopping group selector for correcting classification.
-- Manual group corrections are remembered for that normalized ingredient.
-- Store choices made through Move or item editing are remembered as ingredient preferences.
-- Recipe ingredients can use the learned preferred store automatically.
-- Existing shopping-list items migrate automatically; recipe modules do not require changes.
-
-## Compatibility
-
-- Recipe module format remains unchanged.
-- Existing profiles, stores, shopping items, notes, favorites, and installed modules remain supported.
+- Displays a clean ingredient name as the shopping item with recipe quantities and sources kept underneath.
+- Combines open entries for the same ingredient even when they were originally assigned to different stores.
+- Organizes each store list into Produce, Meat & Seafood, Dairy & Eggs, Bakery, Pantry, Canned & Jarred, Spices & Baking, Frozen, Beverages, Household, and Other.
+- Moves checked items to a dedicated section at the bottom of each store.
+- Lets users correct an item's shopping group and remembers the correction for that profile.
+- Learns a preferred store after the same ingredient is assigned there three times.
+- Automatically uses a learned store when a new entry would otherwise be Unassigned.
+- Preserves learned store and shopping-group preferences in profile exports, full backups, and merged restores.
+- Retains the verified backup, rollback, and startup-recovery safeguards from v0.11.5.4.

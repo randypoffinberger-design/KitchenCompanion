@@ -446,3 +446,10 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .safety-backup-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.65rem .75rem; border:1px solid var(--border); border-radius:12px; background:var(--panel-2); font-size:.85rem; }
 .safety-backup-row .button { flex:0 0 auto; padding:.45rem .7rem; }
 .diagnostics-output { white-space:pre-wrap; overflow:auto; max-height:18rem; padding:.8rem; border-radius:12px; background:var(--panel-2); border:1px solid var(--border); font-size:.78rem; }
+
+/* v0.12.0 smart shopping list */
+.shopping-group-heading{margin:.75rem 0 .1rem;padding:.38rem .15rem .3rem;border-bottom:1px solid var(--border);color:var(--accent);font-size:.82rem;font-weight:850;letter-spacing:.045em;text-transform:uppercase}
+.shopping-group-heading:first-child{margin-top:.25rem}
+.shopping-checked-heading{margin-top:1rem;color:var(--muted)}
+.shopping-group-label{display:block;margin-top:.35rem;color:var(--muted)}
+#shoppingItemGroup{width:100%}
