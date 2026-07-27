@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.6';
+  const ENGINE_VERSION = '0.12.7';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -105,24 +105,45 @@
     menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), importShoppingBtn: document.querySelector('#importShoppingBtn'), shoppingImportFile: document.querySelector('#shoppingImportFile'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), shoppingItemDialogTitle: document.querySelector('#shoppingItemDialogTitle'), shoppingItemEditId: document.querySelector('#shoppingItemEditId'), shoppingItemSubmitBtn: document.querySelector('#shoppingItemSubmitBtn'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn'), addKitchenProfileBtn: document.querySelector('#addKitchenProfileBtn'), profileSetupDialog: document.querySelector('#profileSetupDialog'), profileSetupForm: document.querySelector('#profileSetupForm'), profileSetupName: document.querySelector('#profileSetupName'), importProfileBtn: document.querySelector('#importProfileBtn'), profileImportFile: document.querySelector('#profileImportFile'), profileStorageSummary: document.querySelector('#profileStorageSummary'), headerProfileBtn: document.querySelector('#headerProfileBtn'), headerProfileAvatar: document.querySelector('#headerProfileAvatar'), headerProfileName: document.querySelector('#headerProfileName'), profileQuickMenu: document.querySelector('#profileQuickMenu'), profileEditDialog: document.querySelector('#profileEditDialog'), profileEditForm: document.querySelector('#profileEditForm'), profileEditName: document.querySelector('#profileEditName'), profileEditEmoji: document.querySelector('#profileEditEmoji'), profileEditImage: document.querySelector('#profileEditImage'), profileEditImageInput: document.querySelector('#profileEditImageInput'), profileEditImageBtn: document.querySelector('#profileEditImageBtn'), profileEditRemoveImageBtn: document.querySelector('#profileEditRemoveImageBtn'), profileEditPreview: document.querySelector('#profileEditPreview'), profileEditColorChoices: document.querySelector('#profileEditColorChoices'), cancelProfileEdit: document.querySelector('#cancelProfileEdit'), safeguardStatus: document.querySelector('#safeguardStatus'), safetyBackupList: document.querySelector('#safetyBackupList'), createSafetyBackupBtn: document.querySelector('#createSafetyBackupBtn'), runDiagnosticsBtn: document.querySelector('#runDiagnosticsBtn'), optimizeStorageBtn: document.querySelector('#optimizeStorageBtn'), diagnosticsOutput: document.querySelector('#diagnosticsOutput')
   };
 
-  init();
+  const startupIssues = [];
+  function startupStep(label, action) {
+    try { return action(); }
+    catch (error) {
+      startupIssues.push({ label, error });
+      console.error(`Startup step failed: ${label}`, error);
+      return undefined;
+    }
+  }
+
+  function showStartupIssues() {
+    if (!startupIssues.length) return;
+    const notice = document.createElement('div');
+    notice.className = 'startup-recovery-notice';
+    notice.setAttribute('role', 'alert');
+    notice.innerHTML = `<strong>Kitchen Companion opened in recovery mode.</strong><span>Your information was loaded, but ${startupIssues.length} startup task${startupIssues.length===1?'':'s'} could not finish. This is commonly caused by full iPhone website storage. The controls remain available so you can create a full backup and clean up storage.</span><button type="button" aria-label="Dismiss recovery notice">×</button>`;
+    notice.querySelector('button').addEventListener('click', () => notice.remove());
+    document.body.prepend(notice);
+  }
 
   function init() {
-    if (!state.modules.length) state.modules.push(builtInModule);
-    migrateState();
-    ensurePersonalModule();
-    saveState();
-    applySettings();
-    const versionLabel=document.querySelector('#engineVersionLabel'); if(versionLabel) versionLabel.textContent=ENGINE_VERSION;
-    renderActiveProfile();
-    renderSafeguards();
-    showProfileSetupIfNeeded();
-    bindEvents();
-    refreshAll();
-    startTimerTicker();
-    registerServiceWorker();
-    initBellAudio();
-    updateWakeLock();
+    // Controls and update recovery must be established before any storage
+    // migration or write. A rejected housekeeping save must never freeze UI.
+    startupStep('event controls', bindEvents);
+    startupStep('update service', registerServiceWorker);
+    startupStep('built-in module', () => { if (!state.modules.length) state.modules.push(builtInModule); });
+    const migrated = startupStep('data migration', migrateState);
+    startupStep('personal recipe module', ensurePersonalModule);
+    startupStep(migrated ? 'save migrated data' : 'startup save', saveState);
+    startupStep('appearance', applySettings);
+    startupStep('version label', () => { const versionLabel=document.querySelector('#engineVersionLabel'); if(versionLabel) versionLabel.textContent=ENGINE_VERSION; });
+    startupStep('active profile', renderActiveProfile);
+    startupStep('safeguards', renderSafeguards);
+    startupStep('profile setup', showProfileSetupIfNeeded);
+    startupStep('main interface', refreshAll);
+    startupStep('timers', startTimerTicker);
+    startupStep('alarm', initBellAudio);
+    startupStep('screen wake lock', updateWakeLock);
+    showStartupIssues();
   }
 
   function loadState() {
@@ -777,7 +798,7 @@
     state.regularItems = (state.regularItems || []).map(item => ({
       id:item.id || shoppingId(), name:displayShoppingName(item.name), normalizedName:shoppingNameKey(item.normalizedName || item.name), quantity:String(item.quantity || '').trim(), store:normalizeStore(item.store), group:SHOPPING_GROUPS.includes(item.group) ? item.group : classifyShoppingGroup(item.name), aisle:String(item.aisle || preferredAisleFor(item.name, item.store)).trim().slice(0, 40)
     }));
-    if (changed) saveState();
+    return changed;
   }
 
   function openImportOptions() { els.importOptionsDialog.showModal(); }
@@ -798,7 +819,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.6').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.7').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1353,7 +1374,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.6');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.7');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2274,4 +2295,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
   }
+
+  // Existing shopping data uses constants declared throughout this script.
+  // Start only after every const and helper has finished initialization.
+  init();
 })();
