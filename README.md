@@ -1,4 +1,10 @@
-# Kitchen Companion v0.12.1
+# Kitchen Companion v0.12.2
+
+## Startup and iPhone restore recovery (v0.12.2)
+
+- Storage checkpoint cleanup, normalization, and optimization can no longer prevent the app from starting when browser storage is full or temporarily read-only.
+- Existing profile and module data can load even when a nonessential startup write is rejected.
+- The backup picker no longer filters by filename extension. Kitchen Companion validates the selected file's contents after selection, allowing `.kcbackup` files to be selected in iPhone Files.
 
 Kitchen Companion is a static, installable recipe application for GitHub Pages. It supports recipe modules, personal recipes, recipe editing, scaling, timers, favorites, notes, shopping lists, sharing, backup/restore, pasted-text importing, and screenshot/photo OCR.
 

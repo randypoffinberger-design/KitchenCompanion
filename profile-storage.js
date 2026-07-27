@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.12.1';
+  const APP_VERSION = '0.12.2';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -216,7 +216,10 @@
         compacted.push(backup);
       }
       const retained = this.retainSafetyBackups(compacted);
-      if (JSON.stringify(retained) !== JSON.stringify(this.getSafetyBackups())) this.saveSafetyBackups(retained);
+      if (JSON.stringify(retained) !== JSON.stringify(this.getSafetyBackups())) {
+        try { this.saveSafetyBackups(retained); }
+        catch (error) { console.warn('Checkpoint cleanup was skipped because storage is not writable.', error); }
+      }
       return retained;
     }
 
@@ -270,11 +273,13 @@
       const shared = JSON.parse(localStorage.getItem(SHARED_KEY));
       if (!device?.profiles?.length || !shared) return false;
       this.device = device;
-      this.normalizeProfileMetadata();
+      try { this.normalizeProfileMetadata(); }
+      catch (error) { console.warn('Profile metadata cleanup was skipped because storage is not writable.', error); }
       this.shared = shared;
       this.activeProfile = this.normalizeProfileData(this.readProfile(device.activeProfileId) || this.defaultProfileData(device.activeProfileId));
       this.markProfileUsed(device.activeProfileId);
-      this.persistAll();
+      try { this.persistAll(); }
+      catch (error) { console.warn('Loaded profile data, but startup normalization could not be saved.', error); }
       return true;
     }
 
@@ -319,9 +324,14 @@
     }
 
     initialize() {
-      this.createStartupSafetyBackup();
+      try { this.createStartupSafetyBackup(); }
+      catch (error) { console.warn('Startup checkpoint maintenance was skipped so the app can continue loading.', error); }
       try {
-        if (this.loadCurrentStorage()) { this.optimizeStorage(); return; }
+        if (this.loadCurrentStorage()) {
+          try { this.optimizeStorage(); }
+          catch (error) { console.warn('Startup storage optimization was skipped so the app can continue loading.', error); }
+          return;
+        }
       } catch (error) { console.warn('Profile storage could not be loaded.', error); }
       try {
         const recovered = this.recoverLatestValidCheckpoint();
