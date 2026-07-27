@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.13.1';
+  const APP_VERSION = '0.14.0';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -34,7 +34,7 @@
         favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [],
         shoppingList: [], regularItems: [], stores: ['Unassigned', 'Costco', 'Walmart'],
         settings: { darkMode:false, metricHelpers:false, accentColor:'#7b3f00', wakeLockMode:'recipes-and-timers', alarmVolume:0.85, alarmSoundEnabled:true },
-        ratings: {}, learnedStorePreferences: {}, learnedShoppingGroups: {}, learnedAisles: {}, createdAt: now(), updatedAt: now()
+        ratings: {}, learnedStorePreferences: {}, learnedShoppingGroups: {}, learnedAisles: {}, manualCrossLinks: [], createdAt: now(), updatedAt: now()
       };
     }
 
@@ -364,6 +364,9 @@
       }
       delete normalized.personalModule;
       normalized.schemaVersion = 2;
+      normalized.manualCrossLinks = Array.isArray(normalized.manualCrossLinks)
+        ? normalized.manualCrossLinks.filter(link => link?.id && link?.sourceKey && link?.targetKey && link.sourceKey !== link.targetKey && ['ingredient','pairing'].includes(link.type))
+        : [];
       return normalized;
     }
 
@@ -391,7 +394,7 @@
         this.shared.timers = clone((legacy.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || profileId })));
         this.shared.backupMeta = clone(legacy.backupMeta || {});
         this.activeProfile.personalRecipes = clone(legacy.modules.find(module => module.moduleId === 'my-recipes')?.recipes || []);
-        for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles']) {
+        for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks']) {
           if (legacy[key] !== undefined) this.activeProfile[key] = clone(legacy[key]);
         }
       }
@@ -444,7 +447,8 @@
         ratings: clone(this.activeProfile.ratings || {}),
         learnedStorePreferences: clone(this.activeProfile.learnedStorePreferences || {}),
         learnedShoppingGroups: clone(this.activeProfile.learnedShoppingGroups || {}),
-        learnedAisles: clone(this.activeProfile.learnedAisles || {})
+        learnedAisles: clone(this.activeProfile.learnedAisles || {}),
+        manualCrossLinks: clone(this.activeProfile.manualCrossLinks || [])
       };
     }
 
@@ -454,7 +458,7 @@
       this.shared.timers = clone((state.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || this.device.activeProfileId })));
       this.shared.backupMeta = clone(state.backupMeta || {});
       this.activeProfile.personalRecipes = clone((state.modules || []).find(module => module.moduleId === 'my-recipes')?.recipes || []);
-      for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles']) {
+      for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks']) {
         this.activeProfile[key] = clone(state[key] ?? this.activeProfile[key]);
       }
       this.persistAll();

@@ -102,6 +102,8 @@ button { color: inherit; }
 .crosslink-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
 .crosslink-heading h2 { margin:2px 0 0; }
 .crosslink-heading > span { color:var(--muted); font-weight:700; white-space:nowrap; }
+.crosslink-heading-actions { display:grid; justify-items:end; gap:8px; color:var(--muted); font-weight:700; white-space:nowrap; }
+.crosslink-heading-actions .button { padding:8px 11px; }
 .crosslink-subsection { margin-top:18px; }
 .crosslink-subsection > h3 { margin:0 0 10px; }
 .crosslink-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; }
@@ -116,6 +118,16 @@ button { color: inherit; }
 .crosslink-used-list { display:grid; justify-items:start; gap:3px; }
 .crosslink-used-link { padding:4px 0; border:0; background:transparent; color:var(--accent); font:inherit; font-weight:800; text-align:left; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
 .crosslink-used-link:hover,.crosslink-used-link:focus-visible { color:var(--text); outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); outline-offset:2px; border-radius:3px; }
+.manual-crosslink-row { display:flex; align-items:center; gap:8px; }
+.manual-crosslink-remove { padding:3px 7px; border:1px solid var(--border); border-radius:999px; background:transparent; color:var(--muted); font:inherit; font-size:.7rem; font-weight:750; cursor:pointer; }
+.manual-crosslink-remove:hover,.manual-crosslink-remove:focus-visible { border-color:var(--danger); color:var(--danger); }
+.crosslink-empty { margin:14px 0 0; color:var(--muted); }
+.manual-crosslink-card { max-width:38rem; }
+.manual-crosslink-results { display:grid; gap:7px; max-height:48vh; margin-top:12px; overflow:auto; }
+.manual-crosslink-choice { display:grid; gap:2px; width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:11px; background:var(--panel); color:var(--text); text-align:left; font:inherit; cursor:pointer; }
+.manual-crosslink-choice small { color:var(--muted); }
+.manual-crosslink-choice:hover,.manual-crosslink-choice:focus-visible { border-color:var(--accent); }
+.manual-crosslink-choice:disabled { cursor:default; opacity:.58; }
 .ingredient-list input:checked + span { text-decoration: line-through; color: var(--muted); }
 .instruction-list { padding-left: 1.35rem; }
 .instruction-list li { padding: 0 0 14px 8px; line-height: 1.55; }
@@ -150,6 +162,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .list-header select { width: 100%; }
   .module-card { grid-template-columns: 1fr; }
   .crosslink-grid { grid-template-columns:1fr; }
+  .crosslink-heading-actions { white-space:normal; }
   .top-actions .button { padding: 9px 10px; font-size: .86rem; }
   .brand span { display: none; }
 }

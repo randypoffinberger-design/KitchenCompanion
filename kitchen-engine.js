@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.13.1';
+    static version = '0.14.0';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -130,7 +130,7 @@
       }));
       const outgoingByRecipe = new Map();
       const incomingByRecipe = new Map();
-      const pairingCue = /\b(?:serve|served|pair|paired|pairs|alongside|accompanied|top|topped|spoon|spooned)\b/i;
+      const pairingCue = /\b(?:serve|served|pair|paired|pairs|alongside|accompanied)\b/i;
 
       const matchingTargets = (source, text) => targets
         .filter(target => target.recipe.key !== source.key)

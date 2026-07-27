@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.13.1';
+  const ENGINE_VERSION = '0.14.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -78,7 +78,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {};
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= [];
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -152,7 +152,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true } };
+    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true } };
   }
 
   function saveState() { profileStore.saveCombinedState(state); }
@@ -279,6 +279,9 @@
     els.catalogRefreshBtn.addEventListener('click', loadModuleCatalog);
     els.manageStoresBtn.addEventListener('click', manageStores);
     els.forceUpdateBtn?.addEventListener('click', forceAppUpdate);
+    document.querySelector('#manualCrossLinkSearch')?.addEventListener('input', renderManualCrossLinkResults);
+    document.querySelector('#manualCrossLinkType')?.addEventListener('change', renderManualCrossLinkResults);
+    document.querySelector('#cancelManualCrossLink')?.addEventListener('click', () => document.querySelector('#manualCrossLinkDialog')?.close());
     els.createSafetyBackupBtn?.addEventListener('click', () => {
       const button = els.createSafetyBackupBtn;
       const originalText = button.textContent;
@@ -840,7 +843,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.13.1').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.14.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1100,23 +1103,67 @@
     return crossLinkCache.index;
   }
 
+  function combinedCrossLinks(recipeKey, automaticIndex = getCrossLinkIndex()) {
+    const recipesByKey = new Map(getAllRecipes().map(recipe => [recipe.key, recipe]));
+    const outgoing = [...(automaticIndex.outgoingByRecipe.get(recipeKey) || [])];
+    const incoming = [...(automaticIndex.incomingByRecipe.get(recipeKey) || [])];
+    (state.manualCrossLinks || []).forEach(link => {
+      if (!link?.id || !['ingredient','pairing'].includes(link.type)) return;
+      const source = recipesByKey.get(link.sourceKey);
+      const target = recipesByKey.get(link.targetKey);
+      if (!source || !target || source.key === target.key) return;
+      if (source.key === recipeKey) outgoing.push({
+        id:`manual-${link.id}`,
+        type:link.type,
+        context:'',
+        manualId:link.id,
+        targets:[{ key:target.key, name:target.name, moduleName:target.moduleName, manualId:link.id }]
+      });
+      if (target.key === recipeKey) incoming.push({
+        sourceKey:source.key,
+        sourceName:source.name,
+        sourceModuleName:source.moduleName,
+        type:link.type,
+        manualId:link.id
+      });
+    });
+    return { outgoing, incoming };
+  }
+
+  function compactCrossLinkButton(target) {
+    const linkButton = `<button type="button" class="crosslink-used-link" data-crosslink-target="${escapeHtml(target.key)}">${escapeHtml(target.name)}</button>`;
+    if (!target.manualId) return linkButton;
+    return `<span class="manual-crosslink-row">${linkButton}<button type="button" class="manual-crosslink-remove" data-remove-crosslink="${escapeHtml(target.manualId)}" aria-label="Remove manual link to ${escapeHtml(target.name)}">Remove</button></span>`;
+  }
+
   function renderCrossLinkTargetButton(target, label = '') {
     return `<button type="button" class="crosslink-target-button" data-crosslink-target="${escapeHtml(target.key)}">${escapeHtml(label || target.name)}<small>${escapeHtml(target.moduleName || '')}</small></button>`;
   }
 
   function renderCrossLinkSection(recipe, links, incoming) {
-    if (!links.length && !incoming.length) return '';
-    const outgoingCards = links.map(link => {
-      const heading = link.type === 'ingredient' ? `Make or view: ${link.context}` : `Serving connection`;
-      return `<article class="crosslink-card"><strong>${escapeHtml(heading)}</strong>${link.type === 'pairing' ? `<p>${escapeHtml(link.context)}</p>` : ''}<div class="crosslink-targets">${link.targets.map(target => renderCrossLinkTargetButton(target)).join('')}</div></article>`;
-    }).join('');
-    const renderIncomingList = type => incoming.filter(reference => reference.type === type).map(reference =>
-      `<button type="button" class="crosslink-used-link" data-crosslink-target="${escapeHtml(reference.sourceKey)}">${escapeHtml(reference.sourceName)}</button>`
+    const outgoingByTarget = new Map();
+    links.forEach(link => link.targets.forEach(target => {
+      const existing = outgoingByTarget.get(target.key);
+      if (!existing || (existing.type === 'pairing' && link.type === 'ingredient')) outgoingByTarget.set(target.key, { ...target, type:link.type, manualId:link.manualId || target.manualId });
+    }));
+    const renderCompactLinks = targets => targets.map(compactCrossLinkButton).join('');
+    const usedRecipeLinks = renderCompactLinks([...outgoingByTarget.values()].filter(target => target.type === 'ingredient'));
+    const outgoingPairingLinks = renderCompactLinks([...outgoingByTarget.values()].filter(target => target.type === 'pairing'));
+    const outgoingSections = `${usedRecipeLinks ? `<div class="crosslink-subsection crosslink-used-section"><h3>Uses:</h3><div class="crosslink-used-list">${usedRecipeLinks}</div></div>` : ''}${outgoingPairingLinks ? `<div class="crosslink-subsection crosslink-used-section"><h3>Paired with:</h3><div class="crosslink-used-list">${outgoingPairingLinks}</div></div>` : ''}`;
+    const incomingBySource = new Map();
+    incoming.forEach(reference => {
+      const existing = incomingBySource.get(reference.sourceKey);
+      if (!existing || (existing.type === 'pairing' && reference.type === 'ingredient')) incomingBySource.set(reference.sourceKey, reference);
+    });
+    const uniqueIncoming = [...incomingBySource.values()];
+    const renderIncomingList = type => uniqueIncoming.filter(reference => reference.type === type).map(reference =>
+      compactCrossLinkButton({ key:reference.sourceKey, name:reference.sourceName, manualId:reference.manualId })
     ).join('');
     const usedWithLinks = renderIncomingList('ingredient');
     const pairedWithLinks = renderIncomingList('pairing');
     const incomingSections = `${usedWithLinks ? `<div class="crosslink-subsection crosslink-used-section"><h3>Used with:</h3><div class="crosslink-used-list">${usedWithLinks}</div></div>` : ''}${pairedWithLinks ? `<div class="crosslink-subsection crosslink-used-section"><h3>Paired with:</h3><div class="crosslink-used-list">${pairedWithLinks}</div></div>` : ''}`;
-    return `<section class="recipe-section crosslink-section"><div class="crosslink-heading"><div><div class="recipe-kicker">Across installed modules</div><h2>Cross-Link</h2></div><span>${links.length + incoming.length} connection${links.length + incoming.length === 1 ? '' : 's'}</span></div>${outgoingCards ? `<div class="crosslink-subsection"><h3>From this recipe</h3><div class="crosslink-grid">${outgoingCards}</div></div>` : ''}${incomingSections}</section>`;
+    const connectionCount = outgoingByTarget.size + uniqueIncoming.length;
+    return `<section class="recipe-section crosslink-section"><div class="crosslink-heading"><div><div class="recipe-kicker">Across installed modules</div><h2>Cross-Link</h2></div><div class="crosslink-heading-actions"><span>${connectionCount} connection${connectionCount === 1 ? '' : 's'}</span><button type="button" id="addManualCrossLink" class="button secondary">+ Add link</button></div></div>${outgoingSections}${incomingSections}${connectionCount ? '' : '<p class="crosslink-empty">No connected recipes yet. Add one manually or install a module containing a matching recipe.</p>'}</section>`;
   }
 
   function openCrossLinkChoices(link) {
@@ -1131,18 +1178,109 @@
 
   function bindCrossLinkControls(links) {
     document.querySelectorAll('[data-crosslink-target]').forEach(button => button.addEventListener('click', () => openCrossLinkedRecipe(button.dataset.crosslinkTarget)));
+    document.querySelector('#addManualCrossLink')?.addEventListener('click', openManualCrossLinkDialog);
+    document.querySelectorAll('[data-remove-crosslink]').forEach(button => button.addEventListener('click', () => removeManualCrossLink(button.dataset.removeCrosslink)));
     document.querySelectorAll('[data-crosslink-choice]').forEach(button => button.addEventListener('click', () => {
       const link = links.find(item => item.id === button.dataset.crosslinkChoice);
       if (link) openCrossLinkChoices(link);
     }));
   }
 
+  function openManualCrossLinkDialog() {
+    const source = getAllRecipes({ enabledOnly:false, includeOverridden:true }).find(recipe => recipe.key === selectedRecipeKey);
+    if (!source) return;
+    const dialog = document.querySelector('#manualCrossLinkDialog');
+    document.querySelector('#manualCrossLinkSource').textContent = `Link another installed recipe to ${source.name}.`;
+    document.querySelector('#manualCrossLinkType').value = 'source-uses-target';
+    document.querySelector('#manualCrossLinkSearch').value = '';
+    renderManualCrossLinkResults();
+    dialog.showModal();
+    window.setTimeout(() => document.querySelector('#manualCrossLinkSearch')?.focus(), 50);
+  }
+
+  function manualLinkAlreadyExists(sourceKey, targetKey, type) {
+    const automatic = getCrossLinkIndex();
+    if ((automatic.outgoingByRecipe.get(sourceKey) || []).some(link => link.targets.some(target => target.key === targetKey))) return true;
+    if ((state.manualCrossLinks || []).some(link => link.sourceKey === sourceKey && link.targetKey === targetKey)) return true;
+    if (type === 'pairing') {
+      if ((automatic.incomingByRecipe.get(sourceKey) || []).some(link => link.type === 'pairing' && link.sourceKey === targetKey)) return true;
+      if ((state.manualCrossLinks || []).some(link => link.type === 'pairing' && link.sourceKey === targetKey && link.targetKey === sourceKey)) return true;
+    }
+    return false;
+  }
+
+  function manualLinkEndpoints(selectedKey, relationship) {
+    if (relationship === 'target-uses-source') return { sourceKey:selectedKey, targetKey:selectedRecipeKey, type:'ingredient' };
+    return { sourceKey:selectedRecipeKey, targetKey:selectedKey, type:relationship === 'pairing' ? 'pairing' : 'ingredient' };
+  }
+
+  function renderManualCrossLinkResults() {
+    const results = document.querySelector('#manualCrossLinkResults');
+    if (!results || !selectedRecipeKey) return;
+    const query = String(document.querySelector('#manualCrossLinkSearch')?.value || '').trim().toLowerCase();
+    const relationship = document.querySelector('#manualCrossLinkType')?.value || 'source-uses-target';
+    const matches = getAllRecipes()
+      .filter(recipe => recipe.key !== selectedRecipeKey)
+      .filter(recipe => !query || `${recipe.name} ${recipe.moduleName}`.toLowerCase().includes(query))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, 60);
+    if (!matches.length) {
+      results.innerHTML = '<p class="crosslink-empty">No installed recipes match that search.</p>';
+      return;
+    }
+    results.innerHTML = matches.map(recipe => {
+      const endpoints = manualLinkEndpoints(recipe.key, relationship);
+      const linked = manualLinkAlreadyExists(endpoints.sourceKey, endpoints.targetKey, endpoints.type);
+      return `<button type="button" class="manual-crosslink-choice" data-manual-crosslink-target="${escapeHtml(recipe.key)}" ${linked ? 'disabled' : ''}><strong>${escapeHtml(recipe.name)}</strong><small>${escapeHtml(recipe.moduleName || '')}${linked ? ' · Already linked' : ''}</small></button>`;
+    }).join('');
+    results.querySelectorAll('[data-manual-crosslink-target]:not(:disabled)').forEach(button => button.addEventListener('click', () => addManualCrossLink(button.dataset.manualCrosslinkTarget)));
+  }
+
+  function addManualCrossLink(selectedTargetKey) {
+    const relationship = document.querySelector('#manualCrossLinkType')?.value || 'source-uses-target';
+    const endpoints = manualLinkEndpoints(selectedTargetKey, relationship);
+    const { sourceKey, targetKey, type } = endpoints;
+    if (!selectedRecipeKey || !selectedTargetKey || selectedRecipeKey === selectedTargetKey) return;
+    if (manualLinkAlreadyExists(sourceKey, targetKey, type)) return alert('Those recipes are already linked.');
+    const link = {
+      id:globalThis.crypto?.randomUUID?.() || `crosslink-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceKey,
+      targetKey,
+      type,
+      createdAt:new Date().toISOString()
+    };
+    state.manualCrossLinks.push(link);
+    try {
+      saveState();
+      document.querySelector('#manualCrossLinkDialog')?.close();
+      renderRecipeDetail();
+    } catch (error) {
+      state.manualCrossLinks = state.manualCrossLinks.filter(item => item.id !== link.id);
+      alert(`The recipe link could not be saved: ${error.message}`);
+    }
+  }
+
+  function removeManualCrossLink(linkId) {
+    const link = (state.manualCrossLinks || []).find(item => item.id === linkId);
+    if (!link || !confirm('Remove this manual recipe link?')) return;
+    const previous = state.manualCrossLinks;
+    state.manualCrossLinks = previous.filter(item => item.id !== linkId);
+    try {
+      saveState();
+      renderRecipeDetail();
+    } catch (error) {
+      state.manualCrossLinks = previous;
+      alert(`The recipe link could not be removed: ${error.message}`);
+    }
+  }
+
   function renderRecipeDetail() {
     const recipe = getAllRecipes({ enabledOnly: false, includeOverridden: true }).find(r => r.key === selectedRecipeKey);
     if (!recipe) return showList();
     const crossLinkIndex = getCrossLinkIndex();
-    const crossLinks = crossLinkIndex.outgoingByRecipe.get(recipe.key) || [];
-    const incomingLinks = crossLinkIndex.incomingByRecipe.get(recipe.key) || [];
+    const combinedLinks = combinedCrossLinks(recipe.key, crossLinkIndex);
+    const crossLinks = combinedLinks.outgoing;
+    const incomingLinks = combinedLinks.incoming;
     const favorite = state.favorites.includes(recipe.key);
     const yieldText = recipe.yield ? `${formatNumber(recipe.yield.amount * activeScale)} ${recipe.yield.unit}` : '';
 
@@ -1480,7 +1618,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.13.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.14.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2517,12 +2655,15 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         recipeIds.add(recipe.id);
       });
     });
-    for (const key of ['favorites','shoppingList','regularItems','stores']) {
+    for (const key of ['favorites','shoppingList','regularItems','stores','manualCrossLinks']) {
       if (incoming[key] !== undefined && !Array.isArray(incoming[key])) throw new Error(`Backup field ${key} is damaged.`);
     }
     for (const key of ['recipeNotes','settings','moduleSources','backupMeta']) {
       if (incoming[key] !== undefined && (!incoming[key] || typeof incoming[key] !== 'object' || Array.isArray(incoming[key]))) throw new Error(`Backup field ${key} is damaged.`);
     }
+    (incoming.manualCrossLinks || []).forEach((link, index) => {
+      if (!link?.id || !link.sourceKey || !link.targetKey || link.sourceKey === link.targetKey || !['ingredient','pairing'].includes(link.type)) throw new Error(`Backup manual recipe link ${index + 1} is damaged.`);
+    });
     return true;
   }
 
@@ -2536,7 +2677,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function mergeBackupState(current, incoming) {
     const result=JSON.parse(JSON.stringify(current)); const incomingPersonal=incoming.modules.find(m=>m.moduleId==='my-recipes'); const personal=result.modules.find(m=>m.moduleId==='my-recipes') || ensurePersonalModule();
     if(incomingPersonal){ const byId=new Map(personal.recipes.map(r=>[r.id,r])); incomingPersonal.recipes.forEach(r=>byId.set(r.id,r)); personal.recipes=[...byId.values()]; }
-    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; return result;
+    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
   }
 
   function restoreSelectedBackup(event) {

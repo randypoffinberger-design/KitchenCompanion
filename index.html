@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.13.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.13.1">
+  <link rel="manifest" href="app.webmanifest?v=0.14.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.14.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.13.1">
+  <link rel="stylesheet" href="styles.css?v=0.14.0">
 </head>
 <body>
   <div class="app-shell">
@@ -163,7 +163,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.13.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.14.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -442,6 +442,25 @@
     </form>
   </dialog>
 
+  <dialog id="manualCrossLinkDialog">
+    <form method="dialog" class="dialog-card manual-crosslink-card">
+      <h2>Add a recipe link</h2>
+      <p id="manualCrossLinkSource"></p>
+      <label>Relationship
+        <select id="manualCrossLinkType">
+          <option value="source-uses-target">This recipe uses the selected recipe</option>
+          <option value="target-uses-source">The selected recipe uses this recipe</option>
+          <option value="pairing">These recipes pair together</option>
+        </select>
+      </label>
+      <label>Find a recipe
+        <input id="manualCrossLinkSearch" type="search" autocomplete="off" placeholder="Search recipe names or modules">
+      </label>
+      <div id="manualCrossLinkResults" class="manual-crosslink-results"></div>
+      <div class="dialog-actions"><button type="button" id="cancelManualCrossLink" class="button secondary">Cancel</button></div>
+    </form>
+  </dialog>
+
   <template id="recipeCardTemplate">
     <article class="recipe-card" role="button" tabindex="0">
       <div class="recipe-card-topline">
@@ -455,9 +474,9 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.13.1"></script>
-  <script src="profile-storage.js?v=0.13.1"></script>
-  <script src="app.js?v=0.13.1"></script>
-  <script src="ocr-service.js?v=0.13.1"></script>
+  <script src="kitchen-engine.js?v=0.14.0"></script>
+  <script src="profile-storage.js?v=0.14.0"></script>
+  <script src="app.js?v=0.14.0"></script>
+  <script src="ocr-service.js?v=0.14.0"></script>
 </body>
 </html>
