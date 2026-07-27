@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.12.10">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.12.10">
+  <link rel="manifest" href="app.webmanifest?v=0.12.11">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.12.11">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.12.10">
+  <link rel="stylesheet" href="styles.css?v=0.12.11">
 </head>
 <body>
   <div class="app-shell">
@@ -137,9 +137,33 @@
     </form>
   </dialog>
 
+  <dialog id="shareShoppingDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Share shopping list</h2>
+      <p>Send an importable file, or copy the list into a text message.</p>
+      <div class="share-choice-grid">
+        <button type="button" id="shareShoppingFileBtn" class="button">Share list file</button>
+        <button type="button" id="copyShoppingMessageBtn" class="button secondary">Copy for message</button>
+      </div>
+      <p id="shoppingShareStatus" class="import-status" aria-live="polite"></p>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Close</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="importShoppingDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Import shopping list</h2>
+      <p>Choose a <code>.kcshopping</code> file, or paste the complete Kitchen Companion list copied from a message.</p>
+      <button type="button" id="chooseShoppingFileBtn" class="button secondary">Choose list file</button>
+      <label class="shopping-message-field">Message text<textarea id="shoppingMessageText" rows="10" placeholder="Paste the complete shared shopping-list message here"></textarea></label>
+      <p id="shoppingPasteError" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button><button type="button" id="importPastedShoppingBtn" class="button">Import pasted list</button></div>
+    </form>
+  </dialog>
+
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.12.10</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.12.11</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -423,9 +447,9 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
-  <script src="kitchen-engine.js?v=0.12.10"></script>
-  <script src="profile-storage.js?v=0.12.10"></script>
-  <script src="app.js?v=0.12.10"></script>
-  <script src="ocr-service.js?v=0.12.10"></script>
+  <script src="kitchen-engine.js?v=0.12.11"></script>
+  <script src="profile-storage.js?v=0.12.11"></script>
+  <script src="app.js?v=0.12.11"></script>
+  <script src="ocr-service.js?v=0.12.11"></script>
 </body>
 </html>
