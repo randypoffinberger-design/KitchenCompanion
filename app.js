@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.13';
+  const ENGINE_VERSION = '0.12.14';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -653,7 +653,8 @@
   function shoppingId() { return crypto.randomUUID ? crypto.randomUUID() : `shopping-${Date.now()}-${Math.random()}`; }
   function extractEmbeddedShoppingQuantity(name) {
     const value = String(name || '').replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
-    const amount = String.raw`(?:\d+\s+\d+\/\d+|\d+[¼½¾⅓⅔⅛⅜⅝⅞]|\d+\/\d+|\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?|[¼½¾⅓⅔⅛⅜⅝⅞])`;
+    const singleAmount = String.raw`(?:\d+\s+\d+\/\d+|\d+[¼½¾⅓⅔⅛⅜⅝⅞]|\d+\/\d+|\d+(?:\.\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])`;
+    const amount = String.raw`(?:${singleAmount})(?:\s*(?:-|to)\s*(?:${singleAmount}))?`;
     const unit = String.raw`(?:cups?|c|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|pounds?|lbs?|grams?|g|kilograms?|kg|milliliters?|ml|liters?|litres?|l|packets?|packages?|envelopes?|cans?|jars?|bottles?|cloves?|sticks?)`;
     const parenthetical = new RegExp(`^\\(\\s*(${amount}\\s*${unit})\\s*\\)\\s*`, 'i');
     const leading = new RegExp(`^(${amount}\\s*${unit})\\b\\s*`, 'i');
@@ -709,12 +710,12 @@
       ['Produce', /\b(apple|apples|banana|bananas|berry|berries|blueberry|blueberries|strawberry|strawberries|orange|oranges|lemon|lemons|lime|limes|avocado|avocados|tomato|tomatoes|potato|potatoes|onion|onions|garlic|bell pepper|bell peppers|lettuce|spinach|cabbage|carrot|carrots|celery|broccoli|cauliflower|mushroom|mushrooms|corn|zucchini|squash|cucumber|cilantro|parsley|basil|rosemary|thyme|ginger|fruit|vegetable|salad greens)\b/],
       ['Meat & Seafood', /\b(beef|steak|ground beef|chicken|turkey|pork|bacon|sausage|ham|lamb|fish|salmon|tuna|shrimp|crab|meatball|meatballs)\b/],
       ['Dairy & Eggs', /\b(milk|cream|half and half|butter|cheese|mozzarella|cheddar|parmesan|romano|yogurt|sour cream|cream cheese|egg|eggs)\b/],
+      ['Spices & Baking', /\b(flour|sugar|brown sugar|powdered sugar|baking soda|baking powder|yeast|cornstarch|vanilla|extract|cocoa|chocolate chips|salt|pepper|paprika|cumin|oregano|seasoning|spice|cinnamon|nutmeg)\b/],
       ['Bakery', /\b(bread|bun|buns|roll|rolls|bagel|bagels|tortilla|tortillas|pita|pie crust)\b/],
       ['Frozen', /\b(frozen|ice cream|popsicle|popsicles)\b/],
       ['Beverages', /\b(water|soda|juice|coffee|tea|drink|lemonade)\b/],
       ['Household', /\b(foil|paper towel|paper towels|toilet paper|napkin|napkins|trash bag|trash bags|dish soap|detergent|cleaner|sponge|sponges)\b/],
-      ['Canned & Jarred', /\b(canned|can of|tomato sauce|tomato paste|marinara|broth|stock|beans|olives|pickle|pickles|jam|jelly)\b/],
-      ['Spices & Baking', /\b(flour|sugar|brown sugar|powdered sugar|baking soda|baking powder|yeast|cornstarch|vanilla|extract|cocoa|chocolate chips|salt|pepper|paprika|cumin|oregano|seasoning|spice|cinnamon|nutmeg)\b/]
+      ['Canned & Jarred', /\b(canned|can of|tomato sauce|tomato paste|marinara|broth|stock|beans|olives|pickle|pickles|jam|jelly)\b/]
     ];
     return rules.find(([, pattern]) => pattern.test(key))?.[0] || 'Pantry';
   }
@@ -769,12 +770,15 @@
       ? item.entries.map(normalizeShoppingEntry)
       : [normalizeShoppingEntry({ quantity:item.quantity, source:item.source, recipeKey:item.recipeKey, createdAt:item.createdAt })];
     if (embedded.quantity && entries.length && !entries[0].quantity) entries[0].quantity = embedded.quantity;
+    const learnedGroup = state.learnedShoppingGroups?.[shoppingNameKey(name)];
+    let group = SHOPPING_GROUPS.includes(item.group) ? item.group : classifyShoppingGroup(name);
+    if (!SHOPPING_GROUPS.includes(learnedGroup) && group === 'Bakery' && /\bflour\b/i.test(name)) group = 'Spices & Baking';
     return {
       id: item.id || shoppingId(),
       name,
       normalizedName: shoppingNameKey(item.normalizedName || name),
       store: normalizeStore(item.store),
-      group: SHOPPING_GROUPS.includes(item.group) ? item.group : classifyShoppingGroup(name),
+      group,
       aisle: String(item.aisle || preferredAisleFor(name, item.store)).trim().slice(0, 40),
       checked: !!item.checked,
       entries,
@@ -785,6 +789,14 @@
   function migrateState() {
     let changed = false;
     const grouped = new Map();
+    state.settings ||= {};
+    if (!state.settings.shoppingFlourGroupMigrationV1) {
+      Object.entries(state.learnedShoppingGroups || {}).forEach(([key, group]) => {
+        if (group === 'Bakery' && /\bflour\b/i.test(key)) delete state.learnedShoppingGroups[key];
+      });
+      state.settings.shoppingFlourGroupMigrationV1 = true;
+      changed = true;
+    }
 
     (state.shoppingList || []).forEach(original => {
       const item = normalizeShoppingItem(original);
@@ -827,7 +839,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.13').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.14').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1382,7 +1394,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.13');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.14');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1941,7 +1953,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const key=shoppingNameKey(name);
         const changedStore=normalizeStore(item.store)!==store;
         item.name=displayShoppingName(name); item.normalizedName=key; item.store=store; item.group=group; item.aisle=aisle;
-        state.learnedShoppingGroups[key]=group;
+        if (document.querySelector('#shoppingItemGroup').dataset.touched === 'true') state.learnedShoppingGroups[key]=group;
         if(changedStore)learnStoreChoice(name,store);
         learnAisleChoice(name,store,aisle);
         if((item.entries||[]).length<=1)item.entries=[normalizeShoppingEntry({quantity,source:item.entries?.[0]?.source||'Manual',recipeKey:item.entries?.[0]?.recipeKey||''})];
