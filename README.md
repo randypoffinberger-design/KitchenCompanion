@@ -1,4 +1,10 @@
-# Kitchen Companion v0.12.2
+# Kitchen Companion v0.12.3
+
+## Complete profile restoration (v0.12.3)
+
+- Full replacement restores the backed-up profile name, color, avatar type, and profile picture along with its saved data.
+- Merge mode clearly states that it retains the current profile identity and appearance.
+- The restore summary identifies the profile contained in the selected backup.
 
 ## Startup and iPhone restore recovery (v0.12.2)
 

@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.12.2';
+  const APP_VERSION = '0.12.3';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -461,6 +461,20 @@
 
     getActiveProfileMeta() { return clone(this.device.profiles.find(p => p.profileId === this.device.activeProfileId)); }
     listProfiles() { return clone(this.device.profiles); }
+
+    applyActiveProfileMeta(source = {}) {
+      const meta = this.device.profiles.find(profile => profile.profileId === this.device.activeProfileId);
+      if (!meta) throw new Error('The active profile could not be found.');
+      const name = String(source.displayName || meta.displayName).trim();
+      if (name) meta.displayName = name;
+      if (source.color) meta.color = String(source.color);
+      if (source.kind) meta.kind = String(source.kind);
+      if (['initials','emoji','image'].includes(source.avatarType)) meta.avatarType = source.avatarType;
+      if (source.avatarValue !== undefined) meta.avatarValue = source.avatarValue == null ? '' : String(source.avatarValue);
+      meta.setupComplete = source.setupComplete !== false;
+      meta.updatedAt = now();
+      return clone(meta);
+    }
 
     createProfile(displayName, options = {}) {
       const name = String(displayName || '').trim();

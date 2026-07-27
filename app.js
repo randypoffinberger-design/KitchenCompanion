@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.2';
+  const ENGINE_VERSION = '0.12.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -765,7 +765,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.2').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.3').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1319,7 +1319,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2065,7 +2065,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   async function prepareBackupRestore(event) {
     const file=event.target.files[0]; event.target.value=''; if(!file)return;
     try { const payload=JSON.parse(await file.text()); validateBackupPayload(payload); pendingBackup=payload;
-      const personal=payload.state.modules.find(m=>m.moduleId==='my-recipes'); els.backupSummary.innerHTML=`<strong>${escapeHtml(new Date(payload.createdAt).toLocaleString())}</strong><span>Personal recipes: <b>${personal?.recipes?.length||0}</b></span><span>Favorites: <b>${payload.state.favorites?.length||0}</b></span><span>Installed modules: <b>${payload.state.modules.length}</b></span>`; els.settingsDialog.close(); els.restoreBackupDialog.showModal();
+      const personal=payload.state.modules.find(m=>m.moduleId==='my-recipes'); const profileName=payload.activeProfile?.displayName || 'Unknown profile'; els.backupSummary.innerHTML=`<strong>${escapeHtml(new Date(payload.createdAt).toLocaleString())}</strong><span>Profile: <b>${escapeHtml(profileName)}</b></span><span>Personal recipes: <b>${personal?.recipes?.length||0}</b></span><span>Favorites: <b>${payload.state.favorites?.length||0}</b></span><span>Installed modules: <b>${payload.state.modules.length}</b></span>`; els.settingsDialog.close(); els.restoreBackupDialog.showModal();
     } catch(error){ alert(`Could not read backup: ${error.message}`); }
   }
 
@@ -2078,6 +2078,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function restoreSelectedBackup(event) {
     event.preventDefault(); if(!pendingBackup)return; const mode=new FormData(els.restoreBackupForm).get('restoreMode');
     const previousState = JSON.parse(JSON.stringify(state));
+    const previousProfileMeta = profileStore.getActiveProfileMeta();
     try {
       validateBackupPayload(pendingBackup);
       requireSafetyCheckpoint('before-full-backup-restore');
@@ -2086,11 +2087,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (localStorage.getItem(`${STORAGE_KEY}.rollback`) !== rollback) throw new Error('The restore rollback copy could not be verified.');
       const restored=mode==='replace'?JSON.parse(JSON.stringify(pendingBackup.state)):mergeBackupState(state,pendingBackup.state);
       Object.keys(state).forEach(key => delete state[key]); Object.assign(state, restored);
+      if (mode === 'replace' && pendingBackup.activeProfile) profileStore.applyActiveProfileMeta(pendingBackup.activeProfile);
       saveState();
       pendingBackup=null; els.restoreBackupDialog.close();
       alert('Backup restored and verified. Kitchen Companion will reload now.'); location.reload();
     } catch(error) {
       Object.keys(state).forEach(key => delete state[key]); Object.assign(state, previousState);
+      try { profileStore.applyActiveProfileMeta(previousProfileMeta); } catch {}
       try { saveState(); } catch {}
       alert(`Restore failed and your previous data was kept: ${error.message}`);
     }
