@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.14.0';
+  const APP_VERSION = '0.15.0';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -364,6 +364,16 @@
       }
       delete normalized.personalModule;
       normalized.schemaVersion = 2;
+      const normalizedRatings = {};
+      if (normalized.ratings && typeof normalized.ratings === 'object' && !Array.isArray(normalized.ratings)) {
+        Object.entries(normalized.ratings).forEach(([recipeKey, entry]) => {
+          const value = Math.round(Number(typeof entry === 'number' ? entry : entry?.value));
+          if (!Number.isFinite(value) || value < 1 || value > 5) return;
+          const updatedAt = typeof entry === 'object' && entry && Number.isFinite(Date.parse(entry.updatedAt)) ? entry.updatedAt : null;
+          normalizedRatings[recipeKey] = { value, updatedAt };
+        });
+      }
+      normalized.ratings = normalizedRatings;
       normalized.manualCrossLinks = Array.isArray(normalized.manualCrossLinks)
         ? normalized.manualCrossLinks.filter(link => link?.id && link?.sourceKey && link?.targetKey && link.sourceKey !== link.targetKey && ['ingredient','pairing'].includes(link.type))
         : [];

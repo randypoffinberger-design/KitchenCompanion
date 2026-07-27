@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.14.0">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.14.0">
+  <link rel="manifest" href="app.webmanifest?v=0.15.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.15.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.14.0">
+  <link rel="stylesheet" href="styles.css?v=0.15.0">
 </head>
 <body>
   <div class="app-shell">
@@ -69,6 +69,8 @@
             <div class="filter-select-row">
               <label class="filter-field"><span>Module</span><select id="moduleFilter"><option value="all">All modules</option></select></label>
               <label class="filter-field"><span>Category</span><select id="categoryFilter"><option value="all">All categories</option></select></label>
+              <label class="filter-field"><span>Rating</span><select id="ratingFilter"><option value="all">All ratings</option><option value="rated">Rated only</option><option value="5">5 stars</option><option value="4">4 stars & up</option><option value="3">3 stars & up</option><option value="unrated">Not rated</option></select></label>
+              <label class="filter-field"><span>Sort</span><select id="ratingSort"><option value="name">Name A–Z</option><option value="rating-high">Highest rated</option><option value="rating-low">Lowest rated</option><option value="recently-rated">Recently rated</option></select></label>
             </div>
             <div class="filter-action-row">
               <button id="favoritesFilterBtn" type="button" class="button secondary" aria-pressed="false">☆ Favorites</button>
@@ -163,7 +165,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.14.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.15.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -468,15 +470,16 @@
         <button type="button" class="recipe-favorite" aria-label="Add to favorites" aria-pressed="false">☆</button>
       </div>
       <h2 class="recipe-name"></h2>
+      <div class="recipe-card-rating" hidden></div>
       <p class="recipe-description"></p>
       <div class="recipe-meta"></div>
       <small class="recipe-source"></small>
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.14.0"></script>
-  <script src="profile-storage.js?v=0.14.0"></script>
-  <script src="app.js?v=0.14.0"></script>
-  <script src="ocr-service.js?v=0.14.0"></script>
+  <script src="kitchen-engine.js?v=0.15.0"></script>
+  <script src="profile-storage.js?v=0.15.0"></script>
+  <script src="app.js?v=0.15.0"></script>
+  <script src="ocr-service.js?v=0.15.0"></script>
 </body>
 </html>

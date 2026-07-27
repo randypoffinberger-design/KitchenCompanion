@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.14.0';
+  const ENGINE_VERSION = '0.15.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -78,7 +78,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= [];
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -92,7 +92,7 @@
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
     searchInput: document.querySelector('#searchInput'), recipeGrid: document.querySelector('#recipeGrid'), emptyState: document.querySelector('#emptyState'),
-    categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'), categoryFilter: document.querySelector('#categoryFilter'), clearSearchBtn: document.querySelector('#clearSearchBtn'), favoritesFilterBtn: document.querySelector('#favoritesFilterBtn'), clearFiltersBtn: document.querySelector('#clearFiltersBtn'),
+    categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'), categoryFilter: document.querySelector('#categoryFilter'), ratingFilter: document.querySelector('#ratingFilter'), ratingSort: document.querySelector('#ratingSort'), clearSearchBtn: document.querySelector('#clearSearchBtn'), favoritesFilterBtn: document.querySelector('#favoritesFilterBtn'), clearFiltersBtn: document.querySelector('#clearFiltersBtn'),
     viewTitle: document.querySelector('#viewTitle'), viewSubtitle: document.querySelector('#viewSubtitle'),
     listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'),
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
@@ -157,6 +157,31 @@
 
   function saveState() { profileStore.saveCombinedState(state); }
 
+  function normalizeRatingRecord(entry) {
+    const rawValue = typeof entry === 'number' ? entry : entry?.value;
+    const value = Math.round(Number(rawValue));
+    if (!Number.isFinite(value) || value < 1 || value > 5) return null;
+    const updatedAt = typeof entry === 'object' && entry && Number.isFinite(Date.parse(entry.updatedAt)) ? entry.updatedAt : null;
+    return { value, updatedAt };
+  }
+
+  function normalizeRatingMap(ratings) {
+    const normalized = {};
+    if (!ratings || typeof ratings !== 'object' || Array.isArray(ratings)) return normalized;
+    Object.entries(ratings).forEach(([recipeKey, entry]) => {
+      const record = normalizeRatingRecord(entry);
+      if (record) normalized[recipeKey] = record;
+    });
+    return normalized;
+  }
+
+  function recipeRatingRecord(recipeKey) { return normalizeRatingRecord(state.ratings?.[recipeKey]); }
+  function recipeRatingValue(recipeKey) { return recipeRatingRecord(recipeKey)?.value || 0; }
+  function ratingStars(value) {
+    const rating = Math.max(0, Math.min(5, Number(value) || 0));
+    return `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}`;
+  }
+
   function bindEvents() {
     els.headerProfileBtn?.addEventListener('click', event => {
       event.stopPropagation();
@@ -187,6 +212,8 @@
     els.clearSearchBtn.addEventListener('click', () => { els.searchInput.value = ''; renderRecipeList(); els.searchInput.focus(); });
     els.moduleFilter.addEventListener('change', renderRecipeList);
     els.categoryFilter.addEventListener('change', renderRecipeList);
+    els.ratingFilter?.addEventListener('change', renderRecipeList);
+    els.ratingSort?.addEventListener('change', renderRecipeList);
     els.favoritesFilterBtn.addEventListener('click', () => { currentView = currentView === 'favorites' ? 'all' : 'favorites'; selectedCategory = null; syncFavoriteFilterButton(); renderRecipeList(); });
     els.clearFiltersBtn.addEventListener('click', clearRecipeFilters);
     els.backBtn.addEventListener('click', navigateBackFromRecipe);
@@ -843,7 +870,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.14.0').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.15.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1007,6 +1034,8 @@
   function clearRecipeFilters() {
     els.moduleFilter.value = 'all';
     els.categoryFilter.value = 'all';
+    if (els.ratingFilter) els.ratingFilter.value = 'all';
+    if (els.ratingSort) els.ratingSort.value = 'name';
     selectedCategory = null;
     if (currentView === 'category') currentView = 'all';
     document.querySelectorAll('.category-button').forEach(x => x.classList.remove('active'));
@@ -1019,13 +1048,30 @@
     const moduleId = els.moduleFilter.value;
     const selectedFilterCategory = currentView === 'category' ? selectedCategory : els.categoryFilter.value;
     let recipes = engine.filterRecipes(getAllRecipes(), { query, moduleId, category: selectedFilterCategory, favorites: currentView === 'favorites' ? state.favorites : null });
+    const ratingFilter = els.ratingFilter?.value || 'all';
+    if (ratingFilter === 'rated') recipes = recipes.filter(recipe => recipeRatingValue(recipe.key) > 0);
+    else if (ratingFilter === 'unrated') recipes = recipes.filter(recipe => recipeRatingValue(recipe.key) === 0);
+    else if (/^[3-5]$/.test(ratingFilter)) recipes = recipes.filter(recipe => recipeRatingValue(recipe.key) >= Number(ratingFilter));
 
     els.viewTitle.textContent = currentView === 'favorites' ? 'Favorites' : currentView === 'category' ? selectedCategory : 'All recipes';
     els.viewSubtitle.textContent = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'} shown.`;
     els.recipeGrid.innerHTML = '';
     els.emptyState.hidden = recipes.length > 0;
 
-    recipes.sort((a,b) => a.name.localeCompare(b.name)).forEach(recipe => {
+    const ratingSort = els.ratingSort?.value || 'name';
+    recipes.sort((a, b) => {
+      if (ratingSort === 'rating-high') return recipeRatingValue(b.key) - recipeRatingValue(a.key) || a.name.localeCompare(b.name);
+      if (ratingSort === 'rating-low') {
+        const aValue = recipeRatingValue(a.key); const bValue = recipeRatingValue(b.key);
+        return (aValue || 6) - (bValue || 6) || a.name.localeCompare(b.name);
+      }
+      if (ratingSort === 'recently-rated') {
+        const aTime = Date.parse(recipeRatingRecord(a.key)?.updatedAt || '') || 0;
+        const bTime = Date.parse(recipeRatingRecord(b.key)?.updatedAt || '') || 0;
+        return bTime - aTime || a.name.localeCompare(b.name);
+      }
+      return a.name.localeCompare(b.name);
+    }).forEach(recipe => {
       const fragment = document.querySelector('#recipeCardTemplate').content.cloneNode(true);
       const card = fragment.querySelector('.recipe-card');
       fragment.querySelector('.recipe-category').textContent = recipe.category || 'Uncategorized';
@@ -1036,6 +1082,13 @@
       favoriteButton.setAttribute('aria-label', isFavorite ? `Remove ${recipe.name} from favorites` : `Add ${recipe.name} to favorites`);
       favoriteButton.addEventListener('click', event => { event.stopPropagation(); toggleFavoriteFromList(recipe.key); });
       fragment.querySelector('.recipe-name').textContent = recipe.name;
+      const rating = recipeRatingValue(recipe.key);
+      const ratingSummary = fragment.querySelector('.recipe-card-rating');
+      if (rating) {
+        ratingSummary.hidden = false;
+        ratingSummary.textContent = `${ratingStars(rating)} ${rating}/5`;
+        ratingSummary.setAttribute('aria-label', `My rating: ${rating} out of 5`);
+      }
       fragment.querySelector('.recipe-description').textContent = recipe.description || 'No description yet.';
       const meta = fragment.querySelector('.recipe-meta');
       [recipe.prepTime && `Prep ${recipe.prepTime}`, recipe.cookTime && `Cook ${recipe.cookTime}`, recipe.yield && `${recipe.yield.amount} ${recipe.yield.unit}`].filter(Boolean).forEach(text => {
@@ -1274,6 +1327,31 @@
     }
   }
 
+  function renderRecipeRating(recipe) {
+    const value = recipeRatingValue(recipe.key);
+    const stars = [1,2,3,4,5].map(star =>
+      `<button type="button" class="recipe-rating-star ${star <= value ? 'selected' : ''}" data-recipe-rating="${star}" aria-label="Rate ${star} out of 5" aria-pressed="${star === value}">★</button>`
+    ).join('');
+    return `<div class="recipe-rating-panel"><div><strong>My rating</strong><span>${value ? `${value} out of 5` : 'Not rated yet'}</span></div><div class="recipe-rating-controls" role="group" aria-label="Rate ${escapeHtml(recipe.name)}">${stars}${value ? '<button type="button" id="clearRecipeRating" class="recipe-rating-clear">Clear</button>' : ''}</div></div>`;
+  }
+
+  function setRecipeRating(recipeKey, value) {
+    const rating = Number(value);
+    if (!recipeKey || !Number.isInteger(rating) || rating < 0 || rating > 5) return;
+    const previous = state.ratings[recipeKey] ? JSON.parse(JSON.stringify(state.ratings[recipeKey])) : null;
+    if (rating) state.ratings[recipeKey] = { value:rating, updatedAt:new Date().toISOString() };
+    else delete state.ratings[recipeKey];
+    try {
+      saveState();
+      const persisted = normalizeRatingRecord(profileStore.loadActiveState().ratings?.[recipeKey]);
+      if ((persisted?.value || 0) !== rating) throw new Error('Saved rating could not be verified.');
+      renderRecipeDetail();
+    } catch (error) {
+      if (previous) state.ratings[recipeKey] = previous; else delete state.ratings[recipeKey];
+      alert(`The rating could not be saved: ${error.message}`);
+    }
+  }
+
   function renderRecipeDetail() {
     const recipe = getAllRecipes({ enabledOnly: false, includeOverridden: true }).find(r => r.key === selectedRecipeKey);
     if (!recipe) return showList();
@@ -1296,6 +1374,7 @@
           ${yieldText ? `<span class="stat"><strong>Yield:</strong> ${escapeHtml(yieldText)}</span>` : ''}
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
+        ${renderRecipeRating(recipe)}
         <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
@@ -1307,6 +1386,8 @@
       <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
+    document.querySelectorAll('[data-recipe-rating]').forEach(button => button.addEventListener('click', () => setRecipeRating(recipe.key, Number(button.dataset.recipeRating))));
+    document.querySelector('#clearRecipeRating')?.addEventListener('click', () => setRecipeRating(recipe.key, 0));
     document.querySelector('#editRecipeBtn').addEventListener('click', () => openRecipeEditor(recipe));
     document.querySelector('#shareRecipeBtn').addEventListener('click', () => openShareRecipe(recipe));
     document.querySelector('#addIngredientsBtn').addEventListener('click', () => openIngredientShopping(recipe));
@@ -1618,7 +1699,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.14.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.15.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2516,6 +2597,36 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function replacementIds(entry, module) {
     return [...new Set([...(entry.replacesModuleIds || []), ...(module.replacesModuleIds || [])].filter(Boolean))];
   }
+  function remapReplacedRecipeKey(key, replacedIds, newModuleId) {
+    if (!key) return key;
+    const oldId = replacedIds.find(id => key.startsWith(`${id}:`));
+    return oldId ? `${newModuleId}:${key.slice(oldId.length + 1)}` : key;
+  }
+  function remapProfileRecipeReferences(replacedIds, newModuleId) {
+    if (!replacedIds.length) return;
+    state.favorites = [...new Set((state.favorites || []).map(key => remapReplacedRecipeKey(key, replacedIds, newModuleId)))];
+    state.hiddenRecipes = [...new Set((state.hiddenRecipes || []).map(key => remapReplacedRecipeKey(key, replacedIds, newModuleId)))];
+    for (const field of ['ratings','recipeNotes']) {
+      const remapped = {};
+      Object.entries(state[field] || {}).forEach(([key, value]) => {
+        const newKey = remapReplacedRecipeKey(key, replacedIds, newModuleId);
+        if (remapped[newKey] === undefined) remapped[newKey] = value;
+      });
+      state[field] = remapped;
+    }
+    state.manualCrossLinks = (state.manualCrossLinks || []).map(link => ({
+      ...link,
+      sourceKey:remapReplacedRecipeKey(link.sourceKey, replacedIds, newModuleId),
+      targetKey:remapReplacedRecipeKey(link.targetKey, replacedIds, newModuleId)
+    }));
+    state.timers = (state.timers || []).map(timer => ({ ...timer, recipeKey:remapReplacedRecipeKey(timer.recipeKey, replacedIds, newModuleId) }));
+    state.shoppingList = (state.shoppingList || []).map(item => ({
+      ...item,
+      entries:(item.entries || []).map(entry => ({ ...entry, recipeKey:remapReplacedRecipeKey(entry.recipeKey, replacedIds, newModuleId) }))
+    }));
+    const personal = state.modules.find(module => module.moduleId === 'my-recipes');
+    if (personal) personal.recipes = (personal.recipes || []).map(recipe => ({ ...recipe, copiedFrom:remapReplacedRecipeKey(recipe.copiedFrom, replacedIds, newModuleId) }));
+  }
   function renderCatalog(modules){
     const existing=document.querySelector('#catalogSection');existing?.remove();
     const section=document.createElement('section');section.id='catalogSection';section.className='catalog-section';
@@ -2551,10 +2662,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if(idx>=0)state.modules[idx]=module;else state.modules.push(module);
       state.moduleSources[module.moduleId]=moduleUrl;
       if(replacedIds.length){
-        state.favorites=[...new Set(state.favorites.map(key=>{
-          const oldId=replacedIds.find(id=>key.startsWith(`${id}:`));
-          return oldId?`${module.moduleId}:${key.slice(oldId.length+1)}`:key;
-        }))];
+        remapProfileRecipeReferences(replacedIds,module.moduleId);
       }
       saveState();refreshAll();showModules();
       alert(`${module.name} ${module.version} installed.${replacedIds.length?' The previous module was removed and matching favorites were preserved.':''}`)
@@ -2658,9 +2766,12 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     for (const key of ['favorites','shoppingList','regularItems','stores','manualCrossLinks']) {
       if (incoming[key] !== undefined && !Array.isArray(incoming[key])) throw new Error(`Backup field ${key} is damaged.`);
     }
-    for (const key of ['recipeNotes','settings','moduleSources','backupMeta']) {
+    for (const key of ['recipeNotes','settings','moduleSources','backupMeta','ratings']) {
       if (incoming[key] !== undefined && (!incoming[key] || typeof incoming[key] !== 'object' || Array.isArray(incoming[key]))) throw new Error(`Backup field ${key} is damaged.`);
     }
+    Object.entries(incoming.ratings || {}).forEach(([recipeKey, entry]) => {
+      if (!recipeKey || !normalizeRatingRecord(entry)) throw new Error(`Backup rating for ${recipeKey || 'an unknown recipe'} is damaged.`);
+    });
     (incoming.manualCrossLinks || []).forEach((link, index) => {
       if (!link?.id || !link.sourceKey || !link.targetKey || link.sourceKey === link.targetKey || !['ingredient','pairing'].includes(link.type)) throw new Error(`Backup manual recipe link ${index + 1} is damaged.`);
     });
@@ -2677,7 +2788,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function mergeBackupState(current, incoming) {
     const result=JSON.parse(JSON.stringify(current)); const incomingPersonal=incoming.modules.find(m=>m.moduleId==='my-recipes'); const personal=result.modules.find(m=>m.moduleId==='my-recipes') || ensurePersonalModule();
     if(incomingPersonal){ const byId=new Map(personal.recipes.map(r=>[r.id,r])); incomingPersonal.recipes.forEach(r=>byId.set(r.id,r)); personal.recipes=[...byId.values()]; }
-    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
+    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
   }
 
   function restoreSelectedBackup(event) {

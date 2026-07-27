@@ -68,6 +68,7 @@ button { color: inherit; }
 .recipe-favorite { border: 0; background: transparent; color: var(--accent); font-size: 1.55rem; line-height: 1; padding: 6px; margin: -6px; border-radius: 999px; cursor: pointer; }
 .recipe-favorite:hover, .recipe-favorite:focus-visible { background: var(--panel-2); }
 .recipe-name { margin: 16px 0 8px; font-size: 1.25rem; }
+.recipe-card-rating { margin:-2px 0 9px; color:var(--accent); font-weight:850; letter-spacing:.03em; }
 .recipe-description { margin: 0 0 18px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .recipe-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; font-size: .82rem; }
 .recipe-meta span { padding: 5px 8px; border-radius: 999px; background: var(--panel-2); }
@@ -132,6 +133,14 @@ button { color: inherit; }
 .instruction-list { padding-left: 1.35rem; }
 .instruction-list li { padding: 0 0 14px 8px; line-height: 1.55; }
 .module-badge { display: inline-flex; margin-top: 14px; padding: 7px 10px; border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: .82rem; }
+.recipe-rating-panel { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:18px; padding:13px 15px; border:1px solid var(--border); border-radius:14px; background:var(--panel-2); }
+.recipe-rating-panel > div:first-child { display:grid; gap:2px; }
+.recipe-rating-panel > div:first-child span { color:var(--muted); font-size:.82rem; }
+.recipe-rating-controls { display:flex; align-items:center; gap:2px; }
+.recipe-rating-star { padding:3px; border:0; background:transparent; color:color-mix(in srgb,var(--muted) 45%,transparent); font-size:1.7rem; line-height:1; cursor:pointer; }
+.recipe-rating-star.selected { color:var(--accent); }
+.recipe-rating-star:hover,.recipe-rating-star:focus-visible { color:var(--accent); transform:scale(1.08); outline:none; }
+.recipe-rating-clear { margin-left:7px; padding:5px 8px; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--muted); font:inherit; font-size:.72rem; font-weight:750; cursor:pointer; }
 
 .module-cards { display: grid; gap: 14px; }
 .module-card { display: grid; grid-template-columns: 1fr auto; gap: 18px; padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
