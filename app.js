@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.15.1';
+  const ENGINE_VERSION = '0.15.2';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -820,6 +820,7 @@
   function migrateState() {
     let changed = false;
     const grouped = new Map();
+    if (repairFavoriteReferences()) changed = true;
     state.settings ||= {};
     if (!state.settings.shoppingFlourGroupMigrationV1) {
       Object.entries(state.learnedShoppingGroups || {}).forEach(([key, group]) => {
@@ -870,7 +871,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.15.1').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.15.2').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -977,12 +978,66 @@
     return options.includeHidden ? recipes : recipes.filter(recipe => !state.hiddenRecipes.includes(recipe.key));
   }
 
+  function repairFavoriteReferences() {
+    const allRecipes = getAllRecipes({ enabledOnly:false, includeOverridden:true, includeHidden:true });
+    const byKey = new Map(allRecipes.map(recipe => [recipe.key, recipe]));
+    let overriddenBy = new Map(allRecipes.filter(recipe => recipe.moduleId === 'my-recipes' && recipe.copiedFrom).map(recipe => [recipe.copiedFrom, recipe.key]));
+    const byModuleAndName = new Map();
+    allRecipes.forEach(recipe => {
+      const lookup = `${recipe.moduleId}|${engine.slugify(recipe.name)}`;
+      const matches = byModuleAndName.get(lookup) || [];
+      matches.push(recipe.key);
+      byModuleAndName.set(lookup, matches);
+    });
+    const referencedKeys = new Set([
+      ...(state.favorites || []),
+      ...(state.hiddenRecipes || []),
+      ...Object.keys(state.ratings || {}),
+      ...Object.keys(state.recipeNotes || {}),
+      ...(state.manualCrossLinks || []).flatMap(link => [link.sourceKey, link.targetKey]),
+      ...(state.timers || []).map(timer => timer.recipeKey),
+      ...(state.shoppingList || []).flatMap(item => (item.entries || []).map(entry => entry.recipeKey)),
+      ...(state.modules.find(module => module.moduleId === 'my-recipes')?.recipes || []).map(recipe => recipe.copiedFrom)
+    ].filter(key => typeof key === 'string' && key));
+    const keyMap = new Map();
+    referencedKeys.forEach(key => {
+      if (byKey.has(key)) return;
+      const separator = key.indexOf(':');
+      if (separator <= 0) return;
+      const lookup = `${key.slice(0, separator)}|${engine.slugify(key.slice(separator + 1))}`;
+      const matches = byModuleAndName.get(lookup) || [];
+      if (matches.length === 1) keyMap.set(key, matches[0]);
+    });
+    remapRecipeReferences(keyMap);
+    overriddenBy = new Map((state.modules.find(module => module.moduleId === 'my-recipes')?.recipes || [])
+      .filter(recipe => recipe.copiedFrom)
+      .map(recipe => [recipe.copiedFrom, `my-recipes:${recipe.id}`]));
+    const repaired = [];
+    (state.favorites || []).forEach(rawKey => {
+      if (typeof rawKey !== 'string' || !rawKey) return;
+      let key = overriddenBy.get(rawKey) || rawKey;
+      if (!byKey.has(key)) {
+        const separator = key.indexOf(':');
+        if (separator > 0) {
+          const lookup = `${key.slice(0, separator)}|${engine.slugify(key.slice(separator + 1))}`;
+          const matches = byModuleAndName.get(lookup) || [];
+          if (matches.length === 1) key = overriddenBy.get(matches[0]) || matches[0];
+        }
+      }
+      if (byKey.has(key) && !repaired.includes(key)) repaired.push(key);
+    });
+    const changed = keyMap.size > 0 || JSON.stringify(repaired) !== JSON.stringify(state.favorites || []);
+    state.favorites = repaired;
+    return changed;
+  }
+
   function renderCounts() {
     const recipes = getAllRecipes();
+    const visibleKeys = new Set(recipes.map(recipe => recipe.key));
     els.moduleCount.textContent = `${state.modules.length} module${state.modules.length === 1 ? '' : 's'}`;
     els.navModuleCount.textContent = state.modules.length;
     els.allCount.textContent = recipes.length;
-    els.favoriteCount.textContent = state.favorites.length;
+    els.favoriteCount.textContent = [...new Set(state.favorites)].filter(key => visibleKeys.has(key)).length;
     els.shoppingCount.textContent = state.shoppingList.filter(x=>!x.checked).length;
   }
 
@@ -1468,14 +1523,16 @@
   function formatNumber(value) { return Number(value.toFixed(2)).toString(); }
 
   function toggleFavorite(key) {
-    const index = state.favorites.indexOf(key);
-    if (index >= 0) state.favorites.splice(index, 1); else state.favorites.push(key);
+    repairFavoriteReferences();
+    if (state.favorites.includes(key)) state.favorites = state.favorites.filter(item => item !== key);
+    else state.favorites = [...new Set([...state.favorites, key])];
     saveState(); renderCounts(); renderRecipeDetail();
   }
 
   function toggleFavoriteFromList(key) {
-    const index = state.favorites.indexOf(key);
-    if (index >= 0) state.favorites.splice(index, 1); else state.favorites.push(key);
+    repairFavoriteReferences();
+    if (state.favorites.includes(key)) state.favorites = state.favorites.filter(item => item !== key);
+    else state.favorites = [...new Set([...state.favorites, key])];
     saveState();
     renderCounts();
     renderRecipeList();
@@ -1699,7 +1756,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.15.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.15.2');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1853,7 +1910,9 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         if (existingIndex >= 0) {
           const replace = confirm(`${module.name} is already installed. Replace version ${state.modules[existingIndex].version} with ${module.version}?`);
           if (!replace) continue;
+          const recipeKeyMap = buildRecipeUpdateKeyMap([state.modules[existingIndex]], module);
           state.modules[existingIndex] = module;
+          remapRecipeReferences(recipeKeyMap);
         } else state.modules.push(module);
       } catch (error) {
         alert(`Could not import ${file.name}: ${error.message}`);
@@ -2624,35 +2683,58 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function replacementIds(entry, module) {
     return [...new Set([...(entry.replacesModuleIds || []), ...(module.replacesModuleIds || [])].filter(Boolean))];
   }
-  function remapReplacedRecipeKey(key, replacedIds, newModuleId) {
-    if (!key) return key;
-    const oldId = replacedIds.find(id => key.startsWith(`${id}:`));
-    return oldId ? `${newModuleId}:${key.slice(oldId.length + 1)}` : key;
+  function buildRecipeUpdateKeyMap(previousModules, nextModule) {
+    const keyMap = new Map();
+    const nextById = new Map((nextModule.recipes || []).map(recipe => [recipe.id, recipe]));
+    const nextByName = new Map();
+    (nextModule.recipes || []).forEach(recipe => {
+      const nameKey = engine.slugify(recipe.name);
+      const matches = nextByName.get(nameKey) || [];
+      matches.push(recipe);
+      nextByName.set(nameKey, matches);
+    });
+    (previousModules || []).forEach(previousModule => {
+      (previousModule.recipes || []).forEach(previousRecipe => {
+        let match = nextById.get(previousRecipe.id);
+        if (!match) {
+          const matches = nextByName.get(engine.slugify(previousRecipe.name)) || [];
+          if (matches.length === 1) [match] = matches;
+        }
+        if (match) keyMap.set(`${previousModule.moduleId}:${previousRecipe.id}`, `${nextModule.moduleId}:${match.id}`);
+      });
+    });
+    return keyMap;
   }
-  function remapProfileRecipeReferences(replacedIds, newModuleId) {
-    if (!replacedIds.length) return;
-    state.favorites = [...new Set((state.favorites || []).map(key => remapReplacedRecipeKey(key, replacedIds, newModuleId)))];
-    state.hiddenRecipes = [...new Set((state.hiddenRecipes || []).map(key => remapReplacedRecipeKey(key, replacedIds, newModuleId)))];
+  function remapRecipeReferences(keyMap) {
+    if (!keyMap?.size) return;
+    const remap = key => keyMap.get(key) || key;
+    state.favorites = [...new Set((state.favorites || []).map(remap).filter(Boolean))];
+    state.hiddenRecipes = [...new Set((state.hiddenRecipes || []).map(remap).filter(Boolean))];
     for (const field of ['ratings','recipeNotes']) {
       const remapped = {};
-      Object.entries(state[field] || {}).forEach(([key, value]) => {
-        const newKey = remapReplacedRecipeKey(key, replacedIds, newModuleId);
+      const entries = Object.entries(state[field] || {});
+      entries.filter(([key]) => remap(key) === key).forEach(([key, value]) => { remapped[key] = value; });
+      entries.filter(([key]) => remap(key) !== key).forEach(([key, value]) => {
+        const newKey = remap(key);
         if (remapped[newKey] === undefined) remapped[newKey] = value;
       });
       state[field] = remapped;
     }
-    state.manualCrossLinks = (state.manualCrossLinks || []).map(link => ({
-      ...link,
-      sourceKey:remapReplacedRecipeKey(link.sourceKey, replacedIds, newModuleId),
-      targetKey:remapReplacedRecipeKey(link.targetKey, replacedIds, newModuleId)
-    }));
-    state.timers = (state.timers || []).map(timer => ({ ...timer, recipeKey:remapReplacedRecipeKey(timer.recipeKey, replacedIds, newModuleId) }));
+    const links = new Map();
+    (state.manualCrossLinks || []).forEach(link => {
+      const repaired = { ...link, sourceKey:remap(link.sourceKey), targetKey:remap(link.targetKey) };
+      if (!repaired.sourceKey || !repaired.targetKey || repaired.sourceKey === repaired.targetKey) return;
+      const identity = `${repaired.type}|${repaired.sourceKey}|${repaired.targetKey}`;
+      if (!links.has(identity)) links.set(identity, repaired);
+    });
+    state.manualCrossLinks = [...links.values()];
+    state.timers = (state.timers || []).map(timer => ({ ...timer, recipeKey:remap(timer.recipeKey) }));
     state.shoppingList = (state.shoppingList || []).map(item => ({
       ...item,
-      entries:(item.entries || []).map(entry => ({ ...entry, recipeKey:remapReplacedRecipeKey(entry.recipeKey, replacedIds, newModuleId) }))
+      entries:(item.entries || []).map(entry => ({ ...entry, recipeKey:remap(entry.recipeKey) }))
     }));
     const personal = state.modules.find(module => module.moduleId === 'my-recipes');
-    if (personal) personal.recipes = (personal.recipes || []).map(recipe => ({ ...recipe, copiedFrom:remapReplacedRecipeKey(recipe.copiedFrom, replacedIds, newModuleId) }));
+    if (personal) personal.recipes = (personal.recipes || []).map(recipe => ({ ...recipe, copiedFrom:remap(recipe.copiedFrom) }));
   }
   function renderCatalog(modules){
     const existing=document.querySelector('#catalogSection');existing?.remove();
@@ -2682,17 +2764,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if(entry.version&&String(module.version)!==String(entry.version))throw new Error(`Catalog lists version ${entry.version}, but the downloaded file contains version ${module.version}. Update catalog.json so both versions match.`);
       requireSafetyCheckpoint('before-module-update');
       const replacedIds=replacementIds(entry,module).filter(id=>id!==module.moduleId);
-      const oldFavorites=new Set(state.favorites);
+      const previousModules=state.modules.filter(installed=>installed.moduleId===module.moduleId||replacedIds.includes(installed.moduleId));
+      const recipeKeyMap=buildRecipeUpdateKeyMap(previousModules,module);
       state.modules=state.modules.filter(m=>!replacedIds.includes(m.moduleId));
       replacedIds.forEach(id=>delete state.moduleSources[id]);
       const idx=state.modules.findIndex(m=>m.moduleId===module.moduleId);
       if(idx>=0)state.modules[idx]=module;else state.modules.push(module);
       state.moduleSources[module.moduleId]=moduleUrl;
-      if(replacedIds.length){
-        remapProfileRecipeReferences(replacedIds,module.moduleId);
-      }
+      remapRecipeReferences(recipeKeyMap);
       saveState();refreshAll();showModules();
-      alert(`${module.name} ${module.version} installed.${replacedIds.length?' The previous module was removed and matching favorites were preserved.':''}`)
+      alert(`${module.name} ${module.version} installed.${previousModules.length?' Saved recipe information was carried forward to matching recipes.':''}`)
     }catch(error){alert(`Could not install module: ${error.message}`)}
   }
   async function updateModuleFromSource(module){

@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.15.1';
+  const APP_VERSION = '0.15.2';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -364,6 +364,7 @@
       }
       delete normalized.personalModule;
       normalized.schemaVersion = 2;
+      normalized.favorites = [...new Set((Array.isArray(normalized.favorites) ? normalized.favorites : []).filter(key => typeof key === 'string' && key))];
       const normalizedRatings = {};
       if (normalized.ratings && typeof normalized.ratings === 'object' && !Array.isArray(normalized.ratings)) {
         Object.entries(normalized.ratings).forEach(([recipeKey, entry]) => {
