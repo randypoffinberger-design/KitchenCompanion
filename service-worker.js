@@ -1,7 +1,7 @@
-const CACHE_NAME = 'kitchen-companion-v0.12.14';
+const CACHE_NAME = 'kitchen-companion-v0.12.15';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.12.14', './kitchen-engine.js?v=0.12.14', './profile-storage.js?v=0.12.14', './app.js?v=0.12.14',
-  './ocr-service.js?v=0.12.14', './alarm-bell.wav?v=0.12.14', './app.webmanifest?v=0.12.14', './icon-180.png?v=0.12.14', './icon-192.png?v=0.12.14', './icon-512.png?v=0.12.14'
+  './', './index.html', './styles.css?v=0.12.15', './kitchen-engine.js?v=0.12.15', './profile-storage.js?v=0.12.15', './app.js?v=0.12.15',
+  './ocr-service.js?v=0.12.15', './alarm-bell.wav?v=0.12.15', './app.webmanifest?v=0.12.15', './icon-180.png?v=0.12.15', './icon-192.png?v=0.12.15', './icon-512.png?v=0.12.15'
 ];
 
 self.addEventListener('install', event => {
@@ -21,9 +21,21 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   event.respondWith((async () => {
+    if (event.request.mode === 'navigate') {
+      const cachedPage = await caches.match('./index.html') || await caches.match('./');
+      if (cachedPage) return cachedPage;
+    }
+
+    const cacheFirst = url.origin === self.location.origin
+      || url.hostname === 'cdn.jsdelivr.net';
+    if (cacheFirst) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+    }
+
     try {
       const response = await fetch(event.request, { cache: 'no-store' });
-      if (response && response.ok && (url.origin === self.location.origin || ['script','worker','wasm'].includes(event.request.destination))) {
+      if (response && (response.ok || response.type === 'opaque') && cacheFirst) {
         const cache = await caches.open(CACHE_NAME);
         cache.put(event.request, response.clone());
       }

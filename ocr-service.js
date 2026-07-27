@@ -11,13 +11,43 @@
   const openPaste = document.querySelector('#openPasteFromOcr');
   if (!button || !fileInput || !output || !status) return;
 
-  let running = false, worker = null, activePage = 0, pageCount = 0;
+  let running = false, worker = null, libraryPromise = null, activePage = 0, pageCount = 0;
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_CANVAS_EDGE = 10_000;
   const AI_PROMPT = `Convert the attached recipe screenshot(s) into clean plain text. Include the recipe title, yield, prep and cook times, ingredients, instructions, and notes. Remove advertisements, navigation, social buttons, photo credits, repeated headers or footers, and duplicated text caused by overlapping screenshots. Preserve fractions and quantities exactly. Do not invent missing ingredients, quantities, times, or steps. Format the result with clear Ingredients and Instructions headings.`;
 
   function setStatus(message, showFallback = false) { status.textContent = message; if (fallbackActions) fallbackActions.hidden = !showFallback; }
   function progressLabel(message) { const phase=String(message.status||'').replace(/_/g,' '); const percent=Number.isFinite(message.progress)?` ${Math.round(message.progress*100)}%`:''; setStatus(`${pageCount?`Image ${activePage} of ${pageCount}: `:''}${phase}${percent}`.trim()); }
+
+  function loadOcrLibrary() {
+    if (globalThis.Tesseract?.createWorker) return Promise.resolve(globalThis.Tesseract);
+    if (libraryPromise) return libraryPromise;
+    libraryPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const timeout = window.setTimeout(() => {
+        script.remove();
+        libraryPromise = null;
+        reject(new Error('OCR download timed out. The rest of Kitchen Companion remains available offline.'));
+      }, 30000);
+      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js';
+      script.async = true;
+      script.onload = () => {
+        window.clearTimeout(timeout);
+        if (globalThis.Tesseract?.createWorker) resolve(globalThis.Tesseract);
+        else {
+          libraryPromise = null;
+          reject(new Error('The OCR library downloaded but could not start.'));
+        }
+      };
+      script.onerror = () => {
+        window.clearTimeout(timeout);
+        libraryPromise = null;
+        reject(new Error('Connect to the internet for the first OCR use, then try again.'));
+      };
+      document.head.append(script);
+    });
+    return libraryPromise;
+  }
 
   async function loadBitmap(file) {
     if ('createImageBitmap' in window) return createImageBitmap(file);
@@ -44,7 +74,7 @@
 
   async function getWorker() {
     if(worker)return worker;
-    if(!globalThis.Tesseract?.createWorker) throw new Error('The OCR library did not load. Connect to the internet for the first OCR use, then reopen Kitchen Companion.');
+    await loadOcrLibrary();
     setStatus('Preparing the OCR engine. First use can take a minute…');
     worker=await globalThis.Tesseract.createWorker('eng',globalThis.Tesseract.OEM?.LSTM_ONLY,{logger:progressLabel,workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0',langPath:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int'});
     await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300',tessedit_pageseg_mode:globalThis.Tesseract.PSM?.AUTO||'3'}); return worker;
