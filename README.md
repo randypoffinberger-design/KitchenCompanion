@@ -1,4 +1,11 @@
-# Kitchen Companion v0.12.3
+# Kitchen Companion v0.12.4
+
+## Shareable shopping-list files (v0.12.4)
+
+- Share creates a dedicated `.kcshopping` file containing unchecked items, stores, shopping groups, quantities, and source details.
+- Shopping lists can be imported directly from another Kitchen Companion user and safely merged with the active profile's list.
+- Existing items, checked items, and personal store-learning preferences remain intact during import.
+- Re-importing the same shared file skips entries that were already imported.
 
 ## Complete profile restoration (v0.12.3)
 

@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.3';
+  const ENGINE_VERSION = '0.12.4';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -102,7 +102,7 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), shoppingItemDialogTitle: document.querySelector('#shoppingItemDialogTitle'), shoppingItemEditId: document.querySelector('#shoppingItemEditId'), shoppingItemSubmitBtn: document.querySelector('#shoppingItemSubmitBtn'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn'), addKitchenProfileBtn: document.querySelector('#addKitchenProfileBtn'), profileSetupDialog: document.querySelector('#profileSetupDialog'), profileSetupForm: document.querySelector('#profileSetupForm'), profileSetupName: document.querySelector('#profileSetupName'), importProfileBtn: document.querySelector('#importProfileBtn'), profileImportFile: document.querySelector('#profileImportFile'), profileStorageSummary: document.querySelector('#profileStorageSummary'), headerProfileBtn: document.querySelector('#headerProfileBtn'), headerProfileAvatar: document.querySelector('#headerProfileAvatar'), headerProfileName: document.querySelector('#headerProfileName'), profileQuickMenu: document.querySelector('#profileQuickMenu'), profileEditDialog: document.querySelector('#profileEditDialog'), profileEditForm: document.querySelector('#profileEditForm'), profileEditName: document.querySelector('#profileEditName'), profileEditEmoji: document.querySelector('#profileEditEmoji'), profileEditImage: document.querySelector('#profileEditImage'), profileEditImageInput: document.querySelector('#profileEditImageInput'), profileEditImageBtn: document.querySelector('#profileEditImageBtn'), profileEditRemoveImageBtn: document.querySelector('#profileEditRemoveImageBtn'), profileEditPreview: document.querySelector('#profileEditPreview'), profileEditColorChoices: document.querySelector('#profileEditColorChoices'), cancelProfileEdit: document.querySelector('#cancelProfileEdit'), safeguardStatus: document.querySelector('#safeguardStatus'), safetyBackupList: document.querySelector('#safetyBackupList'), createSafetyBackupBtn: document.querySelector('#createSafetyBackupBtn'), runDiagnosticsBtn: document.querySelector('#runDiagnosticsBtn'), optimizeStorageBtn: document.querySelector('#optimizeStorageBtn'), diagnosticsOutput: document.querySelector('#diagnosticsOutput')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), importShoppingBtn: document.querySelector('#importShoppingBtn'), shoppingImportFile: document.querySelector('#shoppingImportFile'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), shoppingItemDialogTitle: document.querySelector('#shoppingItemDialogTitle'), shoppingItemEditId: document.querySelector('#shoppingItemEditId'), shoppingItemSubmitBtn: document.querySelector('#shoppingItemSubmitBtn'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn'), addKitchenProfileBtn: document.querySelector('#addKitchenProfileBtn'), profileSetupDialog: document.querySelector('#profileSetupDialog'), profileSetupForm: document.querySelector('#profileSetupForm'), profileSetupName: document.querySelector('#profileSetupName'), importProfileBtn: document.querySelector('#importProfileBtn'), profileImportFile: document.querySelector('#profileImportFile'), profileStorageSummary: document.querySelector('#profileStorageSummary'), headerProfileBtn: document.querySelector('#headerProfileBtn'), headerProfileAvatar: document.querySelector('#headerProfileAvatar'), headerProfileName: document.querySelector('#headerProfileName'), profileQuickMenu: document.querySelector('#profileQuickMenu'), profileEditDialog: document.querySelector('#profileEditDialog'), profileEditForm: document.querySelector('#profileEditForm'), profileEditName: document.querySelector('#profileEditName'), profileEditEmoji: document.querySelector('#profileEditEmoji'), profileEditImage: document.querySelector('#profileEditImage'), profileEditImageInput: document.querySelector('#profileEditImageInput'), profileEditImageBtn: document.querySelector('#profileEditImageBtn'), profileEditRemoveImageBtn: document.querySelector('#profileEditRemoveImageBtn'), profileEditPreview: document.querySelector('#profileEditPreview'), profileEditColorChoices: document.querySelector('#profileEditColorChoices'), cancelProfileEdit: document.querySelector('#cancelProfileEdit'), safeguardStatus: document.querySelector('#safeguardStatus'), safetyBackupList: document.querySelector('#safetyBackupList'), createSafetyBackupBtn: document.querySelector('#createSafetyBackupBtn'), runDiagnosticsBtn: document.querySelector('#runDiagnosticsBtn'), optimizeStorageBtn: document.querySelector('#optimizeStorageBtn'), diagnosticsOutput: document.querySelector('#diagnosticsOutput')
   };
 
   init();
@@ -235,6 +235,8 @@
     els.shoppingItemForm.addEventListener('submit', addManualShoppingItem);
     els.regularItemsBtn.addEventListener('click', showRegularItems);
     els.shareShoppingBtn.addEventListener('click', shareShoppingList);
+    els.importShoppingBtn.addEventListener('click', () => els.shoppingImportFile.click());
+    els.shoppingImportFile.addEventListener('change', importShoppingList);
     els.clearCheckedBtn.addEventListener('click', () => {
       if (!state.shoppingList.some(x => x.checked)) return;
       try {
@@ -700,6 +702,7 @@
       quantity: String(entry.quantity || '').trim(),
       source: String(entry.source || 'Manual').trim(),
       recipeKey: entry.recipeKey || '',
+      importKey: String(entry.importKey || ''),
       createdAt: entry.createdAt || new Date().toISOString()
     };
   }
@@ -765,7 +768,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.3').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.4').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -787,7 +790,8 @@
       'before-restore':'Before checkpoint restore', 'before-full-backup-restore':'Before full backup restore',
       'before-module-import':'Before module import', 'before-module-update':'Before module update',
       'before-module-uninstall':'Before module uninstall', 'before-recipe-import':'Before recipe import',
-      'before-recipe-delete':'Before recipe deletion', 'before-bulk-delete':'Before bulk deletion'
+      'before-recipe-delete':'Before recipe deletion', 'before-bulk-delete':'Before bulk deletion',
+      'before-shopping-list-import':'Before shopping-list import'
     };
     profileStore.compactSafetyBackups().forEach(backup => {
       const row = document.createElement('div'); row.className = 'safety-backup-row';
@@ -1319,7 +1323,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.3');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.4');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1904,8 +1908,123 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     saveState();populateStoreSelects();renderShoppingList();
   }
 
-  function shoppingText(){const groups={};state.shoppingList.filter(x=>!x.checked).forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));return Object.entries(groups).map(([store,items])=>`${store}\n${items.map(x=>{const details=(x.entries||[]).map(e=>[e.quantity,e.source].filter(Boolean).join(' · ')).join('; ');return `- ${x.name}${details?` (${details})`:''}`}).join('\n')}`).join('\n\n')||'Shopping list is empty.'}
-  async function shareShoppingList(){const text=shoppingText();if(navigator.share){try{await navigator.share({title:'Kitchen Companion Shopping List',text});return}catch(e){if(e.name==='AbortError')return}}try{await navigator.clipboard.writeText(text);alert('Shopping list copied to the clipboard.')}catch{prompt('Copy your shopping list:',text)}}
+  function shoppingListPayload() {
+    const profile = profileStore.getActiveProfileMeta();
+    const items = state.shoppingList.filter(item => !item.checked).map(item => ({
+      name:item.name,
+      store:normalizeStore(item.store),
+      group:SHOPPING_GROUPS.includes(item.group) ? item.group : classifyShoppingGroup(item.name),
+      entries:(item.entries || []).map(entry => ({
+        id:entry.id || shoppingId(),
+        quantity:String(entry.quantity || '').trim(),
+        source:String(entry.source || '').trim(),
+        recipeKey:entry.recipeKey || ''
+      }))
+    }));
+    return {
+      format:'kitchen-companion-shopping-list',
+      schemaVersion:1,
+      exportId:shoppingId(),
+      exportedAt:new Date().toISOString(),
+      exportedBy:{ displayName:profile?.displayName || 'Kitchen Companion user' },
+      stores:[...new Set(items.map(item => item.store).filter(store => store !== 'Unassigned'))],
+      items
+    };
+  }
+
+  function validateShoppingListPayload(payload) {
+    if (!payload || payload.format !== 'kitchen-companion-shopping-list') throw new Error('This is not a Kitchen Companion shopping list.');
+    if (Number(payload.schemaVersion) !== 1) throw new Error(`Shopping-list version ${payload.schemaVersion ?? 'unknown'} is not supported.`);
+    if (!payload.exportId || typeof payload.exportId !== 'string') throw new Error('The shopping-list file has no sharing identifier.');
+    if (!payload.exportedAt || !Number.isFinite(Date.parse(payload.exportedAt))) throw new Error('The shopping-list date is missing or invalid.');
+    if (!Array.isArray(payload.items) || payload.items.length > 2000) throw new Error('The shopping-list items are missing or invalid.');
+    if (payload.stores !== undefined && !Array.isArray(payload.stores)) throw new Error('The shopping-list stores are invalid.');
+    (payload.stores || []).forEach(store => {
+      if (typeof store !== 'string' || store.length > 60) throw new Error('The shopping list contains an invalid store name.');
+    });
+    payload.items.forEach((item, index) => {
+      if (!item || typeof item.name !== 'string' || item.name.length > 200 || !shoppingNameKey(item.name)) throw new Error(`Shopping item ${index + 1} has no valid name.`);
+      if (item.store !== undefined && (typeof item.store !== 'string' || item.store.length > 60)) throw new Error(`Shopping item ${index + 1} has an invalid store.`);
+      if (item.group !== undefined && typeof item.group !== 'string') throw new Error(`Shopping item ${index + 1} has an invalid shopping group.`);
+      if (item.entries !== undefined && !Array.isArray(item.entries)) throw new Error(`Shopping item ${index + 1} has invalid details.`);
+      if ((item.entries || []).length > 100) throw new Error(`Shopping item ${index + 1} contains too many detail entries.`);
+      (item.entries || []).forEach(entry => {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new Error(`Shopping item ${index + 1} contains an invalid detail entry.`);
+        for (const key of ['id','quantity','source','recipeKey']) {
+          if (entry[key] !== undefined && (typeof entry[key] !== 'string' || entry[key].length > 500)) throw new Error(`Shopping item ${index + 1} contains invalid ${key} data.`);
+        }
+      });
+    });
+    return true;
+  }
+
+  async function shareShoppingList() {
+    const payload = shoppingListPayload();
+    if (!payload.items.length) return alert('There are no unchecked shopping items to share.');
+    const owner = safeFilename(payload.exportedBy.displayName || 'Shopping-List');
+    await deliverFile(`${owner}-Shopping-List-${new Date().toISOString().slice(0,10)}.kcshopping`, JSON.stringify(payload, null, 2), 'application/json');
+  }
+
+  async function importShoppingList(event) {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    let previousShoppingList = null;
+    let previousStores = null;
+    try {
+      if (file.size > 5 * 1024 * 1024) throw new Error('This shopping-list file is larger than the 5 MB safety limit.');
+      const payload = JSON.parse(await file.text());
+      validateShoppingListPayload(payload);
+      const sender = String(payload.exportedBy?.displayName || 'another Kitchen Companion user').trim();
+      if (!confirm(`Import ${payload.items.length} unchecked item${payload.items.length===1?'':'s'} from ${sender}?\n\nMatching ingredients will merge with your current list. Your existing stores and checked items will remain.`)) return;
+      requireSafetyCheckpoint('before-shopping-list-import');
+      previousShoppingList = JSON.parse(JSON.stringify(state.shoppingList));
+      previousStores = JSON.parse(JSON.stringify(state.stores));
+      (payload.stores || []).forEach(store => {
+        const name = normalizeStore(String(store || ''));
+        if (name !== 'Unassigned' && !state.stores.some(existing => existing.toLowerCase() === name.toLowerCase())) state.stores.push(name);
+      });
+      let addedEntries = 0;
+      let skippedEntries = 0;
+      payload.items.forEach(incoming => {
+        const normalized = normalizeShoppingItem({ ...incoming, checked:false });
+        let target = state.shoppingList.find(item => !item.checked && shoppingNameKey(item.normalizedName || item.name) === normalized.normalizedName);
+        if (!target) {
+          target = normalizeShoppingItem({ ...normalized, id:shoppingId(), entries:[] });
+          target.entries = [];
+          state.shoppingList.push(target);
+        }
+        (normalized.entries.length ? normalized.entries : [normalizeShoppingEntry({ source:`Shared by ${sender}` })]).forEach(entry => {
+          const importKey = `${payload.exportId}:${entry.id}`;
+          if ((target.entries || []).some(existing => existing.importKey === importKey)) { skippedEntries += 1; return; }
+          target.entries ||= [];
+          target.entries.push(normalizeShoppingEntry({
+            ...entry,
+            id:shoppingId(),
+            importKey,
+            source:entry.source || `Shared by ${sender}`
+          }));
+          addedEntries += 1;
+        });
+        target.updatedAt = new Date().toISOString();
+      });
+      saveState();
+      populateStoreSelects();
+      renderShoppingList();
+      renderCounts();
+      alert(`${payload.items.length} shopping item${payload.items.length===1?'':'s'} imported from ${sender}.${skippedEntries ? ` ${skippedEntries} previously imported detail${skippedEntries===1?' was':'s were'} skipped.` : ''}`);
+    } catch (error) {
+      if (previousShoppingList && previousStores) {
+        state.shoppingList = previousShoppingList;
+        state.stores = previousStores;
+        try { saveState(); } catch {}
+        populateStoreSelects();
+        renderShoppingList();
+        renderCounts();
+      }
+      alert(`Shopping list was not imported: ${error.message}`);
+    }
+  }
 
   async function loadModuleCatalog(){
     currentView='modules'; showModules();
