@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.7';
+  const ENGINE_VERSION = '0.12.8';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -819,7 +819,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.7').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.8').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1374,7 +1374,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.7');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.8');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1773,10 +1773,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
   function normalizeStore(store) { return store && store.trim() ? store.trim() : 'Unassigned'; }
+  function displayStoreName(store) { return normalizeStore(store) === 'Unassigned' ? 'No store' : normalizeStore(store); }
   function populateStoreSelects() {
     const stores=[...new Set(['Unassigned',...(state.stores||[]),...state.shoppingList.map(x=>normalizeStore(x.store))])];
     state.stores=stores;
-    const fill=(select,all=false)=>{ const current=select.value; select.innerHTML=all?'<option value="all">All stores</option>':''; stores.forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;select.append(o)}); if([...select.options].some(o=>o.value===current))select.value=current; };
+    const fill=(select,all=false)=>{ const current=select.value; select.innerHTML=all?'<option value="all">All stores</option>':''; stores.forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=displayStoreName(st);select.append(o)}); if([...select.options].some(o=>o.value===current))select.value=current; };
     fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const moveStore=document.querySelector('#shoppingMoveStore'); if(moveStore) { fill(moveStore); const addOption=document.createElement('option'); addOption.value='__new_store__'; addOption.textContent='＋ New store…'; moveStore.append(addOption); }
   }
 
@@ -1808,7 +1809,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     Object.entries(groups).forEach(([store,list])=>{
       const remaining=list.filter(x=>!x.checked).length;
       const section=document.createElement('section');section.className='shopping-store-card';
-      section.innerHTML=`<div class="shopping-store-heading"><h2>${escapeHtml(store)}</h2><span>${remaining} remaining</span></div><div class="shopping-items"></div>`;
+      section.innerHTML=`<div class="shopping-store-heading"><h2>${escapeHtml(displayStoreName(store))}</h2><span>${remaining} remaining</span></div><div class="shopping-items"></div>`;
       const box=section.querySelector('.shopping-items');
       let previousGroup = '';
       let checkedHeadingShown = false;
@@ -1840,8 +1841,9 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const leading=shoppingSelectionMode
           ? `<label class="bulk-select-control" aria-label="Select ${escapeHtml(item.name)}"><input class="bulk-select-check" type="checkbox" ${shoppingSelectedIds.has(item.id)?'checked':''}></label>`
           : `<label class="shopping-check" aria-label="Mark ${escapeHtml(item.name)} purchased"><input class="purchase-check" type="checkbox" ${item.checked?'checked':''}></label>`;
-        const aisleText=item.aisle?` · Aisle: ${escapeHtml(item.aisle)}`:'';
-        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong></button><button type="button" class="row-store-pill" aria-label="Change store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(normalizeStore(item.store))}</button><button type="button" class="shopping-detail-toggle" aria-label="Show details for ${escapeHtml(item.name)}" aria-expanded="false"><span class="shopping-details-chevron">⌄</span></button></div><div class="shopping-row-details" hidden>${details}<small class="shopping-group-label">Group: ${escapeHtml(group)}${aisleText}</small><div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
+        const aisleDetail=item.aisle?`<small class="shopping-aisle-label">Aisle: ${escapeHtml(item.aisle)}</small>`:'';
+        const aisleButtonLabel=item.aisle?`Aisle ${item.aisle}`:'＋ Set aisle';
+        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong></button><div class="shopping-location-actions"><button type="button" class="row-store-pill" aria-label="Change store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(displayStoreName(item.store))}</button><button type="button" class="aisle-quick-button" aria-label="Set aisle for ${escapeHtml(item.name)} at ${escapeHtml(displayStoreName(item.store))}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(aisleButtonLabel)}</button></div><button type="button" class="shopping-detail-toggle" aria-label="Show details for ${escapeHtml(item.name)}" aria-expanded="false"><span class="shopping-details-chevron">⌄</span></button></div><div class="shopping-row-details" hidden>${details}<small class="shopping-group-label">Group: ${escapeHtml(group)}</small>${aisleDetail}<div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
         const storeButton=row.querySelector('.row-store-pill');
         storeButton.addEventListener('click',()=>openShoppingMoveDialog([item.id],`Move ${item.name}`));
         const purchase=row.querySelector('.purchase-check');
@@ -1849,6 +1851,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const bulk=row.querySelector('.bulk-select-check');
         bulk?.addEventListener('change',e=>{e.target.checked?shoppingSelectedIds.add(item.id):shoppingSelectedIds.delete(item.id);row.classList.toggle('bulk-selected',e.target.checked);updateShoppingBulkBar();});
         const nameToggle=row.querySelector('.shopping-name-toggle');
+        const aisleButton=row.querySelector('.aisle-quick-button');
         const detailToggle=row.querySelector('.shopping-detail-toggle');
         const toggleDetails=()=>{
           if(shoppingSelectionMode){bulk.checked=!bulk.checked;bulk.dispatchEvent(new Event('change',{bubbles:true}));return;}
@@ -1858,6 +1861,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
           row.querySelector('.shopping-details-chevron').textContent=panel.hidden?'⌄':'⌃';
         };
         nameToggle.addEventListener('click',toggleDetails);
+        aisleButton.addEventListener('click',()=>{
+          const store=normalizeStore(item.store);
+          if(store==='Unassigned')return alert(`Choose a store for ${item.name} before setting its aisle.`);
+          const response=prompt(`Aisle for ${item.name} at ${store}:\\n\\nLeave blank to clear the saved aisle.`,item.aisle||preferredAisleFor(item.name,store));
+          if(response===null)return;
+          item.aisle=String(response).trim().slice(0,40);
+          learnAisleChoice(item.name,store,item.aisle);
+          item.updatedAt=new Date().toISOString();
+          saveState();renderShoppingList(item.id);
+        });
         detailToggle.addEventListener('click',toggleDetails);
         row.querySelector('.edit-shopping').addEventListener('click',()=>openShoppingItemDialog(item));
         row.querySelector('.remove-shopping').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from the shopping list?`))return;state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});
@@ -1917,7 +1930,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if(!state.regularItems.length){els.regularItemsList.innerHTML='<p>No regular items yet. Add a manual item and choose “Save as regular item.”</p>';}
     state.regularItems.forEach(item=>{
       const row=document.createElement('div');row.className='regular-item-row';
-      row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(item.store||'Unassigned')}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
+      row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(displayStoreName(item.store))}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
       row.querySelector('.add-regular').addEventListener('click',e=>{const added=addShoppingEntry({name:item.name,quantity:item.quantity,store:item.store,group:item.group,aisle:item.aisle,source:'Regular item',learnStore:true});saveState();renderShoppingList(added.id);renderCounts();e.currentTarget.textContent='Added ✓';setTimeout(()=>e.currentTarget.textContent='Add',1000);});
       row.querySelector('.edit-regular').addEventListener('click',()=>{const name=prompt('Regular item name:',item.name);if(!name)return;const quantity=prompt('Default quantity or note:',item.quantity||'')??item.quantity;const store=prompt(`Default store:\n${state.stores.join('\n')}`,item.store||'Unassigned')||item.store;item.name=displayShoppingName(name);item.normalizedName=shoppingNameKey(name);item.quantity=quantity.trim();item.store=normalizeStore(store);saveState();showRegularItems();});
       row.querySelector('.remove-regular').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from regular items?`))return;state.regularItems=state.regularItems.filter(x=>x.id!==item.id);saveState();showRegularItems();});
@@ -1960,7 +1973,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if (!action) return;
     if (/^REMOVE:/i.test(action)) {
       const name=action.replace(/^REMOVE:/i,'').trim();
-      if (!name || name==='Unassigned') return alert('Unassigned cannot be removed.');
+      if (!name || name==='Unassigned') return alert('No store cannot be removed.');
       state.stores=state.stores.filter(x=>x.toLowerCase()!==name.toLowerCase());
       state.shoppingList.forEach(x=>{if(normalizeStore(x.store).toLowerCase()===name.toLowerCase())x.store='Unassigned'});
       state.regularItems.forEach(x=>{if(normalizeStore(x.store).toLowerCase()===name.toLowerCase())x.store='Unassigned'});
