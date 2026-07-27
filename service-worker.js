@@ -1,7 +1,7 @@
-const CACHE_NAME = 'kitchen-companion-v0.15.0';
+const CACHE_NAME = 'kitchen-companion-v0.15.1';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.15.0', './kitchen-engine.js?v=0.15.0', './profile-storage.js?v=0.15.0', './app.js?v=0.15.0',
-  './ocr-service.js?v=0.15.0', './alarm-bell.wav?v=0.15.0', './app.webmanifest?v=0.15.0', './icon-180.png?v=0.15.0', './icon-192.png?v=0.15.0', './icon-512.png?v=0.15.0'
+  './', './index.html', './styles.css?v=0.15.1', './kitchen-engine.js?v=0.15.1', './profile-storage.js?v=0.15.1', './app.js?v=0.15.1',
+  './ocr-service.js?v=0.15.1', './alarm-bell.wav?v=0.15.1', './app.webmanifest?v=0.15.1', './icon-180.png?v=0.15.1', './icon-192.png?v=0.15.1', './icon-512.png?v=0.15.1'
 ];
 
 self.addEventListener('install', event => {
@@ -21,6 +21,29 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   event.respondWith((async () => {
+    const isCatalogRequest = url.origin === self.location.origin && url.pathname.endsWith('/catalog.json');
+    if (isCatalogRequest) {
+      const cache = await caches.open(CACHE_NAME);
+      const canonicalRequest = new Request(`${self.registration.scope}catalog.json`);
+      try {
+        const response = await fetch(event.request, { cache:'no-store' });
+        if (response?.ok) {
+          await cache.put(canonicalRequest, response.clone());
+          return response;
+        }
+        const cachedCatalog = await cache.match(canonicalRequest);
+        if (cachedCatalog) return cachedCatalog;
+        return response;
+      } catch (error) {
+        const cachedCatalog = await cache.match(canonicalRequest);
+        if (cachedCatalog) return cachedCatalog;
+        return new Response(JSON.stringify({ error:'catalog-unavailable' }), {
+          status:503,
+          headers:{ 'Content-Type':'application/json', 'Cache-Control':'no-store' }
+        });
+      }
+    }
+
     if (event.request.mode === 'navigate') {
       const cachedPage = await caches.match('./index.html') || await caches.match('./');
       if (cachedPage) return cachedPage;

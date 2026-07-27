@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.15.0';
+  const ENGINE_VERSION = '0.15.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -870,7 +870,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.15.0').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.15.1').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1699,7 +1699,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.15.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.15.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2590,9 +2590,36 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     }
   }
 
+  async function fetchModuleCatalog() {
+    let lastError = null;
+    for (const url of [`${MODULE_CATALOG_URL}?v=${Date.now()}`, MODULE_CATALOG_URL]) {
+      try {
+        const response = await fetch(url, { cache:'no-store' });
+        if (!response.ok) {
+          const error = new Error(`Catalog returned ${response.status}`);
+          error.status = response.status;
+          throw error;
+        }
+        const catalog = await response.json();
+        if (!catalog || !Array.isArray(catalog.modules)) throw new Error('Catalog data is damaged or missing its modules list.');
+        return catalog;
+      } catch (error) { lastError = error; }
+    }
+    throw lastError || new Error('Catalog request failed.');
+  }
+  function renderCatalogLoadError(error) {
+    document.querySelector('#catalogSection')?.remove();
+    const section = document.createElement('section');
+    section.id = 'catalogSection';
+    section.className = 'catalog-section catalog-error-section';
+    const missing = error?.status === 404;
+    section.innerHTML = `<h2>Available from GitHub</h2><div class="catalog-load-error"><strong>${missing ? 'The module catalog was not found.' : 'The module catalog is temporarily unavailable.'}</strong><p>${missing ? 'Confirm that catalog.json is uploaded to the repository root.' : 'Your installed recipes remain available. Check your connection and try again; after one successful load, Kitchen Companion can reuse the saved catalog when service is limited.'}</p><button type="button" class="button catalog-retry">Try again</button></div>`;
+    section.querySelector('.catalog-retry').addEventListener('click', loadModuleCatalog);
+    els.modulesPane.prepend(section);
+  }
   async function loadModuleCatalog(){
     currentView='modules'; showModules();
-    try{const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`Catalog returned ${res.status}`);const catalog=await res.json();renderCatalog(catalog.modules||[])}catch(error){alert(`Could not load the GitHub module catalog: ${error.message}. Make sure catalog.json and the recipepack files are uploaded to the repository root.`)}
+    try{const catalog=await fetchModuleCatalog();renderCatalog(catalog.modules||[])}catch(error){renderCatalogLoadError(error)}
   }
   function replacementIds(entry, module) {
     return [...new Set([...(entry.replacesModuleIds || []), ...(module.replacesModuleIds || [])].filter(Boolean))];
@@ -2671,8 +2698,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   async function updateModuleFromSource(module){
     const url=state.moduleSources[module.moduleId];if(!url)return;
     try{
-      const res=await fetch(`${MODULE_CATALOG_URL}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`Catalog returned ${res.status}`);
-      const catalog=await res.json();
+      const catalog=await fetchModuleCatalog();
       const entry=(catalog.modules||[]).find(x=>x.moduleId===module.moduleId||(x.replacesModuleIds||[]).includes(module.moduleId));
       if(!entry)return alert("This installed module is no longer listed in the catalog. Uninstall it, or add its old moduleId to the new catalog entry's replacesModuleIds list.");
       const renamed=entry.moduleId!==module.moduleId;
