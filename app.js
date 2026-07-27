@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.4';
+  const ENGINE_VERSION = '0.12.5';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -235,8 +235,8 @@
     els.shoppingItemForm.addEventListener('submit', addManualShoppingItem);
     els.regularItemsBtn.addEventListener('click', showRegularItems);
     els.shareShoppingBtn.addEventListener('click', shareShoppingList);
-    els.importShoppingBtn.addEventListener('click', () => els.shoppingImportFile.click());
-    els.shoppingImportFile.addEventListener('change', importShoppingList);
+    els.importShoppingBtn?.addEventListener('click', () => els.shoppingImportFile?.click());
+    els.shoppingImportFile?.addEventListener('change', importShoppingList);
     els.clearCheckedBtn.addEventListener('click', () => {
       if (!state.shoppingList.some(x => x.checked)) return;
       try {
@@ -768,7 +768,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.4').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.5').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1323,7 +1323,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.4');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.5');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
