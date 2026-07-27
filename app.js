@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.12';
+  const ENGINE_VERSION = '0.12.13';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -827,7 +827,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.12').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.13').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1382,7 +1382,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.12');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.13');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1895,7 +1895,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     els.shoppingItemEditId.value=item?.id||'';
     els.shoppingItemDialogTitle.textContent=item?'Edit shopping item':'Add shopping item';
     els.shoppingItemSubmitBtn.textContent=item?'Save changes':'Add item';
-    document.querySelector('#saveRegularItem').closest('label').hidden=!!item;
+    document.querySelector('#saveRegularItem').closest('label').hidden=false;
     const groupSelect=document.querySelector('#shoppingItemGroup');
     groupSelect.innerHTML=SHOPPING_GROUPS.map(group=>`<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join('');
     groupSelect.dataset.touched='false';
@@ -1932,7 +1932,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function addManualShoppingItem(event){
     event.preventDefault(); const name=document.querySelector('#shoppingItemName').value.trim(); const quantity=document.querySelector('#shoppingItemQuantity').value.trim(); const store=normalizeStore(els.shoppingItemStore.value); const group=document.querySelector('#shoppingItemGroup').value; const aisle=document.querySelector('#shoppingItemAisle').value.trim().slice(0,40); if(!name)return;
-    const saveAsRegular = !els.shoppingItemEditId.value && new FormData(event.currentTarget).has('saveRegularItem');
+    const saveAsRegular = new FormData(event.currentTarget).has('saveRegularItem');
     const editId=els.shoppingItemEditId.value;
     let item;
     try {
@@ -1951,8 +1951,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         item=addShoppingEntry({name,quantity,store,group,aisle,source:'Manual',learnStore:true});
         state.learnedShoppingGroups[shoppingNameKey(name)]=group;
         learnAisleChoice(name,store,aisle);
-        if(saveAsRegular) upsertRegularItem({name,quantity,store,group,aisle});
       }
+      if(saveAsRegular) upsertRegularItem({name,quantity,store,group,aisle});
       saveState();
       if (saveAsRegular) {
         const persisted = profileStore.loadActiveState().regularItems.some(regular => shoppingNameKey(regular.normalizedName || regular.name) === shoppingNameKey(name));
