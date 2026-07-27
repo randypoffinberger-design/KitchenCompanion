@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.15';
+  const ENGINE_VERSION = '0.13.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -82,6 +82,7 @@
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
+  let recipeNavigationStack = [];
   let activeScale = 1;
   let timerTicker = null;
   let bellAudio = null;
@@ -188,7 +189,7 @@
     els.categoryFilter.addEventListener('change', renderRecipeList);
     els.favoritesFilterBtn.addEventListener('click', () => { currentView = currentView === 'favorites' ? 'all' : 'favorites'; selectedCategory = null; syncFavoriteFilterButton(); renderRecipeList(); });
     els.clearFiltersBtn.addEventListener('click', clearRecipeFilters);
-    els.backBtn.addEventListener('click', showList);
+    els.backBtn.addEventListener('click', navigateBackFromRecipe);
     
     els.moduleImportBtn.addEventListener('click', openImportOptions);
     els.menuImportModule.addEventListener('click', () => { toggleSidebar(false); openImportOptions(); });
@@ -839,7 +840,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.15').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.13.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1038,7 +1039,7 @@
         const span = document.createElement('span'); span.textContent = text; meta.append(span);
       });
       fragment.querySelector('.recipe-source').textContent = recipe.moduleName;
-      const openCard = () => { selectedRecipeKey = recipe.key; activeScale = 1; showDetail(); };
+      const openCard = () => { recipeNavigationStack = []; selectedRecipeKey = recipe.key; activeScale = 1; showDetail(); };
       card.addEventListener('click', openCard);
       card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCard(); } });
       els.recipeGrid.append(fragment);
@@ -1048,6 +1049,7 @@
   function recipeSearchText(recipe) { return engine.searchText(recipe); }
 
   function showList() {
+    recipeNavigationStack = [];
     selectedRecipeKey = null;
     els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
     renderRecipeList(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1058,15 +1060,89 @@
     renderRecipeDetail(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function navigateBackFromRecipe() {
+    const previous = recipeNavigationStack.pop();
+    if (!previous) return showList();
+    selectedRecipeKey = previous;
+    activeScale = 1;
+    showDetail();
+  }
+
+  function openCrossLinkedRecipe(targetKey) {
+    if (!targetKey || targetKey === selectedRecipeKey) return;
+    if (selectedRecipeKey) recipeNavigationStack.push(selectedRecipeKey);
+    selectedRecipeKey = targetKey;
+    activeScale = 1;
+    document.querySelector('#crossLinkChoicesDialog')?.close();
+    showDetail();
+  }
+
   function showModules() {
     selectedRecipeKey = null;
     els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true;
     renderModules(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  let crossLinkCache = { signature:'', index:null };
+  function getCrossLinkIndex() {
+    const recipes = getAllRecipes();
+    const signature = JSON.stringify(recipes.map(recipe => [
+      recipe.key,
+      recipe.name,
+      recipe.crossLinkAliases,
+      recipe.description,
+      (recipe.ingredientGroups || []).flatMap(group => (group.ingredients || []).map(ingredient => ingredient.item)),
+      recipe.instructions
+    ]));
+    if (crossLinkCache.signature !== signature) {
+      crossLinkCache = { signature, index:engine.buildCrossLinks(recipes) };
+    }
+    return crossLinkCache.index;
+  }
+
+  function renderCrossLinkTargetButton(target, label = '') {
+    return `<button type="button" class="crosslink-target-button" data-crosslink-target="${escapeHtml(target.key)}">${escapeHtml(label || target.name)}<small>${escapeHtml(target.moduleName || '')}</small></button>`;
+  }
+
+  function renderCrossLinkSection(recipe, links, incoming) {
+    if (!links.length && !incoming.length) return '';
+    const outgoingCards = links.map(link => {
+      const heading = link.type === 'ingredient' ? `Make or view: ${link.context}` : `Serving connection`;
+      return `<article class="crosslink-card"><strong>${escapeHtml(heading)}</strong>${link.type === 'pairing' ? `<p>${escapeHtml(link.context)}</p>` : ''}<div class="crosslink-targets">${link.targets.map(target => renderCrossLinkTargetButton(target)).join('')}</div></article>`;
+    }).join('');
+    const incomingCards = incoming.map(reference => `
+      <article class="crosslink-card crosslink-reverse-card">
+        <strong>${reference.type === 'ingredient' ? 'Used in' : 'Pairs with'}</strong>
+        ${renderCrossLinkTargetButton({ key:reference.sourceKey, name:reference.sourceName, moduleName:reference.sourceModuleName })}
+        <p>${escapeHtml(reference.context)}</p>
+      </article>`).join('');
+    return `<section class="recipe-section crosslink-section"><div class="crosslink-heading"><div><div class="recipe-kicker">Across installed modules</div><h2>Cross-Link</h2></div><span>${links.length + incoming.length} connection${links.length + incoming.length === 1 ? '' : 's'}</span></div>${outgoingCards ? `<div class="crosslink-subsection"><h3>From this recipe</h3><div class="crosslink-grid">${outgoingCards}</div></div>` : ''}${incomingCards ? `<div class="crosslink-subsection"><h3>Used by or paired with</h3><div class="crosslink-grid">${incomingCards}</div></div>` : ''}</section>`;
+  }
+
+  function openCrossLinkChoices(link) {
+    const dialog = document.querySelector('#crossLinkChoicesDialog');
+    const context = document.querySelector('#crossLinkChoicesContext');
+    const list = document.querySelector('#crossLinkChoicesList');
+    context.textContent = link.type === 'ingredient' ? `Recipes matching “${link.context}”` : link.context;
+    list.innerHTML = link.targets.map(target => renderCrossLinkTargetButton(target)).join('');
+    list.querySelectorAll('[data-crosslink-target]').forEach(button => button.addEventListener('click', () => openCrossLinkedRecipe(button.dataset.crosslinkTarget)));
+    dialog.showModal();
+  }
+
+  function bindCrossLinkControls(links) {
+    document.querySelectorAll('[data-crosslink-target]').forEach(button => button.addEventListener('click', () => openCrossLinkedRecipe(button.dataset.crosslinkTarget)));
+    document.querySelectorAll('[data-crosslink-choice]').forEach(button => button.addEventListener('click', () => {
+      const link = links.find(item => item.id === button.dataset.crosslinkChoice);
+      if (link) openCrossLinkChoices(link);
+    }));
+  }
+
   function renderRecipeDetail() {
     const recipe = getAllRecipes({ enabledOnly: false, includeOverridden: true }).find(r => r.key === selectedRecipeKey);
     if (!recipe) return showList();
+    const crossLinkIndex = getCrossLinkIndex();
+    const crossLinks = crossLinkIndex.outgoingByRecipe.get(recipe.key) || [];
+    const incomingLinks = crossLinkIndex.incomingByRecipe.get(recipe.key) || [];
     const favorite = state.favorites.includes(recipe.key);
     const yieldText = recipe.yield ? `${formatNumber(recipe.yield.amount * activeScale)} ${recipe.yield.unit}` : '';
 
@@ -1086,9 +1162,10 @@
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
-        <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button></div>${renderIngredientGroups(recipe)}</section>
+        <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button></div>${renderIngredientGroups(recipe, crossLinks)}</section>
         <section class="recipe-section"><h2>Instructions</h2><ol class="instruction-list">${(recipe.instructions || []).map((step,index) => `<li>${renderInstructionWithTimers(step, recipe, index)}</li>`).join('')}</ol></section>
       </div>
+      ${renderCrossLinkSection(recipe, crossLinks, incomingLinks)}
       <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
@@ -1099,16 +1176,25 @@
     document.querySelector('#deleteRecipeBtn')?.addEventListener('click', () => deletePersonalRecipe(recipe));
     document.querySelector('#hideRecipeBtn')?.addEventListener('click', () => hideModuleRecipe(recipe));
     document.querySelectorAll('.timer-link').forEach(button => button.addEventListener('click', () => offerTimer(button, recipe)));
+    bindCrossLinkControls(crossLinks);
     const notesInput = document.querySelector('#recipeNotesInput'); let noteTimer;
     notesInput.addEventListener('input', () => { clearTimeout(noteTimer); document.querySelector('#saveNoteStatus').textContent = 'Saving…'; noteTimer=setTimeout(() => { state.recipeNotes[recipe.key]=notesInput.value; saveState(); document.querySelector('#saveNoteStatus').textContent='Saved on this device'; }, 350); });
     document.querySelectorAll('.scale-button').forEach(button => button.addEventListener('click', () => { activeScale = Number(button.dataset.scale); renderRecipeDetail(); }));
   }
 
-  function renderIngredientGroups(recipe) {
+  function renderIngredientGroups(recipe, crossLinks = []) {
+    const ingredientLinks = new Map(crossLinks.filter(link => link.type === 'ingredient').map(link => [`${link.groupIndex}:${link.ingredientIndex}`, link]));
     return (recipe.ingredientGroups || []).map(group => `
       <div class="ingredient-group">
         ${group.name && group.name !== 'Main' ? `<h3>${escapeHtml(group.name)}</h3>` : ''}
-        <ul class="ingredient-list">${(group.ingredients || []).map(ingredient => `<li><label><input type="checkbox"><span>${formatIngredient(ingredient)}</span></label></li>`).join('')}</ul>
+        <ul class="ingredient-list">${(group.ingredients || []).map((ingredient, ingredientIndex) => {
+          const groupIndex = (recipe.ingredientGroups || []).indexOf(group);
+          const link = ingredientLinks.get(`${groupIndex}:${ingredientIndex}`);
+          const linkButton = !link ? '' : link.targets.length === 1
+            ? `<button type="button" class="crosslink-inline-button" data-crosslink-target="${escapeHtml(link.targets[0].key)}">View recipe</button>`
+            : `<button type="button" class="crosslink-inline-button" data-crosslink-choice="${escapeHtml(link.id)}">${link.targets.length} recipe options</button>`;
+          return `<li><label><input type="checkbox"><span>${formatIngredient(ingredient)}</span></label>${linkButton}</li>`;
+        }).join('')}</ul>
       </div>`).join('');
   }
 
@@ -1394,7 +1480,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.15');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.13.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

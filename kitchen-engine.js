@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.10.3';
+    static version = '0.13.0';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -29,6 +29,7 @@
         if (typeof recipe.id !== 'string' || !recipe.id.trim()) errors.push(`${label} needs an id.`);
         else if (!ID_PATTERN.test(recipe.id)) errors.push(`${label} has invalid id “${recipe.id}”.`);
         if (typeof recipe.name !== 'string' || !recipe.name.trim()) errors.push(`${label} needs a name.`);
+        if (recipe.crossLinkAliases !== undefined && (!Array.isArray(recipe.crossLinkAliases) || recipe.crossLinkAliases.some(alias => typeof alias !== 'string' || !alias.trim()))) errors.push(`${label}: crossLinkAliases must be an array of non-empty strings.`);
         if (recipe.id) {
           if (ids.has(recipe.id)) errors.push(`Duplicate recipe id “${recipe.id}” at recipes ${ids.get(recipe.id) + 1} and ${index + 1}.`);
           else ids.set(recipe.id, index);
@@ -88,6 +89,108 @@
         if (favorites && !favorites.includes(recipe.key)) return false;
         return !normalizedQuery || this.searchText(recipe).includes(normalizedQuery);
       });
+    }
+
+    normalizeCrossLinkText(value) {
+      return String(value || '')
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[’']/g, '')
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    crossLinkAliases(recipe) {
+      const aliases = [recipe.name, ...(Array.isArray(recipe.crossLinkAliases) ? recipe.crossLinkAliases : [])];
+      const genericLead = /^(?:the|a|an|classic|easy|simple|quick|homemade|traditional|creamy|best|ultimate|favorite|family|old fashioned)\s+/;
+      const results = new Set();
+      aliases.forEach(alias => {
+        let normalized = this.normalizeCrossLinkText(alias).replace(/\s+recipe$/, '').trim();
+        if (!normalized) return;
+        results.add(normalized);
+        let shortened = normalized;
+        while (genericLead.test(shortened)) shortened = shortened.replace(genericLead, '').trim();
+        if (shortened && shortened !== normalized) results.add(shortened);
+      });
+      return [...results].filter(alias => alias.length >= 4);
+    }
+
+    crossLinkPhraseMatch(text, alias) {
+      const haystack = ` ${this.normalizeCrossLinkText(text)} `;
+      const needle = ` ${this.normalizeCrossLinkText(alias)} `;
+      return needle.trim().length >= 4 && haystack.includes(needle);
+    }
+
+    buildCrossLinks(recipes) {
+      const targets = (recipes || []).filter(recipe => recipe?.key && recipe?.name).map(recipe => ({
+        recipe,
+        aliases:this.crossLinkAliases(recipe)
+      }));
+      const outgoingByRecipe = new Map();
+      const incomingByRecipe = new Map();
+      const pairingCue = /\b(?:serve|served|pair|paired|pairs|alongside|accompanied|top|topped|spoon|spooned)\b/i;
+
+      const matchingTargets = (source, text) => targets
+        .filter(target => target.recipe.key !== source.key)
+        .map(target => {
+          const matches = target.aliases.filter(alias => this.crossLinkPhraseMatch(text, alias));
+          if (!matches.length) return null;
+          const normalizedText = this.normalizeCrossLinkText(text);
+          const longestAlias = matches.sort((a, b) => b.length - a.length)[0];
+          const exact = normalizedText === longestAlias;
+          return { key:target.recipe.key, name:target.recipe.name, moduleName:target.recipe.moduleName, score:(exact ? 1000 : 500) + longestAlias.length };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+
+      targets.forEach(({ recipe }) => {
+        const links = [];
+        (recipe.ingredientGroups || []).forEach((group, groupIndex) => {
+          (group.ingredients || []).forEach((ingredient, ingredientIndex) => {
+            const matches = matchingTargets(recipe, ingredient.item);
+            if (matches.length) links.push({
+              id:`ingredient-${groupIndex}-${ingredientIndex}`,
+              type:'ingredient',
+              context:ingredient.item,
+              groupIndex,
+              ingredientIndex,
+              targets:matches
+            });
+          });
+        });
+
+        const pairingTexts = [recipe.description, ...(recipe.instructions || [])]
+          .map(text => String(text || '').trim())
+          .filter(text => text && pairingCue.test(text));
+        pairingTexts.forEach((text, index) => {
+          const matches = matchingTargets(recipe, text);
+          if (matches.length) links.push({
+            id:`pairing-${index}`,
+            type:'pairing',
+            context:text,
+            targets:matches
+          });
+        });
+
+        outgoingByRecipe.set(recipe.key, links);
+        links.forEach(link => link.targets.forEach(target => {
+          const incoming = incomingByRecipe.get(target.key) || [];
+          if (!incoming.some(item => item.sourceKey === recipe.key && item.type === link.type && item.context === link.context)) {
+            incoming.push({
+              sourceKey:recipe.key,
+              sourceName:recipe.name,
+              sourceModuleName:recipe.moduleName,
+              type:link.type,
+              context:link.context
+            });
+          }
+          incomingByRecipe.set(target.key, incoming);
+        }));
+      });
+
+      return { outgoingByRecipe, incomingByRecipe };
     }
 
     installModule(modules, incoming) {
