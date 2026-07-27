@@ -1,6 +1,6 @@
 {
   "name": "Kitchen Companion",
-  "short_name": "Kitchen",
+  "short_name": "Kitchen Companion",
   "description": "Recipes, timers, modules, notes, and shopping lists.",
   "start_url": "./?source=pwa",
   "scope": "./",
@@ -19,5 +19,5 @@
       "type": "image/png"
     }
   ],
-  "version": "0.12.9"
+  "version": "0.12.10"
 }
