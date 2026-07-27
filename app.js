@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.13.0';
+  const ENGINE_VERSION = '0.13.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -840,7 +840,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.13.0').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.13.1').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1110,13 +1110,13 @@
       const heading = link.type === 'ingredient' ? `Make or view: ${link.context}` : `Serving connection`;
       return `<article class="crosslink-card"><strong>${escapeHtml(heading)}</strong>${link.type === 'pairing' ? `<p>${escapeHtml(link.context)}</p>` : ''}<div class="crosslink-targets">${link.targets.map(target => renderCrossLinkTargetButton(target)).join('')}</div></article>`;
     }).join('');
-    const incomingCards = incoming.map(reference => `
-      <article class="crosslink-card crosslink-reverse-card">
-        <strong>${reference.type === 'ingredient' ? 'Used in' : 'Pairs with'}</strong>
-        ${renderCrossLinkTargetButton({ key:reference.sourceKey, name:reference.sourceName, moduleName:reference.sourceModuleName })}
-        <p>${escapeHtml(reference.context)}</p>
-      </article>`).join('');
-    return `<section class="recipe-section crosslink-section"><div class="crosslink-heading"><div><div class="recipe-kicker">Across installed modules</div><h2>Cross-Link</h2></div><span>${links.length + incoming.length} connection${links.length + incoming.length === 1 ? '' : 's'}</span></div>${outgoingCards ? `<div class="crosslink-subsection"><h3>From this recipe</h3><div class="crosslink-grid">${outgoingCards}</div></div>` : ''}${incomingCards ? `<div class="crosslink-subsection"><h3>Used by or paired with</h3><div class="crosslink-grid">${incomingCards}</div></div>` : ''}</section>`;
+    const renderIncomingList = type => incoming.filter(reference => reference.type === type).map(reference =>
+      `<button type="button" class="crosslink-used-link" data-crosslink-target="${escapeHtml(reference.sourceKey)}">${escapeHtml(reference.sourceName)}</button>`
+    ).join('');
+    const usedWithLinks = renderIncomingList('ingredient');
+    const pairedWithLinks = renderIncomingList('pairing');
+    const incomingSections = `${usedWithLinks ? `<div class="crosslink-subsection crosslink-used-section"><h3>Used with:</h3><div class="crosslink-used-list">${usedWithLinks}</div></div>` : ''}${pairedWithLinks ? `<div class="crosslink-subsection crosslink-used-section"><h3>Paired with:</h3><div class="crosslink-used-list">${pairedWithLinks}</div></div>` : ''}`;
+    return `<section class="recipe-section crosslink-section"><div class="crosslink-heading"><div><div class="recipe-kicker">Across installed modules</div><h2>Cross-Link</h2></div><span>${links.length + incoming.length} connection${links.length + incoming.length === 1 ? '' : 's'}</span></div>${outgoingCards ? `<div class="crosslink-subsection"><h3>From this recipe</h3><div class="crosslink-grid">${outgoingCards}</div></div>` : ''}${incomingSections}</section>`;
   }
 
   function openCrossLinkChoices(link) {
@@ -1480,7 +1480,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.13.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.13.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

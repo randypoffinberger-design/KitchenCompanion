@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.13.0';
+    static version = '0.13.1';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -177,13 +177,12 @@
         outgoingByRecipe.set(recipe.key, links);
         links.forEach(link => link.targets.forEach(target => {
           const incoming = incomingByRecipe.get(target.key) || [];
-          if (!incoming.some(item => item.sourceKey === recipe.key && item.type === link.type && item.context === link.context)) {
+          if (!incoming.some(item => item.sourceKey === recipe.key)) {
             incoming.push({
               sourceKey:recipe.key,
               sourceName:recipe.name,
               sourceModuleName:recipe.moduleName,
-              type:link.type,
-              context:link.context
+              type:link.type
             });
           }
           incomingByRecipe.set(target.key, incoming);

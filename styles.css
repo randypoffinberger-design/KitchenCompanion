@@ -112,6 +112,10 @@ button { color: inherit; }
 .crosslink-target-button small { color:var(--muted); font-weight:500; }
 .crosslink-target-button:hover,.crosslink-target-button:focus-visible,.crosslink-inline-button:hover,.crosslink-inline-button:focus-visible { border-color:var(--accent); outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); }
 .crosslink-choice-list { max-height:55vh; overflow:auto; margin-top:14px; }
+.crosslink-used-section > h3 { margin-bottom:6px; }
+.crosslink-used-list { display:grid; justify-items:start; gap:3px; }
+.crosslink-used-link { padding:4px 0; border:0; background:transparent; color:var(--accent); font:inherit; font-weight:800; text-align:left; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.crosslink-used-link:hover,.crosslink-used-link:focus-visible { color:var(--text); outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); outline-offset:2px; border-radius:3px; }
 .ingredient-list input:checked + span { text-decoration: line-through; color: var(--muted); }
 .instruction-list { padding-left: 1.35rem; }
 .instruction-list li { padding: 0 0 14px 8px; line-height: 1.55; }
