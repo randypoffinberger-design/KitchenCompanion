@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.12.11';
+  const ENGINE_VERSION = '0.12.12';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -827,7 +827,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.12.11').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.12.12').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1382,7 +1382,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.12.11');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.12.12');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -1910,28 +1910,58 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     else { groupSelect.value='Other'; aisleInput.value=''; }
     els.shoppingItemDialog.showModal();
   }
+
+  function upsertRegularItem({ name, quantity, store, group, aisle }) {
+    const normalizedName = shoppingNameKey(name);
+    const values = {
+      name:displayShoppingName(name),
+      normalizedName,
+      quantity:String(quantity || '').trim(),
+      store:normalizeStore(store),
+      group:SHOPPING_GROUPS.includes(group) ? group : classifyShoppingGroup(name),
+      aisle:String(aisle || '').trim().slice(0, 40)
+    };
+    let regularItem = state.regularItems.find(item => shoppingNameKey(item.normalizedName || item.name) === normalizedName);
+    if (regularItem) Object.assign(regularItem, values);
+    else {
+      regularItem = { id:shoppingId(), ...values };
+      state.regularItems.push(regularItem);
+    }
+    return regularItem;
+  }
+
   function addManualShoppingItem(event){
     event.preventDefault(); const name=document.querySelector('#shoppingItemName').value.trim(); const quantity=document.querySelector('#shoppingItemQuantity').value.trim(); const store=normalizeStore(els.shoppingItemStore.value); const group=document.querySelector('#shoppingItemGroup').value; const aisle=document.querySelector('#shoppingItemAisle').value.trim().slice(0,40); if(!name)return;
+    const saveAsRegular = !els.shoppingItemEditId.value && new FormData(event.currentTarget).has('saveRegularItem');
     const editId=els.shoppingItemEditId.value;
     let item;
-    if(editId){
-      item=state.shoppingList.find(x=>x.id===editId); if(!item)return;
-      const key=shoppingNameKey(name);
-      const changedStore=normalizeStore(item.store)!==store;
-      item.name=displayShoppingName(name); item.normalizedName=key; item.store=store; item.group=group; item.aisle=aisle;
-      state.learnedShoppingGroups[key]=group;
-      if(changedStore)learnStoreChoice(name,store);
-      learnAisleChoice(name,store,aisle);
-      if((item.entries||[]).length<=1)item.entries=[normalizeShoppingEntry({quantity,source:item.entries?.[0]?.source||'Manual',recipeKey:item.entries?.[0]?.recipeKey||''})];
-      item.updatedAt=new Date().toISOString();
+    try {
+      if(editId){
+        item=state.shoppingList.find(x=>x.id===editId); if(!item)return;
+        const key=shoppingNameKey(name);
+        const changedStore=normalizeStore(item.store)!==store;
+        item.name=displayShoppingName(name); item.normalizedName=key; item.store=store; item.group=group; item.aisle=aisle;
+        state.learnedShoppingGroups[key]=group;
+        if(changedStore)learnStoreChoice(name,store);
+        learnAisleChoice(name,store,aisle);
+        if((item.entries||[]).length<=1)item.entries=[normalizeShoppingEntry({quantity,source:item.entries?.[0]?.source||'Manual',recipeKey:item.entries?.[0]?.recipeKey||''})];
+        item.updatedAt=new Date().toISOString();
+      }
+      else {
+        item=addShoppingEntry({name,quantity,store,group,aisle,source:'Manual',learnStore:true});
+        state.learnedShoppingGroups[shoppingNameKey(name)]=group;
+        learnAisleChoice(name,store,aisle);
+        if(saveAsRegular) upsertRegularItem({name,quantity,store,group,aisle});
+      }
+      saveState();
+      if (saveAsRegular) {
+        const persisted = profileStore.loadActiveState().regularItems.some(regular => shoppingNameKey(regular.normalizedName || regular.name) === shoppingNameKey(name));
+        if (!persisted) throw new Error('The regular item could not be verified after saving.');
+      }
+      els.shoppingItemDialog.close(); renderShoppingList(item.id); renderCounts();
+    } catch (error) {
+      alert(`Shopping item was not saved: ${error.message}`);
     }
-    else {
-      item=addShoppingEntry({name,quantity,store,group,aisle,source:'Manual',learnStore:true});
-      state.learnedShoppingGroups[shoppingNameKey(name)]=group;
-      learnAisleChoice(name,store,aisle);
-      if(document.querySelector('#saveRegularItem').checked&&!state.regularItems.some(x=>shoppingNameKey(x.name)===shoppingNameKey(name)))state.regularItems.push({id:shoppingId(),name:displayShoppingName(name),normalizedName:shoppingNameKey(name),quantity,store,group,aisle});
-    }
-    saveState(); els.shoppingItemDialog.close(); renderShoppingList(item.id); renderCounts();
   }
 
   function showRegularItems(){
