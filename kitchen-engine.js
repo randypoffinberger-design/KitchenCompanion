@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.10';
+    static version = '0.16.11';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -316,6 +316,7 @@
         if (hasFillingGroup) repaired = repaired.replace(/\ba layer of\s+on\b/gi, 'a layer of filling on');
         repaired = repaired.replace(/([.!?])\s+your\s+(.+?)\s+into\b/gi, '$1 Dip your $2 into');
         repaired = repaired.replace(/\byour\s+your\b/gi, 'your');
+        repaired = repaired.replace(/\bPour\s+the\s+wet(?:\s+ingredients)?\s+into\s+the\s+dry(?:\s+ingredients)?\b/gi, 'Pour the wet ingredients into the dry ingredients');
         return repaired;
       });
       result.description = description.join(' ').trim(); result.notes = notes.join('\n').trim();
