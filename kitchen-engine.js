@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.13';
+    static version = '0.16.14';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -316,14 +316,50 @@
         }
       }
       const hasFillingGroup = groups.some(group => /^filling$/i.test(group.name));
-      result.instructions = mergedInstructions.map(step => {
-        let repaired = step;
+      const actionVerb = '(?:preheat|grease|line|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool)';
+      const actionStart = new RegExp(`^${actionVerb}\\b`, 'i');
+      const repairInstruction = step => {
+        let repaired = step.replace(/\s+/g, ' ').trim();
         if (hasFillingGroup) repaired = repaired.replace(/\ba layer of\s+on\b/gi, 'a layer of filling on');
         repaired = repaired.replace(/([.!?])\s+your\s+(.+?)\s+into\b/gi, '$1 Dip your $2 into');
         repaired = repaired.replace(/\byour\s+your\b/gi, 'your');
         repaired = repaired.replace(/\bPour\s+the\s+wet(?:\s+ingredients)?\s+into\s+the\s+dry(?:\s+ingredients)?\b/gi, 'Pour the wet ingredients into the dry ingredients');
+        // OCR often drops punctuation where a second imperative begins.
+        repaired = repaired.replace(/([a-z0-9)])\s+(Preheat|Grease|Line|Mix|Combine|Stir|Add|Place|Put|Take|Bake|Cook|Heat|Whisk|Whip|Beat|Fold|Pour|Serve|Remove|Let|Chill|Refrigerate|Freeze|Slice|Cut|Spread|Sprinkle|Bring|Reduce|Cover|Drain|Dust|Flip|Roll|Unroll|Unravel|Melt|Dip|Tap|Cool)\b/g, (match, before, verb, offset, whole) => {
+          const prefix = whole.slice(Math.max(0, offset - 18), offset + 1);
+          if (/\b(?:and|or|then)\s*$/i.test(prefix)) return match;
+          return `${before}. ${verb}`;
+        });
+        repaired = repaired.replace(/\)\s+(slowly|gradually)\s+(add|pour|mix|stir|whisk|beat)\b/gi, '). $1 $2');
+        repaired = repaired.replace(/\bthen\s*[.]\s*$/i, '.');
+        repaired = repaired.replace(/\s+([,.!?])/g, '$1');
         return repaired;
-      });
+      };
+      const segmentInstruction = step => {
+        const repaired = repairInstruction(step).replace(/\s+and\s+(?=(?:roll\s+back|freeze|chill|refrigerate|dip|tap)\b)/gi, '. ');
+        const sentences = repaired.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [repaired];
+        const segments = [];
+        sentences.forEach(sentence => {
+          let value = sentence.trim();
+          if (!value) return;
+          // Split only high-confidence comma transitions; preserve openers such as “In a bowl, whisk…”.
+          const commaParts = actionStart.test(value)
+            ? value.split(/,\s+(?=(?:and\s+)?(?:put|take|remove|flip|roll|unroll|unravel|freeze|chill|refrigerate|dip|tap|cool)\b)/i)
+            : [value];
+          commaParts.forEach(part => {
+            let cleaned = part.trim().replace(/^and\s+/i, '');
+            cleaned = cleaned ? cleaned[0].toUpperCase() + cleaned.slice(1) : cleaned;
+            if (!cleaned) return;
+            const previous = segments[segments.length - 1];
+            const isCaution = /^(?:do not|don't|be careful|make sure|avoid)\b/i.test(cleaned);
+            const isShortSupport = !actionStart.test(cleaned) && (cleaned.match(/[A-Za-z]{2,}/g) || []).length <= 7;
+            if (previous && (isCaution || isShortSupport)) segments[segments.length - 1] = `${previous.replace(/[.!?]?$/, '')}. ${cleaned}`;
+            else segments.push(cleaned);
+          });
+        });
+        return segments;
+      };
+      result.instructions = mergedInstructions.flatMap(segmentInstruction);
       result.description = description.join(' ').trim(); result.notes = notes.join('\n').trim();
       return result;
     }
