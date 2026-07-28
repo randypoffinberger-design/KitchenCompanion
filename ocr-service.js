@@ -223,13 +223,16 @@
           const words=line.match(/[A-Za-z]{2,}/g)||[];
           return words.length>=2&&words.length<=10
             && !/^(?:ingredients?|instructions?|directions?|method|cake|filling|topping)\s*:?\s*$/i.test(line)
-            && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line);
+            && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line)
+            && !/[.!?]\s*(?:preheat|mix|stir|add|bake|whip|fold|freeze|slice|cut|melt|dip)\b/i.test(line)
+            && !/\b\d+\s*(?:seconds?|minutes?|hours?)\b/i.test(line);
         })
         .map((line,index)=>({
           line,index,
-          score:(/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|chicken|beef|pork|pasta|cider)\b/i.test(line)?40:0)
+          score:(/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|pie|pies|chicken|beef|pork|pasta|cider)\b/i.test(line)?40:0)
             + (/^[^a-z]*[A-Z][A-Z '&-]+$/.test(line)?12:0)
         }))
+        .filter(candidate=>candidate.score>=40)
         .sort((a,b)=>b.score-a.score||a.index-b.index)[0]?.line;
       const regions=[
         {x:0,y:.08,width:.58,height:.40},

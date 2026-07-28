@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.5';
+    static version = '0.16.6';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -233,6 +233,8 @@
         && !/^(?:active|prep|cook|total)\s*time\b/i.test(line)
         && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line)
         && !/^(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip)\b/i.test(line)
+        && !/[.!?]\s*(?:preheat|mix|stir|add|bake|whip|fold|freeze|slice|cut|melt|dip)\b/i.test(line)
+        && !/\b\d+\s*(?:seconds?|minutes?|hours?)\b/i.test(line)
       );
       const titleScore = line => {
         const words=line.match(/[A-Za-z]{2,}/g)||[],letters=(line.match(/[A-Za-z]/g)||[]).length,visible=(line.match(/[A-Za-z0-9]/g)||[]).length;
@@ -305,6 +307,7 @@
         let repaired = step;
         if (hasFillingGroup) repaired = repaired.replace(/\ba layer of\s+on\b/gi, 'a layer of filling on');
         repaired = repaired.replace(/([.!?])\s+your\s+(.+?)\s+into\b/gi, '$1 Dip your $2 into');
+        repaired = repaired.replace(/\byour\s+your\b/gi, 'your');
         return repaired;
       });
       result.description = description.join(' ').trim(); result.notes = notes.join('\n').trim();
