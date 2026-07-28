@@ -156,6 +156,12 @@
       .replace(/(\d)\s*\/\s*(\d)/g,'$1/$2')
       .replace(/\b(\d{1,2})\s+(\d{1,2})\s*(?=(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b)/gi,(match,start,end)=>Number(start)<Number(end)?`${start}–${end} `:match)
       .replace(/\b(\d{1,2})\s+(?:to|[-–])\s+(\d{1,2})\s+(seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/gi,'$1–$2 $3')
+      .replace(/^([e°o])\s+(?=\d|l?eggs?\b)/i,'')
+      .replace(/\b(\d)([1-7])\/([2348])\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|pounds?)\b)/gi,'$1 $2/$3 ')
+      .replace(/^1?l\s*eggs?\b/i,'1 egg')
+      .replace(/^(\d+)[lI|]eggs?\b/i,'$1 egg')
+      .replace(/^(\d+)\s+directions?\s*:?\s*$/i,'Directions')
+      .replace(/\bIna\s+(?=(?:medium|large|small|another|the)\b)/g,'In a ')
       .replace(/\b([1-7])[.]?\s+([2348])\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|pounds?)\b)/gi,(match,numerator,denominator)=>Number(numerator)<Number(denominator)?`${numerator}/${denominator} `:match)
       .replace(/^(?:I|l|\[|\|)\s*2\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'1/2 ')
       .replace(/^(?:I|l|\[|\|)\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'1 ')
@@ -226,12 +232,12 @@
     const layoutHints=attempts.map(attempt=>attempt.text).join('\n');
     if(/\b(?:cake|filling|topping)\s*[:.]?/i.test(layoutHints)){
       const titleSources=attempts.flatMap(attempt=>attempt.text.split(/\r?\n/).slice(0,12));
-      const titleCanvas=await makeCanvas(file,'threshold',{x:.14,y:0,width:.86,height:.22},-15);try{
-        await ocrWorker.setParameters({tessedit_pageseg_mode:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'});
-        const titleResult=await ocrWorker.recognize(titleCanvas,{rotateAuto:false});
-        const titleLines=String(titleResult.data?.text||'').split(/\r?\n/).map(normalizeLine).filter(line=>/[A-Za-z]{4,}/.test(line));
-        titleSources.unshift(titleLines.join(' '),...titleLines);
-      }finally{titleCanvas.width=1;titleCanvas.height=1;}
+      for(const angle of [-15,-10]){const titleCanvas=await makeCanvas(file,'threshold',{x:.14,y:0,width:.86,height:.22},angle);try{
+          await ocrWorker.setParameters({tessedit_pageseg_mode:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'});
+          const titleResult=await ocrWorker.recognize(titleCanvas,{rotateAuto:false});
+          const titleLines=String(titleResult.data?.text||'').split(/\r?\n/).map(normalizeLine).filter(line=>/[A-Za-z]{4,}/.test(line));
+          titleSources.unshift(titleLines.join(' '),...titleLines);
+        }finally{titleCanvas.width=1;titleCanvas.height=1;}}
       const titleHint=titleSources
         .map(normalizeLine)
         .filter(line=>{
@@ -266,6 +272,14 @@
             ? (/\bmelt\b[\s\S]*\bdip\b/i.test(text)?60:0)+(/\blet dry\b/i.test(text)?30:0)
             : 0;
           candidates.push({text,confidence,score:scoreText(text,confidence)+endingBonus});
+        }
+        if(regionIndex===2){
+          attempts.forEach(attempt=>{
+            const lines=attempt.text.split(/\r?\n/),start=lines.findIndex(line=>instructionStart.test(line.replace(/^[^A-Za-z]*\d+[.),]?\s*/,'').replace(/^[-•*▪◦]+\s*/,'').trim()));
+            if(start<0)return;
+            const text=lines.slice(start).join('\n').trim(),endingBonus=(/\bmelt\b[\s\S]*\bdip\b/i.test(text)?60:0)+(/\blet dry\b/i.test(text)?30:0);
+            candidates.push({text,confidence:attempt.confidence,score:scoreText(text,attempt.confidence)+endingBonus});
+          });
         }
         candidates.sort((a,b)=>b.score-a.score);const best=candidates[0];
         if(best?.text)regionTexts.push(best.text);regionConfidences.push(best?.confidence||0);

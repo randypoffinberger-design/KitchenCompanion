@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.8';
+    static version = '0.16.9';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -247,15 +247,15 @@
       const titleScore = line => {
         const words=line.match(/[A-Za-z]{2,}/g)||[],letters=(line.match(/[A-Za-z]/g)||[]).length,visible=(line.match(/[A-Za-z0-9]/g)||[]).length;
         if(words.length<2||words.length>10||visible&&letters/visible<.7||/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line))return -100;
-        return (/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|pie|pies|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
+        return (/\b(?:recipe|cake|pancakes?|rolls?|bread|soup|salad|sauce|cookies?|pie|pies|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
       };
       const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
       const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
       let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
       const groups = [currentGroup], description = [], notes = [];
-      const stripBullet = line => line.replace(/^[-•*▪◦]+\s*/, '').replace(/^\d+[.)]\s*/, '').trim();
-      const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|a|an)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
-      const looksInstruction = line => /^\d+[.)]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|in\s+(?:a|an|the)\b)\b/i.test(stripBullet(line));
+      const stripBullet = line => line.replace(/^[-•*▪◦]+\s*/, '').replace(/^\d+[.),]\s*/, '').trim();
+      const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
+      const looksInstruction = line => /^\d+[.),]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|in\s+(?:a|an|another|the)\b)\b/i.test(stripBullet(line));
       const groupHeading = line => line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i) || (/^[A-Z][A-Z &-]{2,30}:?$/.test(line) ? [line, line.replace(/:$/, '')] : null);
       let seenTitle = false;
       lines.forEach((line,lineIndex) => {
