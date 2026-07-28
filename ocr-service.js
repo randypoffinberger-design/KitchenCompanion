@@ -149,6 +149,8 @@
       .replace(/\bI\s*\/\s*2\b/gi,'1/2')
       .replace(/\bI\s*\/\s*4\b/gi,'1/4')
       .replace(/(\d)\s*\/\s*(\d)/g,'$1/$2')
+      .replace(/\b(\d{1,2})\s+(\d{1,2})\s*(?=(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b)/gi,(match,start,end)=>Number(start)<Number(end)?`${start}–${end} `:match)
+      .replace(/\b(\d{1,2})\s+(?:to|[-–])\s+(\d{1,2})\s+(seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/gi,'$1–$2 $3')
       .replace(/\b([1-7])[.]?\s+([2348])\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|pounds?)\b)/gi,(match,numerator,denominator)=>Number(numerator)<Number(denominator)?`${numerator}/${denominator} `:match)
       .replace(/^(?:I|l|\[|\|)\s*2\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'1/2 ')
       .replace(/^(?:I|l|\[|\|)\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'1 ')

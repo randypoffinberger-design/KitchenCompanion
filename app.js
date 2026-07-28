@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.6';
+  const ENGINE_VERSION = '0.16.7';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -887,7 +887,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.6').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.7').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -2003,13 +2003,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function renderInstructionWithTimers(step, recipe, stepIndex) {
     const escaped = escapeHtml(step);
-    const pattern = /\b(?:(\d+)\s*(?:hours?|hrs?|hr)\s*(?:and\s*)?)?(\d+(?:\s*[–-]\s*\d+)?)\s*(minutes?|mins?|min)\b|\b(\d+)\s*(hours?|hrs?|hr)\b/gi;
+    const pattern = /\b(?:(\d+)\s*(?:hours?|hrs?|hr)\s*(?:and\s*)?)?(\d+(?:\s*(?:[–-]|to)\s*\d+)?)\s*(minutes?|mins?|min)\b|\b(\d+(?:\s*(?:[–-]|to)\s*\d+)?)\s*(hours?|hrs?|hr)\b/gi;
     return escaped.replace(pattern, (match, hours, minutePart, _minuteUnit, hourOnly) => {
       let values=[];
-      if (hourOnly) values=[Number(hourOnly)*60];
+      if (hourOnly) values=String(hourOnly).split(/\s*(?:[–-]|to)\s*/i).map(value=>Number(value)*60);
       else {
         const base=(Number(hours)||0)*60;
-        const nums=String(minutePart).split(/[–-]/).map(x=>Number(x.trim()));
+        const nums=String(minutePart).split(/\s*(?:[–-]|to)\s*/i).map(x=>Number(x.trim()));
         values=nums.map(n=>base+n);
       }
       return `<button type="button" class="timer-link" data-minutes="${values.join(',')}" data-step="${stepIndex+1}" data-label="${escapeHtml(match)}">⏱ ${escapeHtml(match)}</button>`;
@@ -2043,7 +2043,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.6');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.7');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

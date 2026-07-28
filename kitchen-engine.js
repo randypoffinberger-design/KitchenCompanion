@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.6';
+    static version = '0.16.7';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -225,7 +225,15 @@
       const instructionHeads = new Set(['instructions', 'directions', 'method', 'steps', 'preparation']);
       const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
       const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use)$/i;
-      const titleCandidates = nonblank.filter(line =>
+      const titleBoundary = nonblank.findIndex((line,index) => {
+        const h=heading(line);
+        return ingredientHeads.has(h)
+          || instructionHeads.has(h)
+          || /^(?:cake|filling|topping)\s*:?\s*$/i.test(line)
+          || (index>0 && /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+\S+/i.test(line));
+      });
+      const titlePool = titleBoundary===0 ? [] : titleBoundary>0 ? nonblank.slice(0,titleBoundary) : nonblank.slice(0,12);
+      const titleCandidates = titlePool.filter(line =>
         !clutter.test(line)
         && !ingredientHeads.has(heading(line))
         && !instructionHeads.has(heading(line))
@@ -239,7 +247,7 @@
       const titleScore = line => {
         const words=line.match(/[A-Za-z]{2,}/g)||[],letters=(line.match(/[A-Za-z]/g)||[]).length,visible=(line.match(/[A-Za-z0-9]/g)||[]).length;
         if(words.length<2||words.length>10||visible&&letters/visible<.7||/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line))return -100;
-        return (/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
+        return (/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|pie|pies|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
       };
       const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
       const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
