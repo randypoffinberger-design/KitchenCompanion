@@ -201,7 +201,7 @@
       .replace(/\s+-\s*$/,'')
       .trim();
   }
-  function cleanRecipeText(text) {
+  function cleanRecipeText(text, removeClutter=true) {
     const junk=[/^(save|share|print|rate|review|jump to recipe|skip to content|advertisement|sponsored|cookie settings|accept cookies|sign up|log in|subscribe)$/i,/^(facebook|pinterest|instagram|youtube|tiktok|x|twitter)$/i,/^©|all rights reserved|privacy policy|terms of use/i,/^(home|recipes|about|contact|menu)$/i,/^(open in app|download app|view comments)$/i];
     const repairedHeadings=String(text||'')
       .replace(/\bI\s*N\s*G\s*R\s*E\s*D\s*I\s*E\s*N\s*T\s*S\s*[:.]?/gi,'\nINGREDIENTS\n')
@@ -210,7 +210,7 @@
       .replace(/\bF[I1]\s+in\s+N(?:G|6)?\s*[:.]?/gi,'\nFILLING:\n')
       .replace(/\bT\s*O\s*P\s*P\s*I\s*N\s*G\s*[:.]?/gi,'\nTOPPING:\n')
       .replace(/\b1?0\s+PPI\s*N\s*G5?\s*[:.]?/gi,'\nTOPPING:\n');
-    let lines=repairedHeadings.split(/\r?\n/).map(normalizeLine).filter(Boolean).filter(line=>!junk.some(rx=>rx.test(line)));
+    let lines=repairedHeadings.split(/\r?\n/).map(normalizeLine).filter(Boolean).filter(line=>!removeClutter||!junk.some(rx=>rx.test(line)));
     const dedup=[]; for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({line,key}); }
     return dedup.map(x=>x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?)\b)/gi,'\n\n');
   }
@@ -298,7 +298,9 @@
             const newStepIndex=endingLines.findIndex(line=>{
               const plain=line.replace(/^[^A-Za-z]*\d+[.),]?\s*/,'').replace(/^[-•*▪◦]+\s*/,'').trim();
               const signature=plain.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,28);
-              return instructionStart.test(plain)&&signature.length>=8&&!selectedText.toLowerCase().replace(/[^a-z0-9]+/g,' ').includes(signature);
+              return /^(?:melt|serve|store|refrigerate|chill|cool|let)\b/i.test(plain)
+                && signature.length>=8
+                && !selectedText.toLowerCase().replace(/[^a-z0-9]+/g,' ').includes(signature);
             });
             if(newStepIndex>=0){
               const endingSupplement=endingLines.slice(newStepIndex).join('\n');
@@ -319,7 +321,7 @@
   async function readImages(event) {
     event.preventDefault(); event.stopImmediatePropagation(); if(running)return; const files=[...fileInput.files]; if(!files.length)return alert('Choose at least one recipe image first.');
     running=true; pageCount=files.length; button.disabled=true; button.textContent='Reading…'; setStatus('Starting OCR…'); const pages=[],failures=[];
-    try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { const result=await recognizeBest(ocrWorker,files[i]); if(cleanupToggle?.checked)result.text=cleanRecipeText(result.text); if(result.text)pages.push(result);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
+    try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { const result=await recognizeBest(ocrWorker,files[i]); result.text=cleanRecipeText(result.text,cleanupToggle?.checked!==false); if(result.text)pages.push(result);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
       if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.'); const combined=combinePages(pages.map(page=>page.text)); output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const quality=qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low);
     } catch(error){console.error(error); try{await worker?.terminate?.();}catch{} worker=null; setStatus(`Text recognition failed: ${error.message} You can retry, use tighter screenshots, or paste converted text instead.`,true);} finally {running=false;button.disabled=false;button.textContent='Read images';activePage=0;pageCount=0;}
   }
