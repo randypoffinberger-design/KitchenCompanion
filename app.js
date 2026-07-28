@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.15.2';
+  const ENGINE_VERSION = '0.16.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -99,6 +99,7 @@
     moduleFile: document.querySelector('#moduleFile'), importBtn: document.querySelector('#importBtn'), moduleImportBtn: document.querySelector('#moduleImportBtn'),
     moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'),
     settingsBtn: document.querySelector('#menuSettings'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'),
+    reportProblemBtn: document.querySelector('#reportProblemBtn'), sendFeedbackBtn: document.querySelector('#sendFeedbackBtn'), feedbackDialog: document.querySelector('#feedbackDialog'), feedbackForm: document.querySelector('#feedbackForm'), feedbackDialogTitle: document.querySelector('#feedbackDialogTitle'), feedbackIntro: document.querySelector('#feedbackIntro'), feedbackReportId: document.querySelector('#feedbackReportId'), feedbackType: document.querySelector('#feedbackType'), feedbackSeverityField: document.querySelector('#feedbackSeverityField'), feedbackSeverity: document.querySelector('#feedbackSeverity'), feedbackSummary: document.querySelector('#feedbackSummary'), feedbackBugFields: document.querySelector('#feedbackBugFields'), feedbackActivity: document.querySelector('#feedbackActivity'), feedbackActual: document.querySelector('#feedbackActual'), feedbackExpected: document.querySelector('#feedbackExpected'), feedbackDetailsField: document.querySelector('#feedbackDetailsField'), feedbackDetails: document.querySelector('#feedbackDetails'), feedbackEmail: document.querySelector('#feedbackEmail'), feedbackScreenshot: document.querySelector('#feedbackScreenshot'), feedbackScreenshotStatus: document.querySelector('#feedbackScreenshotStatus'), feedbackIncludeDiagnostics: document.querySelector('#feedbackIncludeDiagnostics'), prepareFeedbackBtn: document.querySelector('#prepareFeedbackBtn'), feedbackPreviewField: document.querySelector('#feedbackPreviewField'), feedbackReportPreview: document.querySelector('#feedbackReportPreview'), feedbackStatus: document.querySelector('#feedbackStatus'), copyFeedbackBtn: document.querySelector('#copyFeedbackBtn'), downloadFeedbackBtn: document.querySelector('#downloadFeedbackBtn'), shareFeedbackBtn: document.querySelector('#shareFeedbackBtn'), closeFeedbackBtn: document.querySelector('#closeFeedbackBtn'),
     createRecipeBtn: document.querySelector('#menuCreateRecipe'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta'),
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
@@ -224,6 +225,21 @@
     els.importFileBtn.addEventListener('click', () => { els.importOptionsDialog.close(); els.moduleFile.click(); });
     els.moduleFile.addEventListener('change', importModules);
     els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); renderHiddenRecipes(); renderActiveProfile(); els.settingsDialog.showModal(); });
+    els.reportProblemBtn?.addEventListener('click', () => openFeedbackDialog('bug'));
+    els.sendFeedbackBtn?.addEventListener('click', () => openFeedbackDialog('suggestion'));
+    els.closeFeedbackBtn?.addEventListener('click', () => els.feedbackDialog?.close());
+    els.feedbackType?.addEventListener('change', updateFeedbackTypeFields);
+    els.feedbackScreenshot?.addEventListener('change', validateFeedbackScreenshot);
+    els.prepareFeedbackBtn?.addEventListener('click', () => prepareFeedbackPreview(true, true));
+    els.copyFeedbackBtn?.addEventListener('click', copyFeedbackReport);
+    els.downloadFeedbackBtn?.addEventListener('click', downloadFeedbackReport);
+    els.feedbackForm?.addEventListener('submit', shareFeedbackReport);
+    els.feedbackForm?.addEventListener('input', event => {
+      if (event.target === els.feedbackReportPreview || event.target === els.feedbackScreenshot) return;
+      els.feedbackReportPreview.value = '';
+      els.feedbackPreviewField.hidden = true;
+      setFeedbackStatus('');
+    });
     els.hiddenRecipesBtn?.addEventListener('click', () => { renderHiddenRecipes(); els.settingsDialog.close(); els.hiddenRecipesDialog.showModal(); });
     els.restoreAllHiddenBtn?.addEventListener('click', restoreAllHiddenRecipes);
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
@@ -871,7 +887,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.15.2').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.0').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -928,6 +944,271 @@
     const passed = checks.filter(([, ok]) => ok).length;
     els.diagnosticsOutput.hidden = false;
     els.diagnosticsOutput.textContent = `Kitchen Companion ${ENGINE_VERSION} diagnostics\n${checks.map(([name, ok]) => `${ok ? 'PASS' : 'FAIL'}  ${name}`).join('\n')}\n\nStorage used: ${(storageInfo.storageBytes/1024/1024).toFixed(2)} MB\nFull-module recovery points: ${storageInfo.fullBackupCount}\n${passed}/${checks.length} checks passed.`;
+  }
+
+  const FEEDBACK_TYPE_LABELS = {
+    bug:'Bug or problem',
+    suggestion:'Suggestion',
+    question:'Question',
+    general:'General feedback'
+  };
+
+  function newFeedbackReportId() {
+    const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
+    const bytes = new Uint8Array(3);
+    globalThis.crypto?.getRandomValues?.(bytes);
+    const suffix = [...bytes].map(value => value.toString(16).padStart(2, '0')).join('').toUpperCase()
+      || Math.random().toString(16).slice(2, 8).padEnd(6, '0').toUpperCase();
+    return `KC-${stamp}-${suffix}`;
+  }
+
+  function openFeedbackDialog(initialType = 'general') {
+    els.feedbackForm.reset();
+    els.feedbackReportId.value = newFeedbackReportId();
+    els.feedbackType.value = FEEDBACK_TYPE_LABELS[initialType] ? initialType : 'general';
+    els.feedbackIncludeDiagnostics.checked = true;
+    els.feedbackReportPreview.value = '';
+    els.feedbackPreviewField.hidden = true;
+    els.feedbackScreenshotStatus.textContent = 'No screenshot selected.';
+    setFeedbackStatus('');
+    updateFeedbackTypeFields();
+    els.settingsDialog.close();
+    els.feedbackDialog.showModal();
+    window.setTimeout(() => els.feedbackSummary.focus(), 50);
+  }
+
+  function updateFeedbackTypeFields() {
+    const isBug = els.feedbackType.value === 'bug';
+    els.feedbackSeverityField.hidden = !isBug;
+    els.feedbackBugFields.hidden = !isBug;
+    els.feedbackDetailsField.hidden = isBug;
+    for (const field of [els.feedbackActivity, els.feedbackActual, els.feedbackExpected]) field.required = isBug;
+    els.feedbackDetails.required = !isBug;
+    els.feedbackDialogTitle.textContent = isBug ? 'Report a problem' : 'Send feedback';
+    els.feedbackIntro.textContent = isBug
+      ? 'Tell us what happened. You can review everything before sharing it.'
+      : 'Share an idea, question, or general feedback. You can review everything before sharing it.';
+  }
+
+  function validateFeedbackScreenshot() {
+    const file = els.feedbackScreenshot.files?.[0];
+    if (!file) {
+      els.feedbackScreenshotStatus.textContent = 'No screenshot selected.';
+      return true;
+    }
+    const looksLikeImage = String(file.type || '').startsWith('image/')
+      || /\.(?:png|jpe?g|webp|gif|heic|heif)$/i.test(file.name || '');
+    if (!looksLikeImage) {
+      els.feedbackScreenshot.value = '';
+      els.feedbackScreenshotStatus.textContent = 'The selected file is not an image.';
+      return false;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      els.feedbackScreenshot.value = '';
+      els.feedbackScreenshotStatus.textContent = 'The screenshot is larger than the 12 MB limit.';
+      return false;
+    }
+    els.feedbackScreenshotStatus.textContent = `${file.name} • ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    return true;
+  }
+
+  function feedbackDiagnostics() {
+    const storage = profileStore.getDiagnostics();
+    return {
+      appVersion:ENGINE_VERSION,
+      moduleFormat:'1.x',
+      installedModules:(state.modules || [])
+        .filter(module => module.moduleId !== 'my-recipes')
+        .map(module => ({
+          moduleId:String(module.moduleId || ''),
+          name:String(module.name || ''),
+          version:String(module.version || ''),
+          recipeCount:Array.isArray(module.recipes) ? module.recipes.length : 0,
+          enabled:module.enabled !== false
+        })),
+      browser:{
+        userAgent:String(navigator.userAgent || ''),
+        platform:String(navigator.platform || ''),
+        language:String(navigator.language || ''),
+        online:navigator.onLine !== false,
+        standalone:window.matchMedia?.('(display-mode: standalone)')?.matches || !!navigator.standalone
+      },
+      display:{
+        viewportWidth:Math.round(window.innerWidth || 0),
+        viewportHeight:Math.round(window.innerHeight || 0),
+        screenWidth:Math.round(window.screen?.width || 0),
+        screenHeight:Math.round(window.screen?.height || 0),
+        pixelRatio:Number(window.devicePixelRatio || 1)
+      },
+      storage:{
+        schemaVersion:storage.storageSchemaVersion,
+        profileCount:storage.profileCount,
+        moduleCount:storage.moduleCount,
+        checkpointCount:storage.backupCount,
+        healthyCheckpointCount:storage.validBackupCount,
+        fullModuleRecoveryPoints:storage.fullBackupCount,
+        approximateBytes:storage.storageBytes
+      },
+      context:{ currentView },
+      startupErrors:startupIssues.map(issue => ({
+        step:String(issue.label || 'unknown'),
+        errorType:String(issue.error?.name || 'Error')
+      }))
+    };
+  }
+
+  function feedbackFormData() {
+    const type = FEEDBACK_TYPE_LABELS[els.feedbackType.value] ? els.feedbackType.value : 'general';
+    const screenshot = els.feedbackScreenshot.files?.[0] || null;
+    return {
+      reportId:els.feedbackReportId.value || newFeedbackReportId(),
+      type,
+      typeLabel:FEEDBACK_TYPE_LABELS[type],
+      severity:type === 'bug' ? els.feedbackSeverity.value : '',
+      summary:els.feedbackSummary.value.trim(),
+      activity:type === 'bug' ? els.feedbackActivity.value.trim() : '',
+      actual:type === 'bug' ? els.feedbackActual.value.trim() : '',
+      expected:type === 'bug' ? els.feedbackExpected.value.trim() : '',
+      details:type === 'bug' ? '' : els.feedbackDetails.value.trim(),
+      contactEmail:els.feedbackEmail.value.trim(),
+      screenshot:screenshot ? { name:screenshot.name, type:screenshot.type, size:screenshot.size } : null,
+      diagnostics:els.feedbackIncludeDiagnostics.checked ? feedbackDiagnostics() : null
+    };
+  }
+
+  function feedbackReportText(report) {
+    const lines = [
+      'Kitchen Companion Feedback Report',
+      `Report ID: ${report.reportId}`,
+      `Created: ${new Date().toLocaleString()}`,
+      `Type: ${report.typeLabel}`,
+      ...(report.severity ? [`Severity: ${report.severity}`] : []),
+      '',
+      `Summary: ${report.summary}`
+    ];
+    if (report.type === 'bug') {
+      lines.push(
+        '',
+        'What I was doing:',
+        report.activity,
+        '',
+        'What happened:',
+        report.actual,
+        '',
+        'What I expected:',
+        report.expected
+      );
+    } else lines.push('', 'Details:', report.details);
+    if (report.contactEmail) lines.push('', `Contact email: ${report.contactEmail}`);
+    lines.push('', `Screenshot attached: ${report.screenshot ? `${report.screenshot.name} (${report.screenshot.size} bytes)` : 'No'}`);
+    if (report.diagnostics) lines.push('', 'Anonymous diagnostics:', JSON.stringify(report.diagnostics, null, 2));
+    else lines.push('', 'Anonymous diagnostics: Not included');
+    return lines.join('\n');
+  }
+
+  function prepareFeedbackPreview(requireValid = true, force = false) {
+    if (requireValid && !els.feedbackForm.reportValidity()) return '';
+    if (!validateFeedbackScreenshot()) return '';
+    if (!force && !els.feedbackPreviewField.hidden && els.feedbackReportPreview.value.trim()) return els.feedbackReportPreview.value;
+    const text = feedbackReportText(feedbackFormData());
+    els.feedbackReportPreview.value = text;
+    els.feedbackPreviewField.hidden = false;
+    els.feedbackReportPreview.scrollIntoView({ behavior:'smooth', block:'center' });
+    setFeedbackStatus('Report prepared. Review or edit it before sharing.');
+    return text;
+  }
+
+  function currentFeedbackPayload() {
+    const report = feedbackFormData();
+    const reportText = els.feedbackReportPreview.value.trim() || feedbackReportText(report);
+    return {
+      format:'kitchen-companion-feedback',
+      schemaVersion:1,
+      reportId:report.reportId,
+      createdAt:new Date().toISOString(),
+      appVersion:ENGINE_VERSION,
+      report:{
+        type:report.type,
+        severity:report.severity || null,
+        summary:report.summary,
+        activity:report.activity || null,
+        actual:report.actual || null,
+        expected:report.expected || null,
+        details:report.details || null,
+        contactEmail:report.contactEmail || null,
+        screenshot:report.screenshot,
+        diagnostics:report.diagnostics,
+        reportText
+      }
+    };
+  }
+
+  function feedbackFilename() {
+    return `Kitchen-Companion-Feedback-${safeFilename(els.feedbackReportId.value || newFeedbackReportId())}.kcfeedback`;
+  }
+
+  function downloadBlob(filename, blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function feedbackReportFile() {
+    const payload = currentFeedbackPayload();
+    return new File([JSON.stringify(payload, null, 2)], feedbackFilename(), { type:'application/json' });
+  }
+
+  function setFeedbackStatus(message, error = false) {
+    els.feedbackStatus.textContent = message;
+    els.feedbackStatus.classList.toggle('form-error', !!error);
+  }
+
+  async function copyFeedbackReport() {
+    if (!prepareFeedbackPreview()) return;
+    try {
+      await copyTextToClipboard(els.feedbackReportPreview.value);
+      setFeedbackStatus('Report copied. Paste it into a text, email, Messenger, or another app.');
+    } catch (error) { setFeedbackStatus(`Report could not be copied: ${error.message}`, true); }
+  }
+
+  function downloadFeedbackReport() {
+    if (!prepareFeedbackPreview()) return;
+    const file = feedbackReportFile();
+    downloadBlob(file.name, file);
+    setFeedbackStatus('Report downloaded. Attach it wherever you want to send it.');
+  }
+
+  async function shareFeedbackReport(event) {
+    event.preventDefault();
+    if (!prepareFeedbackPreview()) return;
+    const reportFile = feedbackReportFile();
+    const screenshot = els.feedbackScreenshot.files?.[0] || null;
+    const files = screenshot ? [reportFile, screenshot] : [reportFile];
+    const shareTitle = `Kitchen Companion report ${els.feedbackReportId.value}`;
+    try {
+      if (navigator.share) {
+        if (!navigator.canShare || navigator.canShare({ files })) {
+          await navigator.share({ title:shareTitle, text:`Kitchen Companion ${FEEDBACK_TYPE_LABELS[els.feedbackType.value]} — ${els.feedbackSummary.value.trim()}`, files });
+        } else {
+          await navigator.share({ title:shareTitle, text:els.feedbackReportPreview.value });
+        }
+        setFeedbackStatus('The report was handed to your selected sharing app.');
+        return;
+      }
+      downloadBlob(reportFile.name, reportFile);
+      setFeedbackStatus('Sharing is not supported here, so the report was downloaded instead.');
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        setFeedbackStatus('Sharing was canceled. Your completed report is still here.');
+        return;
+      }
+      setFeedbackStatus(`The report could not be shared: ${error.message || error}. Use Download Report instead.`, true);
+    }
   }
 
   function optimizeLocalStorage() {
@@ -1756,7 +2037,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.15.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

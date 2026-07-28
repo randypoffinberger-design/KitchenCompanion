@@ -503,6 +503,24 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .safety-backup-row .button { flex:0 0 auto; padding:.45rem .7rem; }
 .diagnostics-output { white-space:pre-wrap; overflow:auto; max-height:18rem; padding:.8rem; border-radius:12px; background:var(--panel-2); border:1px solid var(--border); font-size:.78rem; }
 
+/* v0.16.0 in-app feedback and bug reports */
+.feedback-launch-actions,.feedback-actions{display:flex;flex-wrap:wrap;gap:.65rem}
+.feedback-launch-actions .button{flex:1 1 10rem}
+.feedback-card{box-sizing:border-box;width:min(94vw,720px);max-height:92vh;overflow:auto}
+.feedback-card h2{margin:.2rem 0 0}
+.feedback-card>label,.feedback-card #feedbackBugFields>label,.feedback-form-grid>label{display:grid;gap:.4rem;margin-top:.85rem;font-weight:750}
+.feedback-card input:not([type="checkbox"]):not([type="file"]),.feedback-card select,.feedback-card textarea{box-sizing:border-box;width:100%;padding:.72rem .8rem;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-weight:400}
+.feedback-card textarea{resize:vertical}
+.feedback-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.feedback-diagnostics-choice{display:flex!important;align-items:flex-start;gap:.7rem;padding:.85rem;margin-top:1rem!important;border:1px solid var(--border);border-radius:12px;background:var(--panel-2)}
+.feedback-diagnostics-choice input{flex:0 0 auto;margin-top:.2rem}
+.feedback-diagnostics-choice span{display:grid;gap:.25rem}
+.feedback-diagnostics-choice small{color:var(--muted);font-weight:400;line-height:1.4}
+.feedback-actions{justify-content:flex-end;margin-top:1rem}
+.feedback-actions .button{flex:1 1 11rem}
+#feedbackPreviewField[hidden],#feedbackBugFields[hidden],#feedbackDetailsField[hidden],#feedbackSeverityField[hidden]{display:none!important}
+@media(max-width:560px){.feedback-form-grid{grid-template-columns:1fr}.feedback-actions .button{flex-basis:100%}}
+
 /* v0.12.0 smart shopping list */
 .shopping-group-heading{margin:.75rem 0 .1rem;padding:.38rem .15rem .3rem;border-bottom:1px solid var(--border);color:var(--accent);font-size:.82rem;font-weight:850;letter-spacing:.045em;text-transform:uppercase}
 .shopping-group-heading:first-child{margin-top:.25rem}
