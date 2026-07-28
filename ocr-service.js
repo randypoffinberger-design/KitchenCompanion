@@ -292,33 +292,41 @@
         }
         if(regionIndex===2&&!/\bmelt\b/i.test(selectedText)){
           const endingCandidates=[];
-          for(const style of ['detail','threshold']){
-            const endingCanvas=await makeCanvas(file,style,{x:0,y:.58,width:1,height:.42});try{
-              const modes=style==='detail'
-                ? [globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6']
-                : [globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'];
-              for(const psm of modes){
-                await ocrWorker.setParameters({tessedit_pageseg_mode:psm});
-                const endingResult=await ocrWorker.recognize(endingCanvas,{rotateAuto:false});
+          const endingPlans=[
+            {style:'detail',region:{x:0,y:.68,width:1,height:.32},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',rotateAuto:false},
+            {style:'threshold',region:{x:0,y:.68,width:1,height:.32},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',rotateAuto:false},
+            {style:'balanced',region:{x:0,y:.74,width:1,height:.26},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',rotateAuto:true},
+            {style:'detail',region:{x:0,y:.74,width:1,height:.26},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11',rotateAuto:false}
+          ];
+          for(const plan of endingPlans){
+            const endingCanvas=await makeCanvas(file,plan.style,plan.region);try{
+                await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});
+                const endingResult=await ocrWorker.recognize(endingCanvas,{rotateAuto:plan.rotateAuto});
                 const endingLines=String(endingResult.data?.text||'').split(/\r?\n/).map(normalizeLine).filter(Boolean);
-                const meltIndex=endingLines.findIndex(line=>/\bmelt\b/i.test(line));
+                const meltIndex=endingLines.findIndex(line=>
+                  /\bmelt\b/i.test(line)
+                  || /\b(?:your\s+)?chocolate\b.*\b(?:tallow|crisco)\b.*\buntil\b/i.test(line)
+                );
                 if(meltIndex<0)continue;
                 const suffix=[];
                 for(const [lineIndex,line] of endingLines.slice(meltIndex).entries()){
                   if(suffix.length&&(line.match(/[A-Za-z]{2,}/g)||[]).length===0)break;
                   const meltMatch=line.match(/\bmelt\b/i);
-                  const cleaned=lineIndex===0&&meltMatch
-                    ? line.slice(meltMatch.index).trim()
-                    : line.replace(/^[-•*▪◦]+\s*/,'').trim();
+                  const evidenceMatch=line.match(/\b(?:your\s+)?chocolate\b.*\b(?:tallow|crisco)\b.*\buntil\b/i);
+                  let cleaned=line.replace(/^[-•*▪◦]+\s*/,'').trim();
+                  if(lineIndex===0&&meltMatch)cleaned=line.slice(meltMatch.index).trim();
+                  else if(lineIndex===0&&evidenceMatch){
+                    const phrase=line.slice(evidenceMatch.index).trim();
+                    cleaned=`Melt ${/^your\b/i.test(phrase)?'':'your '}${phrase}`;
+                  }
                   suffix.push(cleaned);
                 }
                 const text=suffix.join(' ').replace(/\s+/g,' ').trim(),words=(text.match(/[A-Za-z]{2,}/g)||[]).length;
-                if(words<8||!/\bmelt\b/i.test(text)||!/\b(?:dip|chocolate)\b/i.test(text))continue;
+                if(words<8||!/^melt\b/i.test(text)||!/\bchocolate\b/i.test(text)||!/\b(?:dip|tallow|crisco)\b/i.test(text))continue;
                 endingCandidates.push({
                   text,
                   score:words+(/\bdip\b/i.test(text)?80:0)+(/\bchocolate\b/i.test(text)?50:0)+(/\blet dry\b/i.test(text)?50:0)
                 });
-              }
             }finally{endingCanvas.width=1;endingCanvas.height=1;}
           }
           endingCandidates.sort((a,b)=>b.score-a.score);
