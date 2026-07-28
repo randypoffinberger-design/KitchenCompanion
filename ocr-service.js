@@ -92,7 +92,7 @@
     ctx.putImageData(image,0,0);
   }
 
-  async function makeCanvas(file, mode='balanced', region=null) {
+  async function makeCanvas(file, mode='balanced', region=null, rotation=0) {
     const bitmap=await loadBitmap(file); const sourceWidth=bitmap.width||bitmap.naturalWidth; const sourceHeight=bitmap.height||bitmap.naturalHeight;
     const source=document.createElement('canvas');source.width=sourceWidth;source.height=sourceHeight;const sourceCtx=source.getContext('2d',{willReadFrequently:true});sourceCtx.drawImage(bitmap,0,0);bitmap.close?.();
     const autoBounds=findContentBounds(sourceCtx,sourceWidth,sourceHeight), base=region?{
@@ -104,8 +104,13 @@
     const edgeScale=Math.min(MAX_CANVAS_EDGE/base.width,MAX_CANVAS_EDGE/base.height);
     const pixelScale=Math.sqrt(MAX_CANVAS_PIXELS/(base.width*base.height));
     scale=Math.max(0.25,Math.min(scale,edgeScale,pixelScale));
-    const width=Math.max(1,Math.round(base.width*scale)), height=Math.max(1,Math.round(base.height*scale)); const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
-    const ctx=canvas.getContext('2d',{willReadFrequently:true}); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; ctx.drawImage(source,base.x,base.y,base.width,base.height,0,0,width,height);
+    const drawWidth=Math.max(1,Math.round(base.width*scale)), drawHeight=Math.max(1,Math.round(base.height*scale)), radians=rotation*Math.PI/180;
+    const width=rotation?Math.ceil(Math.abs(drawWidth*Math.cos(radians))+Math.abs(drawHeight*Math.sin(radians))):drawWidth;
+    const height=rotation?Math.ceil(Math.abs(drawHeight*Math.cos(radians))+Math.abs(drawWidth*Math.sin(radians))):drawHeight;
+    const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true}); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
+    ctx.save();ctx.translate(width/2,height/2);ctx.rotate(radians);ctx.drawImage(source,base.x,base.y,base.width,base.height,-drawWidth/2,-drawHeight/2,drawWidth,drawHeight);ctx.restore();
     source.width=1;source.height=1;applyTreatment(ctx,width,height,mode); return canvas;
   }
 
@@ -178,6 +183,8 @@
       .replace(/\ba?\s*9\s*x\s*(?:D?B|1\)|B)\s+pan\b/gi,'9 x 13 pan')
       .replace(/^\\?dd\b/i,'Add')
       .replace(/\b350\s+[1I|]\s+(?=(?:Grease|and)\b)/i,'350°F. ')
+      .replace(/\s+[|)]\s*$/,'')
+      .replace(/\s+-\s*$/,'')
       .trim();
   }
   function cleanRecipeText(text) {
@@ -218,8 +225,14 @@
     }finally{canvas.width=1;canvas.height=1;}}
     const layoutHints=attempts.map(attempt=>attempt.text).join('\n');
     if(/\b(?:cake|filling|topping)\s*[:.]?/i.test(layoutHints)){
-      const titleHint=attempts
-        .flatMap(attempt=>attempt.text.split(/\r?\n/).slice(0,12))
+      const titleSources=attempts.flatMap(attempt=>attempt.text.split(/\r?\n/).slice(0,12));
+      const titleCanvas=await makeCanvas(file,'threshold',{x:.14,y:0,width:.86,height:.22},-15);try{
+        await ocrWorker.setParameters({tessedit_pageseg_mode:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'});
+        const titleResult=await ocrWorker.recognize(titleCanvas,{rotateAuto:false});
+        const titleLines=String(titleResult.data?.text||'').split(/\r?\n/).map(normalizeLine).filter(line=>/[A-Za-z]{4,}/.test(line));
+        titleSources.unshift(titleLines.join(' '),...titleLines);
+      }finally{titleCanvas.width=1;titleCanvas.height=1;}
+      const titleHint=titleSources
         .map(normalizeLine)
         .filter(line=>{
           const words=line.match(/[A-Za-z]{2,}/g)||[];
@@ -249,7 +262,10 @@
         for(const psm of modes){
           await ocrWorker.setParameters({tessedit_pageseg_mode:psm});
           const result=await ocrWorker.recognize(canvas,{rotateAuto:false}),text=String(result.data?.text||'').trim(),confidence=Number(result.data?.confidence||0);
-          candidates.push({text,confidence,score:scoreText(text,confidence)});
+          const endingBonus=regionIndex===2
+            ? (/\bmelt\b[\s\S]*\bdip\b/i.test(text)?60:0)+(/\blet dry\b/i.test(text)?30:0)
+            : 0;
+          candidates.push({text,confidence,score:scoreText(text,confidence)+endingBonus});
         }
         candidates.sort((a,b)=>b.score-a.score);const best=candidates[0];
         if(best?.text)regionTexts.push(best.text);regionConfidences.push(best?.confidence||0);
