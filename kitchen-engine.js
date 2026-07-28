@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.1';
+    static version = '0.16.2';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -225,16 +225,22 @@
       const instructionHeads = new Set(['instructions', 'directions', 'method', 'steps', 'preparation']);
       const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
       const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use)$/i;
-      const titleCandidates = nonblank.filter(line => !clutter.test(line) && !ingredientHeads.has(heading(line)) && !instructionHeads.has(heading(line)) && !/^(?:prep|cook|total)\s*time\b/i.test(line));
-      const result = { name: titleCandidates[0] || 'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
+      const titleCandidates = nonblank.filter(line => !clutter.test(line) && !ingredientHeads.has(heading(line)) && !instructionHeads.has(heading(line)) && !/^(?:active|prep|cook|total)\s*time\b/i.test(line));
+      const titleScore = line => {
+        const words=line.match(/[A-Za-z]{2,}/g)||[],letters=(line.match(/[A-Za-z]/g)||[]).length,visible=(line.match(/[A-Za-z0-9]/g)||[]).length;
+        if(words.length<2||words.length>10||visible&&letters/visible<.7)return -100;
+        return (/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
+      };
+      const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
+      const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
       let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
       const groups = [currentGroup], description = [], notes = [];
       const stripBullet = line => line.replace(/^[-•*▪◦]+\s*/, '').replace(/^\d+[.)]\s*/, '').trim();
       const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|a|an)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
       const looksInstruction = line => /^\d+[.)]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|spread|sprinkle|bring|reduce|cover|drain)\b/i.test(stripBullet(line));
-      const groupHeading = line => line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i) || (/^[A-Z][A-Za-z &-]{2,30}:$/.test(line) ? [line, line.replace(/:$/, '')] : null);
+      const groupHeading = line => line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i) || (/^[A-Z][A-Z &-]{2,30}:?$/.test(line) ? [line, line.replace(/:$/, '')] : null);
       let seenTitle = false;
-      lines.forEach(line => {
+      lines.forEach((line,lineIndex) => {
         if (!line || clutter.test(line)) return;
         if (!seenTitle && line === result.name) { seenTitle = true; return; }
         const h = heading(line);
@@ -242,13 +248,18 @@
         if (instructionHeads.has(h)) { section = 'instructions'; return; }
         if (noteHeads.has(h)) { section = 'notes'; return; }
         let match;
-        if ((match = line.match(/^(?:prep(?:aration)?\s*time)\s*[:：-]\s*(.+)$/i))) { result.prepTime = match[1].trim(); return; }
+        if ((match = line.match(/^(?:active|prep(?:aration)?)\s*time\s*[:：-]\s*(.+)$/i))) { result.prepTime = match[1].trim(); return; }
         if ((match = line.match(/^(?:cook(?:ing)?\s*time)\s*[:：-]\s*(.+)$/i))) { result.cookTime = match[1].trim(); return; }
-        if ((match = line.match(/^(?:total\s*time)\s*[:：-]\s*(.+)$/i))) { if (!result.cookTime) result.cookTime = match[1].trim(); return; }
+        if ((match = line.match(/^(?:total\s*time)\s*[:：-]\s*(.+)$/i))) { notes.push(`Total time: ${match[1].trim()}`); return; }
         if ((match = line.match(/^(?:yield|serves|servings|makes)\s*[:：-]?\s*(.+)$/i))) { result.yieldText = match[1].trim(); return; }
         if ((match = line.match(/^category\s*[:：-]\s*(.+)$/i))) { result.category = match[1].trim(); return; }
         if ((match = line.match(/^tags?\s*[:：-]\s*(.+)$/i))) { result.tags = match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean); return; }
+        if (section === 'meta') {
+          const gh=groupHeading(line),next=lines.slice(lineIndex+1).find(Boolean);
+          if(gh&&next&&looksIngredient(next)){section='ingredients';currentGroup={name:gh[1].trim(),ingredients:[]};groups.push(currentGroup);return;}
+        }
         if (section === 'ingredients') {
+          if (looksInstruction(line)) { section = 'instructions'; result.instructions.push(stripBullet(line)); return; }
           const gh = groupHeading(line);
           if (gh && !looksIngredient(line)) { currentGroup = { name: gh[1].trim(), ingredients: [] }; groups.push(currentGroup); }
           else currentGroup.ingredients.push(stripBullet(line));

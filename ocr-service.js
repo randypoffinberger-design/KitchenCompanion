@@ -14,7 +14,7 @@
   let running = false, worker = null, libraryPromise = null, activePage = 0, pageCount = 0;
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_CANVAS_EDGE = 10_000;
-  const MIN_RECIPE_SCORE = 105;
+  const MIN_RECIPE_SCORE = 150;
   const AI_PROMPT = `Convert the attached recipe screenshot(s) into clean plain text. Include the recipe title, yield, prep and cook times, ingredients, instructions, and notes. Remove advertisements, navigation, social buttons, photo credits, repeated headers or footers, and duplicated text caused by overlapping screenshots. Preserve fractions and quantities exactly. Do not invent missing ingredients, quantities, times, or steps. Format the result with clear Ingredients and Instructions headings.`;
 
   function setStatus(message, showFallback = false) { status.textContent = message; if (fallbackActions) fallbackActions.hidden = !showFallback; }
@@ -117,17 +117,40 @@
     await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300',tessedit_pageseg_mode:globalThis.Tesseract.PSM?.AUTO||'3'}); return worker;
   }
 
+  const instructionStart=/^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|spread|sprinkle|bring|reduce|cover|drain|store|take|melt|whip|grease|line|freeze|dip|unravel|roll)\b/i;
+  const ingredientUnits=/\b(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash|eggs?|flour|sugar|butter|cream|chocolate|salt|vanilla|cocoa|coffee|oil)\b/i;
+
+  function textEvidence(text) {
+    const lines=String(text||'').split(/\r?\n/).map(normalizeLine).filter(Boolean);
+    let ingredientLines=0,instructionLines=0,garbageLines=0,coherentWords=0;
+    for(const line of lines){
+      const plain=line.replace(/^[-•*▪◦]+\s*/,'').replace(/^\d+[.)]\s*/,'').trim();
+      const words=plain.match(/[A-Za-z]{2,}/g)||[],letters=(plain.match(/[A-Za-z]/g)||[]).length,visible=(plain.match(/[A-Za-z0-9]/g)||[]).length;
+      const ingredient=/^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|a|an)\b/i.test(plain)&&ingredientUnits.test(plain);
+      const instruction=instructionStart.test(plain);
+      if(ingredient)ingredientLines++;if(instruction)instructionLines++;
+      if((plain.length<=3&&!ingredient)||visible&&letters/visible<.42||(/[=}{<>|]/.test(plain)&&words.length<4))garbageLines++;
+      else coherentWords+=words.length;
+    }
+    const markers=(text.match(/ingredients?|instructions?|directions?|method|prep time|cook time|servings?|yield/gi)||[]).length;
+    const broken=(text.match(/\b[A-Za-z]\s+[A-Za-z]\b/g)||[]).length;
+    return {lines,ingredientLines,instructionLines,garbageLines,coherentWords,markers,broken};
+  }
+
   function scoreText(text, confidence=0) {
-    const words=(text.match(/[A-Za-z]{2,}/g)||[]).length, recipeMarkers=(text.match(/ingredients?|instructions?|directions?|method|prep time|cook time|servings?|yield/gi)||[]).length;
-    const broken=(text.match(/\b[A-Za-z]\s+[A-Za-z]\b/g)||[]).length, symbols=(text.match(/[=}{<>|]{1,}/g)||[]).length;
-    const hasIngredients=/ingredients?/i.test(text),hasInstructions=/instructions?|directions?|method/i.test(text);
-    return words+(recipeMarkers*35)+(hasIngredients&&hasInstructions?60:0)+(confidence*.6)-(broken*5)-(symbols*8);
+    const e=textEvidence(text);
+    return e.coherentWords+(e.markers*24)+(e.ingredientLines*14)+(e.instructionLines*18)+(confidence*1.8)-(e.garbageLines*20)-(e.broken*7);
   }
 
   function normalizeLine(line) { return line.replace(/[ \t]+/g,' ').replace(/\s+([,.;:!?])/g,'$1').replace(/\bI\s*\/\s*2\b/gi,'1/2').replace(/\bI\s*\/\s*4\b/gi,'1/4').replace(/(\d)\s*\/\s*(\d)/g,'$1/$2').trim(); }
   function cleanRecipeText(text) {
     const junk=[/^(save|share|print|rate|review|jump to recipe|skip to content|advertisement|sponsored|cookie settings|accept cookies|sign up|log in|subscribe)$/i,/^(facebook|pinterest|instagram|youtube|tiktok|x|twitter)$/i,/^©|all rights reserved|privacy policy|terms of use/i,/^(home|recipes|about|contact|menu)$/i,/^(open in app|download app|view comments)$/i];
-    let lines=text.split(/\r?\n/).map(normalizeLine).filter(Boolean).filter(line=>!junk.some(rx=>rx.test(line)));
+    const repairedHeadings=String(text||'')
+      .replace(/\bI\s*N\s*G\s*R\s*E\s*D\s*I\s*E\s*N\s*T\s*S\s*[:.]?/gi,'\nINGREDIENTS\n')
+      .replace(/\bI\s*N\s*S\s*T\s*R\s*U\s*C\s*T\s*I\s*O\s*N\s*S\s*[:.]?/gi,'\nINSTRUCTIONS\n')
+      .replace(/\bF\s*I\s*L\s*L\s*I\s*N\s*G\s*[:.]?/gi,'\nFILLING:\n')
+      .replace(/\bT\s*O\s*P\s*P\s*I\s*N\s*G\s*[:.]?/gi,'\nTOPPING:\n');
+    let lines=repairedHeadings.split(/\r?\n/).map(normalizeLine).filter(Boolean).filter(line=>!junk.some(rx=>rx.test(line)));
     const dedup=[]; for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({line,key}); }
     return dedup.map(x=>x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?)\b)/gi,'\n\n');
   }
@@ -138,8 +161,9 @@
   }
 
   function qualityMessage(text, score=0) {
-    const markers=(text.match(/ingredients?|instructions?|directions?|method/gi)||[]).length; const words=(text.match(/[A-Za-z]{2,}/g)||[]).length;
-    if(words<35 || markers<2 || score<MIN_RECIPE_SCORE) return {low:true,message:'Kitchen Companion could not read this image reliably, so it will not send the result into the recipe editor. Try the original full-resolution photo, crop closer to the page, or use the AI conversion instructions.'};
+    const e=textEvidence(text),structured=e.ingredientLines>=3&&e.instructionLines>=2,headed=/ingredients?/i.test(text)&&/instructions?|directions?|method/i.test(text);
+    const garbageRatio=e.garbageLines/Math.max(1,e.lines.length);
+    if(e.coherentWords<35 || (!structured&&!headed) || garbageRatio>.22 || score<MIN_RECIPE_SCORE) return {low:true,message:'Kitchen Companion could not read this image reliably, so it will not send the result into the recipe editor. Try the original full-resolution photo, crop closer to the page, or use the AI conversion instructions.'};
     return {low:false,message:'Text recognition complete. Review the text, then choose Parse and review.'};
   }
 
@@ -147,7 +171,7 @@
     const attempts=[],plans=[
       {mode:'balanced',psm:globalThis.Tesseract.PSM?.AUTO||'3'},
       {mode:'detail',psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
-      {mode:'threshold',psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
+      {mode:'detail',psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
     ];
     for(const plan of plans){const canvas=await makeCanvas(file,plan.mode);try{
       await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});const result=await ocrWorker.recognize(canvas,{rotateAuto:true});
