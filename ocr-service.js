@@ -181,7 +181,15 @@
       .replace(/\bCutin\b/g,'Cut in')
       .replace(/\bhalfwidth\b/gi,'half width')
       .replace(/\bMixin\b/g,'Mix in')
+      .replace(/\bMixwell\b/g,'Mix well')
       .replace(/\balayer\b/gi,'a layer')
+      .replace(/\balaver\b/gi,'a layer')
+      .replace(/\broll up tights\b/gi,'roll up tightly')
+      .replace(/\boff['’]the\b/gi,'off the')
+      .replace(/\ba(\d)\s*x\s*(\d+)\s+pan\b/gi,'a $1 x $2 pan')
+      .replace(/\b(\d+)\s+\1[–-](\d+)\s+(?=(?:seconds?|minutes?|hours?)\b)/gi,'$1–$2 ')
+      .replace(/\bhalf["”]\s+of\b/gi,'half of')
+      .replace(/\bPour the wet into the dry\b/gi,'Pour the wet ingredients into the dry ingredients')
       .replace(/\bFreeze\s*\(or\b/gi,'Freeze for')
       .replace(/\bvour\b/gi,'your')
       .replace(/\bofthen\b/gi,'off the')
@@ -273,16 +281,16 @@
             : 0;
           candidates.push({text,confidence,score:scoreText(text,confidence)+endingBonus});
         }
-        if(regionIndex===2){
-          attempts.forEach(attempt=>{
-            const lines=attempt.text.split(/\r?\n/),start=lines.findIndex(line=>instructionStart.test(line.replace(/^[^A-Za-z]*\d+[.),]?\s*/,'').replace(/^[-•*▪◦]+\s*/,'').trim()));
-            if(start<0)return;
-            const text=lines.slice(start).join('\n').trim(),endingBonus=(/\bmelt\b[\s\S]*\bdip\b/i.test(text)?60:0)+(/\blet dry\b/i.test(text)?30:0);
-            candidates.push({text,confidence:attempt.confidence,score:scoreText(text,attempt.confidence)+endingBonus});
-          });
-        }
         candidates.sort((a,b)=>b.score-a.score);const best=candidates[0];
-        if(best?.text)regionTexts.push(best.text);regionConfidences.push(best?.confidence||0);
+        let selectedText=best?.text||'';
+        if(regionIndex===2&&!/\bmelt\b/i.test(selectedText)){
+          const supplements=attempts.map(attempt=>{
+            const match=attempt.text.match(/\bMelt\b[\s\S]*/i),text=match?.[0]?.trim()||'';
+            return {text,score:(/\bdip\b/i.test(text)?40:0)+(/\blet dry\b/i.test(text)?30:0)+(text.match(/[A-Za-z]{2,}/g)||[]).length};
+          }).filter(item=>item.text).sort((a,b)=>b.score-a.score);
+          if(supplements[0]?.text)selectedText+=`\n${supplements[0].text}`;
+        }
+        if(selectedText)regionTexts.push(selectedText);regionConfidences.push(best?.confidence||0);
       }finally{canvas.width=1;canvas.height=1;}}
       if(regionTexts.length>=2){
         const text=combinePages(titleHint?[titleHint,...regionTexts]:regionTexts),confidence=regionConfidences.reduce((sum,value)=>sum+value,0)/regionConfidences.length;
