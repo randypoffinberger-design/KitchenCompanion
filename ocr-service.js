@@ -268,6 +268,7 @@
         {x:.55,y:.08,width:.45,height:.40},
         {x:0,y:.45,width:1,height:.55}
       ],regionTexts=[],regionConfidences=[];
+      let recoveredEnding=false;
       for(let regionIndex=0;regionIndex<regions.length;regionIndex++){const canvas=await makeCanvas(file,'detail',regions[regionIndex]);try{
         const modes=regionIndex===2
           ? [globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6']
@@ -330,13 +331,16 @@
             }finally{endingCanvas.width=1;endingCanvas.height=1;}
           }
           endingCandidates.sort((a,b)=>b.score-a.score);
-          if(endingCandidates[0]?.text)selectedText+=`\n${endingCandidates[0].text}`;
+          if(endingCandidates[0]?.text){
+            selectedText+=`\n${endingCandidates[0].text}`;
+            recoveredEnding=true;
+          }
         }
         if(selectedText)regionTexts.push(selectedText);regionConfidences.push(best?.confidence||0);
       }finally{canvas.width=1;canvas.height=1;}}
       if(regionTexts.length>=2){
         const text=combinePages(titleHint?[titleHint,...regionTexts]:regionTexts),confidence=regionConfidences.reduce((sum,value)=>sum+value,0)/regionConfidences.length;
-        attempts.push({text,confidence,score:scoreText(text,confidence)+45});
+        attempts.push({text,confidence,score:scoreText(text,confidence)+(recoveredEnding?300:45)});
       }
     }
     attempts.sort((a,b)=>b.score-a.score); return attempts[0]||{text:'',confidence:0,score:0};
