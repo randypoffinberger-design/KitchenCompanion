@@ -223,6 +223,12 @@
   function qualityMessage(text, score=0) {
     const e=textEvidence(text),structured=e.ingredientLines>=3&&e.instructionLines>=2,headed=/ingredients?/i.test(text)&&/instructions?|directions?|method/i.test(text);
     const garbageRatio=e.garbageLines/Math.max(1,e.lines.length);
+    const instructionText=String(text||'').split(/\n(?=(?:instructions?|directions?|method|steps)\b)/i).pop()||'';
+    const meaningfulTail=instructionText.split(/\r?\n/).map(normalizeLine).filter(line=>(line.match(/[A-Za-z]{2,}/g)||[]).length).slice(-1)[0]||'';
+    const truncatedEnding=!/[.!?]$/.test(meaningfulTail)
+      && (/\b(?:extra|the|and|into|with|to|of|your|a|an|for|until)$/i.test(meaningfulTail)
+        || (meaningfulTail===meaningfulTail.toLowerCase()&&(meaningfulTail.match(/[A-Za-z]{2,}/g)||[]).length<=3));
+    if(truncatedEnding)return {low:true,message:'Kitchen Companion appears to have lost the end of this recipe. Check the bottom of the recognized text, crop closer to the final directions, or correct the text before parsing.'};
     if(e.coherentWords<35 || (!structured&&!headed) || garbageRatio>.22 || score<MIN_RECIPE_SCORE) return {low:true,message:'Kitchen Companion could not read this image reliably, so it will not send the result into the recipe editor. Try the original full-resolution photo, crop closer to the page, or use the AI conversion instructions.'};
     return {low:false,message:'Text recognition complete. Review the text, then choose Parse and review.'};
   }
@@ -297,7 +303,9 @@
             {style:'detail',region:{x:0,y:.68,width:1,height:.32},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',rotateAuto:false},
             {style:'threshold',region:{x:0,y:.68,width:1,height:.32},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',rotateAuto:false},
             {style:'balanced',region:{x:0,y:.74,width:1,height:.26},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',rotateAuto:true},
-            {style:'detail',region:{x:0,y:.74,width:1,height:.26},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11',rotateAuto:false}
+            {style:'detail',region:{x:0,y:.74,width:1,height:.26},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11',rotateAuto:false},
+            {style:'detail',region:{x:.02,y:.82,width:.96,height:.18},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',rotateAuto:false},
+            {style:'threshold',region:{x:.02,y:.82,width:.96,height:.18},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11',rotateAuto:false}
           ];
           for(const plan of endingPlans){
             const endingCanvas=await makeCanvas(file,plan.style,plan.region);try{
