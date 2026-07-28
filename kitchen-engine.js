@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.4';
+    static version = '0.16.5';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -225,10 +225,18 @@
       const instructionHeads = new Set(['instructions', 'directions', 'method', 'steps', 'preparation']);
       const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
       const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use)$/i;
-      const titleCandidates = nonblank.filter(line => !clutter.test(line) && !ingredientHeads.has(heading(line)) && !instructionHeads.has(heading(line)) && !/^(?:active|prep|cook|total)\s*time\b/i.test(line));
+      const titleCandidates = nonblank.filter(line =>
+        !clutter.test(line)
+        && !ingredientHeads.has(heading(line))
+        && !instructionHeads.has(heading(line))
+        && !/^(?:cake|filling|topping)\s*:?\s*$/i.test(line)
+        && !/^(?:active|prep|cook|total)\s*time\b/i.test(line)
+        && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line)
+        && !/^(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip)\b/i.test(line)
+      );
       const titleScore = line => {
         const words=line.match(/[A-Za-z]{2,}/g)||[],letters=(line.match(/[A-Za-z]/g)||[]).length,visible=(line.match(/[A-Za-z0-9]/g)||[]).length;
-        if(words.length<2||words.length>10||visible&&letters/visible<.7)return -100;
+        if(words.length<2||words.length>10||visible&&letters/visible<.7||/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line))return -100;
         return (/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
       };
       const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
@@ -271,18 +279,34 @@
       });
       result.ingredientGroups = groups.filter(group => group.ingredients.length);
       result.ingredients = result.ingredientGroups.flatMap(group => group.ingredients);
-      const rawInstructions = result.instructions
+      const instructionFragments = result.instructions
         .flatMap(step => step.split(/(?=\s+\d+[.)]\s+)/))
         .map(stripBullet)
         .filter(Boolean)
-        .filter(step => !/^(?:cake|filling|topping)\s*:$/i.test(step))
         .filter(step => (step.match(/[A-Za-z]{2,}/g) || []).length);
+      const rawInstructions = [];
+      instructionFragments.forEach(step => {
+        const embeddedHeading = step.match(/^(cake|filling|topping)\s*:$/i)?.[1]?.toLowerCase();
+        if (embeddedHeading) {
+          if (embeddedHeading === 'filling' && /^whip$/i.test(rawInstructions[rawInstructions.length - 1] || '')) {
+            rawInstructions[rawInstructions.length - 1] += ' filling';
+          }
+          return;
+        }
+        rawInstructions.push(step);
+      });
       const mergedInstructions = [];
       rawInstructions.forEach(step => {
         if (!mergedInstructions.length || looksInstruction(step)) mergedInstructions.push(step);
         else mergedInstructions[mergedInstructions.length - 1] += ` ${step}`;
       });
-      result.instructions = mergedInstructions;
+      const hasFillingGroup = groups.some(group => /^filling$/i.test(group.name));
+      result.instructions = mergedInstructions.map(step => {
+        let repaired = step;
+        if (hasFillingGroup) repaired = repaired.replace(/\ba layer of\s+on\b/gi, 'a layer of filling on');
+        repaired = repaired.replace(/([.!?])\s+your\s+(.+?)\s+into\b/gi, '$1 Dip your $2 into');
+        return repaired;
+      });
       result.description = description.join(' ').trim(); result.notes = notes.join('\n').trim();
       return result;
     }

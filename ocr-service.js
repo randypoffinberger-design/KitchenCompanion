@@ -175,7 +175,7 @@
       .replace(/\bofthe\b/gi,'off the')
       .replace(/\ba?\s*9\s*x\s*(?:D?B|1\)|B)\s+pan\b/gi,'9 x 13 pan')
       .replace(/^\\?dd\b/i,'Add')
-      .replace(/\b350\s+[I|]\s+(?=(?:Grease|and)\b)/i,'350°F. ')
+      .replace(/\b350\s+[1I|]\s+(?=(?:Grease|and)\b)/i,'350°F. ')
       .trim();
   }
   function cleanRecipeText(text) {
@@ -216,18 +216,41 @@
     }finally{canvas.width=1;canvas.height=1;}}
     const layoutHints=attempts.map(attempt=>attempt.text).join('\n');
     if(/\b(?:cake|filling|topping)\s*[:.]?/i.test(layoutHints)){
+      const titleHint=attempts
+        .flatMap(attempt=>attempt.text.split(/\r?\n/).slice(0,12))
+        .map(normalizeLine)
+        .filter(line=>{
+          const words=line.match(/[A-Za-z]{2,}/g)||[];
+          return words.length>=2&&words.length<=10
+            && !/^(?:ingredients?|instructions?|directions?|method|cake|filling|topping)\s*:?\s*$/i.test(line)
+            && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line);
+        })
+        .map((line,index)=>({
+          line,index,
+          score:(/\b(?:recipe|cake|rolls?|bread|soup|salad|sauce|cookies?|chicken|beef|pork|pasta|cider)\b/i.test(line)?40:0)
+            + (/^[^a-z]*[A-Z][A-Z '&-]+$/.test(line)?12:0)
+        }))
+        .sort((a,b)=>b.score-a.score||a.index-b.index)[0]?.line;
       const regions=[
-        {x:0,y:.08,width:.62,height:.40},
-        {x:.54,y:.08,width:.46,height:.40},
+        {x:0,y:.08,width:.58,height:.40},
+        {x:.55,y:.08,width:.45,height:.40},
         {x:0,y:.45,width:1,height:.55}
       ],regionTexts=[],regionConfidences=[];
-      for(const region of regions){const canvas=await makeCanvas(file,'detail',region);try{
-        await ocrWorker.setParameters({tessedit_pageseg_mode:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'});
-        const result=await ocrWorker.recognize(canvas,{rotateAuto:false}),text=String(result.data?.text||'').trim();
-        if(text)regionTexts.push(text);regionConfidences.push(Number(result.data?.confidence||0));
+      for(let regionIndex=0;regionIndex<regions.length;regionIndex++){const canvas=await makeCanvas(file,'detail',regions[regionIndex]);try{
+        const modes=regionIndex===2
+          ? [globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6']
+          : [globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'];
+        const candidates=[];
+        for(const psm of modes){
+          await ocrWorker.setParameters({tessedit_pageseg_mode:psm});
+          const result=await ocrWorker.recognize(canvas,{rotateAuto:false}),text=String(result.data?.text||'').trim(),confidence=Number(result.data?.confidence||0);
+          candidates.push({text,confidence,score:scoreText(text,confidence)});
+        }
+        candidates.sort((a,b)=>b.score-a.score);const best=candidates[0];
+        if(best?.text)regionTexts.push(best.text);regionConfidences.push(best?.confidence||0);
       }finally{canvas.width=1;canvas.height=1;}}
       if(regionTexts.length>=2){
-        const text=combinePages(regionTexts),confidence=regionConfidences.reduce((sum,value)=>sum+value,0)/regionConfidences.length;
+        const text=combinePages(titleHint?[titleHint,...regionTexts]:regionTexts),confidence=regionConfidences.reduce((sum,value)=>sum+value,0)/regionConfidences.length;
         attempts.push({text,confidence,score:scoreText(text,confidence)+45});
       }
     }
