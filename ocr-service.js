@@ -290,23 +290,35 @@
           }).filter(item=>item.text).sort((a,b)=>b.score-a.score);
           if(supplements[0]?.text)selectedText+=`\n${supplements[0].text}`;
         }
-        if(regionIndex===2){
-          const endingCanvas=await makeCanvas(file,'threshold',{x:0,y:.70,width:1,height:.30});try{
-            await ocrWorker.setParameters({tessedit_pageseg_mode:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'});
-            const endingResult=await ocrWorker.recognize(endingCanvas,{rotateAuto:false});
-            const endingLines=String(endingResult.data?.text||'').split(/\r?\n/).map(normalizeLine).filter(Boolean);
-            const newStepIndex=endingLines.findIndex(line=>{
-              const plain=line.replace(/^[^A-Za-z]*\d+[.),]?\s*/,'').replace(/^[-•*▪◦]+\s*/,'').trim();
-              const signature=plain.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,28);
-              return /^(?:melt|serve|store|refrigerate|chill|cool|let)\b/i.test(plain)
-                && signature.length>=8
-                && !selectedText.toLowerCase().replace(/[^a-z0-9]+/g,' ').includes(signature);
-            });
-            if(newStepIndex>=0){
-              const endingSupplement=endingLines.slice(newStepIndex).join('\n');
-              if((endingSupplement.match(/[A-Za-z]{2,}/g)||[]).length>=5)selectedText+=`\n${endingSupplement}`;
-            }
-          }finally{endingCanvas.width=1;endingCanvas.height=1;}
+        if(regionIndex===2&&!/\bmelt\b/i.test(selectedText)){
+          const endingCandidates=[];
+          for(const style of ['detail','threshold']){
+            const endingCanvas=await makeCanvas(file,style,{x:0,y:.58,width:1,height:.42});try{
+              const modes=style==='detail'
+                ? [globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4',globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6']
+                : [globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'];
+              for(const psm of modes){
+                await ocrWorker.setParameters({tessedit_pageseg_mode:psm});
+                const endingResult=await ocrWorker.recognize(endingCanvas,{rotateAuto:false});
+                const endingLines=String(endingResult.data?.text||'').split(/\r?\n/).map(normalizeLine).filter(Boolean);
+                const meltIndex=endingLines.findIndex(line=>/^[-•*▪◦\s]*melt\b/i.test(line));
+                if(meltIndex<0)continue;
+                const suffix=[];
+                for(const line of endingLines.slice(meltIndex)){
+                  if(suffix.length&&(line.match(/[A-Za-z]{2,}/g)||[]).length===0)break;
+                  suffix.push(line.replace(/^[-•*▪◦]+\s*/,'').trim());
+                }
+                const text=suffix.join(' ').replace(/\s+/g,' ').trim(),words=(text.match(/[A-Za-z]{2,}/g)||[]).length;
+                if(words<8||!/\bmelt\b/i.test(text)||!/\b(?:dip|chocolate)\b/i.test(text))continue;
+                endingCandidates.push({
+                  text,
+                  score:words+(/\bdip\b/i.test(text)?80:0)+(/\bchocolate\b/i.test(text)?50:0)+(/\blet dry\b/i.test(text)?50:0)
+                });
+              }
+            }finally{endingCanvas.width=1;endingCanvas.height=1;}
+          }
+          endingCandidates.sort((a,b)=>b.score-a.score);
+          if(endingCandidates[0]?.text)selectedText+=`\n${endingCandidates[0].text}`;
         }
         if(selectedText)regionTexts.push(selectedText);regionConfidences.push(best?.confidence||0);
       }finally{canvas.width=1;canvas.height=1;}}

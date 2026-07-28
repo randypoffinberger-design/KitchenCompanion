@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.12';
+    static version = '0.16.13';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -310,6 +310,11 @@
         if (!mergedInstructions.length || looksInstruction(step)) mergedInstructions.push(step);
         else mergedInstructions[mergedInstructions.length - 1] += ` ${step}`;
       });
+      for (let index = 1; index < mergedInstructions.length; index++) {
+        if (/^Melt\b/i.test(mergedInstructions[index]) && /\bDip\b/i.test(mergedInstructions[index])) {
+          mergedInstructions[index - 1] = mergedInstructions[index - 1].replace(/\s+Dip\b[\s\S]*$/i, '').trim();
+        }
+      }
       const hasFillingGroup = groups.some(group => /^filling$/i.test(group.name));
       result.instructions = mergedInstructions.map(step => {
         let repaired = step;
