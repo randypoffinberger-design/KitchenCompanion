@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.18';
+  const ENGINE_VERSION = '0.16.19';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -887,7 +887,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.18').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.19').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1928,8 +1928,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     event.preventDefault();
     try {
       if (els.recognizedRecipeText.dataset.ocrQuality === 'low') {
-        alert('This scan was not reliable enough to parse safely. Use the original full-resolution photo, crop closer to the recipe, or correct the recognized text before continuing.');
-        return;
+        const truncated = els.recognizedRecipeText.dataset.ocrWarning === 'truncated';
+        const message = truncated
+          ? 'Kitchen Companion believes the end of this recipe may be missing.\n\nContinue to the populated recipe editor anyway? Compare the editor closely with the image and add any missing instructions before saving.'
+          : 'Parts of this scan may be unreliable.\n\nContinue to the populated recipe editor anyway? Compare every field closely with the image and make any necessary corrections before saving.';
+        if (!confirm(message)) return;
       }
       const parsed = engine.parseRecipeText(els.recognizedRecipeText.value);
       els.imageRecipeDialog.close();
@@ -2043,7 +2046,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.18');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.19');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

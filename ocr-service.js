@@ -228,9 +228,9 @@
     const truncatedEnding=!/[.!?]$/.test(meaningfulTail)
       && (/\b(?:extra|the|and|into|with|to|of|your|a|an|for|until)$/i.test(meaningfulTail)
         || (meaningfulTail===meaningfulTail.toLowerCase()&&(meaningfulTail.match(/[A-Za-z]{2,}/g)||[]).length<=3));
-    if(truncatedEnding)return {low:true,message:'Kitchen Companion appears to have lost the end of this recipe. Check the bottom of the recognized text, crop closer to the final directions, or correct the text before parsing.'};
-    if(e.coherentWords<35 || (!structured&&!headed) || garbageRatio>.22 || score<MIN_RECIPE_SCORE) return {low:true,message:'Kitchen Companion could not read this image reliably, so it will not send the result into the recipe editor. Try the original full-resolution photo, crop closer to the page, or use the AI conversion instructions.'};
-    return {low:false,message:'Text recognition complete. Review the text, then choose Parse and review.'};
+    if(truncatedEnding)return {low:true,reason:'truncated',message:'Kitchen Companion appears to have lost the end of this recipe. You can still choose Parse and review, but compare the editor closely with the image and add any missing text.'};
+    if(e.coherentWords<35 || (!structured&&!headed) || garbageRatio>.22 || score<MIN_RECIPE_SCORE) return {low:true,reason:'unreliable',message:'Kitchen Companion could not read parts of this image reliably. You can still choose Parse and review, but compare every field closely with the image and make manual corrections.'};
+    return {low:false,reason:'good',message:'Text recognition complete. Review the text, then choose Parse and review.'};
   }
 
   async function recognizeBest(ocrWorker,file) {
@@ -358,7 +358,7 @@
     event.preventDefault(); event.stopImmediatePropagation(); if(running)return; const files=[...fileInput.files]; if(!files.length)return alert('Choose at least one recipe image first.');
     running=true; pageCount=files.length; button.disabled=true; button.textContent='Reading…'; setStatus('Starting OCR…'); const pages=[],failures=[];
     try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { const result=await recognizeBest(ocrWorker,files[i]); result.text=cleanRecipeText(result.text,cleanupToggle?.checked!==false); if(result.text)pages.push(result);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
-      if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.'); const combined=combinePages(pages.map(page=>page.text)); output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const quality=qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low);
+      if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.'); const combined=combinePages(pages.map(page=>page.text)); output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const quality=qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; output.dataset.ocrWarning=quality.reason; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low);
     } catch(error){console.error(error); try{await worker?.terminate?.();}catch{} worker=null; setStatus(`Text recognition failed: ${error.message} You can retry, use tighter screenshots, or paste converted text instead.`,true);} finally {running=false;button.disabled=false;button.textContent='Read images';activePage=0;pageCount=0;}
   }
 
