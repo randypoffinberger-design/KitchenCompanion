@@ -1,7 +1,7 @@
-const CACHE_NAME = 'kitchen-companion-v0.16.14';
+const CACHE_NAME = 'kitchen-companion-v0.16.15';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.16.14', './kitchen-engine.js?v=0.16.14', './profile-storage.js?v=0.16.14', './app.js?v=0.16.14',
-  './ocr-service.js?v=0.16.14', './alarm-bell.wav?v=0.16.14', './app.webmanifest?v=0.16.14', './icon-180.png?v=0.16.14', './icon-192.png?v=0.16.14', './icon-512.png?v=0.16.14'
+  './', './index.html', './styles.css?v=0.16.15', './kitchen-engine.js?v=0.16.15', './profile-storage.js?v=0.16.15', './app.js?v=0.16.15',
+  './ocr-service.js?v=0.16.15', './alarm-bell.wav?v=0.16.15', './app.webmanifest?v=0.16.15', './icon-180.png?v=0.16.15', './icon-192.png?v=0.16.15', './icon-512.png?v=0.16.15'
 ];
 
 self.addEventListener('install', event => {

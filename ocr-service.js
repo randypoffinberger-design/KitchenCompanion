@@ -301,12 +301,16 @@
                 await ocrWorker.setParameters({tessedit_pageseg_mode:psm});
                 const endingResult=await ocrWorker.recognize(endingCanvas,{rotateAuto:false});
                 const endingLines=String(endingResult.data?.text||'').split(/\r?\n/).map(normalizeLine).filter(Boolean);
-                const meltIndex=endingLines.findIndex(line=>/^[-•*▪◦\s]*melt\b/i.test(line));
+                const meltIndex=endingLines.findIndex(line=>/\bmelt\b/i.test(line));
                 if(meltIndex<0)continue;
                 const suffix=[];
-                for(const line of endingLines.slice(meltIndex)){
+                for(const [lineIndex,line] of endingLines.slice(meltIndex).entries()){
                   if(suffix.length&&(line.match(/[A-Za-z]{2,}/g)||[]).length===0)break;
-                  suffix.push(line.replace(/^[-•*▪◦]+\s*/,'').trim());
+                  const meltMatch=line.match(/\bmelt\b/i);
+                  const cleaned=lineIndex===0&&meltMatch
+                    ? line.slice(meltMatch.index).trim()
+                    : line.replace(/^[-•*▪◦]+\s*/,'').trim();
+                  suffix.push(cleaned);
                 }
                 const text=suffix.join(' ').replace(/\s+/g,' ').trim(),words=(text.match(/[A-Za-z]{2,}/g)||[]).length;
                 if(words<8||!/\bmelt\b/i.test(text)||!/\b(?:dip|chocolate)\b/i.test(text))continue;
