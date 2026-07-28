@@ -150,14 +150,29 @@
       .replace(/\bI\s*\/\s*4\b/gi,'1/4')
       .replace(/(\d)\s*\/\s*(\d)/g,'$1/$2')
       .replace(/\b([1-7])[.]?\s+([2348])\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|pounds?)\b)/gi,(match,numerator,denominator)=>Number(numerator)<Number(denominator)?`${numerator}/${denominator} `:match)
+      .replace(/^(?:I|l|\[|\|)\s*2\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'1/2 ')
       .replace(/^(?:I|l|\[|\|)\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'1 ')
-      .replace(/\bcof(?:ice|lee|tee)\b/gi,'coffee')
+      .replace(/^[)}]\s*(?=(?:tbsp|tablespoons?)\s+sugar\b)/i,'3 ')
+      .replace(/\b(?:cofice|coflee|coftee|collec|cotlee)\b/gi,'coffee')
       .replace(/\bcgg\b/gi,'egg')
       .replace(/\bhalr\b/gi,'half')
       .replace(/\bdivided in hall\b/gi,'divided in half')
       .replace(/\bseparatec\b/gi,'separated')
       .replace(/\bfuf(?:iy|ly)\b/gi,'fluffy')
+      .replace(/\bQuy\b/g,'fluffy')
       .replace(/\bvolks\b/gi,'yolks')
+      .replace(/\bmin until\b/gi,'mix until')
+      .replace(/\bpicee\b/gi,'piece')
+      .replace(/\bponder\b(?=[.,]?\s+(?:Flip|the cake|onto))/gi,'powder')
+      .replace(/\bsin rectangles\b/gi,'six rectangles')
+      .replace(/\bCutin\b/g,'Cut in')
+      .replace(/\bhalfwidth\b/gi,'half width')
+      .replace(/\bMixin\b/g,'Mix in')
+      .replace(/\balayer\b/gi,'a layer')
+      .replace(/\bFreeze\s*\(or\b/gi,'Freeze for')
+      .replace(/\bvour\b/gi,'your')
+      .replace(/\bofthen\b/gi,'off the')
+      .replace(/\bofthe\b/gi,'off the')
       .replace(/\ba?\s*9\s*x\s*(?:D?B|1\)|B)\s+pan\b/gi,'9 x 13 pan')
       .replace(/^\\?dd\b/i,'Add')
       .replace(/\b350\s+[I|]\s+(?=(?:Grease|and)\b)/i,'350°F. ')
@@ -202,8 +217,8 @@
     const layoutHints=attempts.map(attempt=>attempt.text).join('\n');
     if(/\b(?:cake|filling|topping)\s*[:.]?/i.test(layoutHints)){
       const regions=[
-        {x:0,y:.08,width:.56,height:.40},
-        {x:.46,y:.08,width:.54,height:.40},
+        {x:0,y:.08,width:.62,height:.40},
+        {x:.54,y:.08,width:.46,height:.40},
         {x:0,y:.45,width:1,height:.55}
       ],regionTexts=[],regionConfidences=[];
       for(const region of regions){const canvas=await makeCanvas(file,'detail',region);try{

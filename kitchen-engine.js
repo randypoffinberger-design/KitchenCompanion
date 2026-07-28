@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.3';
+    static version = '0.16.4';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -237,7 +237,7 @@
       const groups = [currentGroup], description = [], notes = [];
       const stripBullet = line => line.replace(/^[-•*▪◦]+\s*/, '').replace(/^\d+[.)]\s*/, '').trim();
       const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|a|an)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
-      const looksInstruction = line => /^\d+[.)]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|spread|sprinkle|bring|reduce|cover|drain)\b/i.test(stripBullet(line));
+      const looksInstruction = line => /^\d+[.)]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|in\s+(?:a|an|the)\b)\b/i.test(stripBullet(line));
       const groupHeading = line => line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i) || (/^[A-Z][A-Z &-]{2,30}:?$/.test(line) ? [line, line.replace(/:$/, '')] : null);
       let seenTitle = false;
       lines.forEach((line,lineIndex) => {
@@ -271,7 +271,18 @@
       });
       result.ingredientGroups = groups.filter(group => group.ingredients.length);
       result.ingredients = result.ingredientGroups.flatMap(group => group.ingredients);
-      result.instructions = result.instructions.flatMap(step => step.split(/(?=\s+\d+[.)]\s+)/)).map(stripBullet).filter(Boolean);
+      const rawInstructions = result.instructions
+        .flatMap(step => step.split(/(?=\s+\d+[.)]\s+)/))
+        .map(stripBullet)
+        .filter(Boolean)
+        .filter(step => !/^(?:cake|filling|topping)\s*:$/i.test(step))
+        .filter(step => (step.match(/[A-Za-z]{2,}/g) || []).length);
+      const mergedInstructions = [];
+      rawInstructions.forEach(step => {
+        if (!mergedInstructions.length || looksInstruction(step)) mergedInstructions.push(step);
+        else mergedInstructions[mergedInstructions.length - 1] += ` ${step}`;
+      });
+      result.instructions = mergedInstructions;
       result.description = description.join(' ').trim(); result.notes = notes.join('\n').trim();
       return result;
     }
