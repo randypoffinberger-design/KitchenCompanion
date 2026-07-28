@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.2';
+  const ENGINE_VERSION = '0.16.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const builtInModule = {
@@ -887,7 +887,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.2').then(reg => reg.update()).catch(console.warn);
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.3').then(reg => reg.update()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
@@ -1985,9 +1985,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function populateCategorySelect(selected='') {
     els.editCategory.innerHTML = '';
-    allCategoryNames().forEach(category => { const option=document.createElement('option'); option.value=category; option.textContent=category; els.editCategory.append(option); });
-    if (selected && !allCategoryNames().includes(selected)) { const option=document.createElement('option'); option.value=selected; option.textContent=selected; els.editCategory.append(option); }
-    els.editCategory.value = selected || els.editCategory.options[0]?.value || 'Uncategorized';
+    const categories=allCategoryNames();
+    if(!categories.includes('Uncategorized'))categories.push('Uncategorized');
+    categories.sort((a,b)=>a.localeCompare(b)).forEach(category => { const option=document.createElement('option'); option.value=category; option.textContent=category; els.editCategory.append(option); });
+    if (selected && !categories.includes(selected)) { const option=document.createElement('option'); option.value=selected; option.textContent=selected; els.editCategory.append(option); }
+    els.editCategory.value = selected || 'Uncategorized';
   }
 
   function getEditorCategory() {
@@ -2041,7 +2043,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
