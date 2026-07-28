@@ -14,6 +14,7 @@
   let running = false, worker = null, libraryPromise = null, activePage = 0, pageCount = 0;
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_CANVAS_EDGE = 10_000;
+  const MIN_RECIPE_SCORE = 105;
   const AI_PROMPT = `Convert the attached recipe screenshot(s) into clean plain text. Include the recipe title, yield, prep and cook times, ingredients, instructions, and notes. Remove advertisements, navigation, social buttons, photo credits, repeated headers or footers, and duplicated text caused by overlapping screenshots. Preserve fractions and quantities exactly. Do not invent missing ingredients, quantities, times, or steps. Format the result with clear Ingredients and Instructions headings.`;
 
   function setStatus(message, showFallback = false) { status.textContent = message; if (fallbackActions) fallbackActions.hidden = !showFallback; }
@@ -54,22 +55,58 @@
     const url=URL.createObjectURL(file); try { const img=new Image(); await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url;}); return img; } finally { URL.revokeObjectURL(url); }
   }
 
-  async function makeCanvas(file, mode='balanced') {
-    const bitmap=await loadBitmap(file); const sourceWidth=bitmap.width||bitmap.naturalWidth; const sourceHeight=bitmap.height||bitmap.naturalHeight;
-    const targetMinWidth=mode==='detail'?2200:1800;
-    let scale=Math.min(3, Math.max(1, targetMinWidth/sourceWidth));
-    const edgeScale=Math.min(MAX_CANVAS_EDGE/sourceWidth,MAX_CANVAS_EDGE/sourceHeight);
-    const pixelScale=Math.sqrt(MAX_CANVAS_PIXELS/(sourceWidth*sourceHeight));
-    scale=Math.max(0.25,Math.min(scale,edgeScale,pixelScale));
-    const width=Math.max(1,Math.round(sourceWidth*scale)), height=Math.max(1,Math.round(sourceHeight*scale)); const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
-    const ctx=canvas.getContext('2d',{willReadFrequently:true}); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; ctx.drawImage(bitmap,0,0,width,height); bitmap.close?.();
-    const image=ctx.getImageData(0,0,width,height), d=image.data;
-    for(let i=0;i<d.length;i+=4){ const gray=d[i]*.299+d[i+1]*.587+d[i+2]*.114; let value;
-      if(mode==='detail') value=Math.max(0,Math.min(255,((gray-128)*1.12)+128));
-      else value=Math.max(0,Math.min(255,((gray-128)*1.22)+128));
-      d[i]=d[i+1]=d[i+2]=value;
+  function findContentBounds(ctx, width, height) {
+    const sampleWidth=Math.min(320,width), sampleHeight=Math.min(480,height);
+    const sample=document.createElement('canvas'); sample.width=sampleWidth; sample.height=sampleHeight;
+    const sctx=sample.getContext('2d',{willReadFrequently:true}); sctx.drawImage(ctx.canvas,0,0,sampleWidth,sampleHeight);
+    const data=sctx.getImageData(0,0,sampleWidth,sampleHeight).data;
+    const rowSignal=new Array(sampleHeight).fill(0), colSignal=new Array(sampleWidth).fill(0);
+    for(let y=0;y<sampleHeight;y++)for(let x=0;x<sampleWidth;x++){
+      const i=(y*sampleWidth+x)*4, light=(data[i]+data[i+1]+data[i+2])/3;
+      if(light>32){rowSignal[y]++;colSignal[x]++;}
     }
-    ctx.putImageData(image,0,0); return canvas;
+    const rowThreshold=sampleWidth*.12, colThreshold=sampleHeight*.08;
+    let top=rowSignal.findIndex(v=>v>rowThreshold), bottom=sampleHeight-1-[...rowSignal].reverse().findIndex(v=>v>rowThreshold);
+    let left=colSignal.findIndex(v=>v>colThreshold), right=sampleWidth-1-[...colSignal].reverse().findIndex(v=>v>colThreshold);
+    if(top<0||bottom<=top){top=0;bottom=sampleHeight-1;} if(left<0||right<=left){left=0;right=sampleWidth-1;}
+    const pad=4;
+    top=Math.max(0,top-pad);bottom=Math.min(sampleHeight-1,bottom+pad);left=Math.max(0,left-pad);right=Math.min(sampleWidth-1,right+pad);
+    return {x:Math.floor(left/sampleWidth*width),y:Math.floor(top/sampleHeight*height),width:Math.ceil((right-left+1)/sampleWidth*width),height:Math.ceil((bottom-top+1)/sampleHeight*height)};
+  }
+
+  function applyTreatment(ctx, width, height, mode) {
+    const image=ctx.getImageData(0,0,width,height), d=image.data, gray=new Uint8Array(width*height);
+    for(let p=0,i=0;i<d.length;i+=4,p++) gray[p]=Math.round(d[i]*.299+d[i+1]*.587+d[i+2]*.114);
+    if(mode==='threshold'){
+      const radius=Math.max(8,Math.round(Math.min(width,height)/120)), integral=new Float64Array((width+1)*(height+1));
+      for(let y=1;y<=height;y++){let row=0;for(let x=1;x<=width;x++){row+=gray[(y-1)*width+x-1];integral[y*(width+1)+x]=integral[(y-1)*(width+1)+x]+row;}}
+      for(let y=0,p=0;y<height;y++)for(let x=0;x<width;x++,p++){
+        const x1=Math.max(0,x-radius),x2=Math.min(width-1,x+radius),y1=Math.max(0,y-radius),y2=Math.min(height-1,y+radius);
+        const sum=integral[(y2+1)*(width+1)+x2+1]-integral[y1*(width+1)+x2+1]-integral[(y2+1)*(width+1)+x1]+integral[y1*(width+1)+x1];
+        const mean=sum/((x2-x1+1)*(y2-y1+1)), value=gray[p] < mean-13 ? 0 : 255, i=p*4; d[i]=d[i+1]=d[i+2]=value;
+      }
+    } else {
+      const contrast=mode==='detail'?1.38:1.22;
+      for(let p=0;p<gray.length;p++){const value=Math.max(0,Math.min(255,((gray[p]-128)*contrast)+128)),i=p*4;d[i]=d[i+1]=d[i+2]=value;}
+    }
+    ctx.putImageData(image,0,0);
+  }
+
+  async function makeCanvas(file, mode='balanced', region=null) {
+    const bitmap=await loadBitmap(file); const sourceWidth=bitmap.width||bitmap.naturalWidth; const sourceHeight=bitmap.height||bitmap.naturalHeight;
+    const source=document.createElement('canvas');source.width=sourceWidth;source.height=sourceHeight;const sourceCtx=source.getContext('2d',{willReadFrequently:true});sourceCtx.drawImage(bitmap,0,0);bitmap.close?.();
+    const autoBounds=findContentBounds(sourceCtx,sourceWidth,sourceHeight), base=region?{
+      x:autoBounds.x+Math.round(autoBounds.width*region.x),y:autoBounds.y+Math.round(autoBounds.height*region.y),
+      width:Math.round(autoBounds.width*region.width),height:Math.round(autoBounds.height*region.height)
+    }:autoBounds;
+    const targetMinWidth=mode==='detail'||mode==='threshold'?2400:1900;
+    let scale=Math.min(4, Math.max(1, targetMinWidth/base.width));
+    const edgeScale=Math.min(MAX_CANVAS_EDGE/base.width,MAX_CANVAS_EDGE/base.height);
+    const pixelScale=Math.sqrt(MAX_CANVAS_PIXELS/(base.width*base.height));
+    scale=Math.max(0.25,Math.min(scale,edgeScale,pixelScale));
+    const width=Math.max(1,Math.round(base.width*scale)), height=Math.max(1,Math.round(base.height*scale)); const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true}); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; ctx.drawImage(source,base.x,base.y,base.width,base.height,0,0,width,height);
+    source.width=1;source.height=1;applyTreatment(ctx,width,height,mode); return canvas;
   }
 
   async function getWorker() {
@@ -80,9 +117,11 @@
     await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300',tessedit_pageseg_mode:globalThis.Tesseract.PSM?.AUTO||'3'}); return worker;
   }
 
-  function scoreText(text) {
+  function scoreText(text, confidence=0) {
     const words=(text.match(/[A-Za-z]{2,}/g)||[]).length, recipeMarkers=(text.match(/ingredients?|instructions?|directions?|method|prep time|cook time|servings?|yield/gi)||[]).length;
-    const broken=(text.match(/\b[A-Za-z]\s+[A-Za-z]\b/g)||[]).length; return words+(recipeMarkers*35)-(broken*4);
+    const broken=(text.match(/\b[A-Za-z]\s+[A-Za-z]\b/g)||[]).length, symbols=(text.match(/[=}{<>|]{1,}/g)||[]).length;
+    const hasIngredients=/ingredients?/i.test(text),hasInstructions=/instructions?|directions?|method/i.test(text);
+    return words+(recipeMarkers*35)+(hasIngredients&&hasInstructions?60:0)+(confidence*.6)-(broken*5)-(symbols*8);
   }
 
   function normalizeLine(line) { return line.replace(/[ \t]+/g,' ').replace(/\s+([,.;:!?])/g,'$1').replace(/\bI\s*\/\s*2\b/gi,'1/2').replace(/\bI\s*\/\s*4\b/gi,'1/4').replace(/(\d)\s*\/\s*(\d)/g,'$1/$2').trim(); }
@@ -98,26 +137,35 @@
     return result.map(x=>x.line).join('\n').replace(/\n{3,}/g,'\n\n').trim();
   }
 
-  function qualityMessage(text) {
+  function qualityMessage(text, score=0) {
     const markers=(text.match(/ingredients?|instructions?|directions?|method/gi)||[]).length; const words=(text.match(/[A-Za-z]{2,}/g)||[]).length;
-    if(words<25 || markers===0) return {low:true,message:'OCR finished, but the result does not look like a complete recipe. Review it, try tighter screenshots, or use the AI conversion instructions.'};
+    if(words<35 || markers<2 || score<MIN_RECIPE_SCORE) return {low:true,message:'Kitchen Companion could not read this image reliably, so it will not send the result into the recipe editor. Try the original full-resolution photo, crop closer to the page, or use the AI conversion instructions.'};
     return {low:false,message:'Text recognition complete. Review the text, then choose Parse and review.'};
   }
 
   async function recognizeBest(ocrWorker,file) {
-    const attempts=[]; for(const mode of ['balanced','detail']){ const canvas=await makeCanvas(file,mode); try { const psm=mode==='detail'?(globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'):(globalThis.Tesseract.PSM?.AUTO||'3'); await ocrWorker.setParameters({tessedit_pageseg_mode:psm}); const result=await ocrWorker.recognize(canvas,{rotateAuto:true}); const text=String(result.data?.text||'').trim(); attempts.push({text,score:scoreText(text)}); } finally { canvas.width=1;canvas.height=1; } }
-    attempts.sort((a,b)=>b.score-a.score); return attempts[0]?.text||'';
+    const attempts=[],plans=[
+      {mode:'balanced',psm:globalThis.Tesseract.PSM?.AUTO||'3'},
+      {mode:'detail',psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
+      {mode:'threshold',psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
+    ];
+    for(const plan of plans){const canvas=await makeCanvas(file,plan.mode);try{
+      await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});const result=await ocrWorker.recognize(canvas,{rotateAuto:true});
+      const text=String(result.data?.text||'').trim(),confidence=Number(result.data?.confidence||0);attempts.push({text,confidence,score:scoreText(text,confidence)});
+    }finally{canvas.width=1;canvas.height=1;}}
+    attempts.sort((a,b)=>b.score-a.score); return attempts[0]||{text:'',confidence:0,score:0};
   }
 
   async function readImages(event) {
     event.preventDefault(); event.stopImmediatePropagation(); if(running)return; const files=[...fileInput.files]; if(!files.length)return alert('Choose at least one recipe image first.');
     running=true; pageCount=files.length; button.disabled=true; button.textContent='Reading…'; setStatus('Starting OCR…'); const pages=[],failures=[];
-    try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { let text=await recognizeBest(ocrWorker,files[i]); if(cleanupToggle?.checked)text=cleanRecipeText(text); if(text)pages.push(text);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
-      if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.'); const combined=combinePages(pages); output.value=combined; output.focus(); const quality=qualityMessage(combined); setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low);
+    try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { const result=await recognizeBest(ocrWorker,files[i]); if(cleanupToggle?.checked)result.text=cleanRecipeText(result.text); if(result.text)pages.push(result);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
+      if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.'); const combined=combinePages(pages.map(page=>page.text)); output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const quality=qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low);
     } catch(error){console.error(error); try{await worker?.terminate?.();}catch{} worker=null; setStatus(`Text recognition failed: ${error.message} You can retry, use tighter screenshots, or paste converted text instead.`,true);} finally {running=false;button.disabled=false;button.textContent='Read images';activePage=0;pageCount=0;}
   }
 
   copyAiPrompt?.addEventListener('click',async()=>{ try{await navigator.clipboard.writeText(AI_PROMPT);setStatus('AI conversion instructions copied. Upload the screenshots to an AI service, then paste its cleaned recipe into Kitchen Companion.',true);}catch{prompt('Copy these instructions:',AI_PROMPT);} });
   openPaste?.addEventListener('click',()=>{ document.querySelector('#imageRecipeDialog')?.close(); const paste=document.querySelector('#pasteRecipeDialog'); const textarea=document.querySelector('#pastedRecipeText'); if(output.value.trim())textarea.value=output.value; paste?.showModal(); textarea?.focus(); });
+  output.addEventListener('input',event=>{if(event.isTrusted&&output.dataset.ocrQuality==='low')output.dataset.ocrQuality='edited';});
   button.addEventListener('click',readImages,{capture:true}); window.addEventListener('pagehide',()=>{worker?.terminate?.();worker=null;});
 })();

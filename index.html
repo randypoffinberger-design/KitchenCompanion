@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.16.0">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.0">
+  <link rel="manifest" href="app.webmanifest?v=0.16.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.16.0">
+  <link rel="stylesheet" href="styles.css?v=0.16.1">
 </head>
 <body>
   <div class="app-shell">
@@ -165,7 +165,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -429,7 +429,7 @@
   <dialog id="imageRecipeDialog">
     <form id="imageRecipeForm" class="dialog-card recipe-import-card">
       <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close">✕</button></div>
-      <p>Select one or more screenshots or photos. Kitchen Companion will read them on this device, combine them in order, and let you correct the text before parsing.</p>
+      <p>Select one or more screenshots or photos. For printed pages, use the original full-resolution photo and fill the frame with the page. If the print is small, take separate close photos of the ingredients and instructions. Kitchen Companion will combine them in order and require review before saving.</p>
       <label>Recipe images<input id="recipeImageFiles" type="file" accept="image/*" multiple required></label>
       <label class="setting-row"><span>Remove common website clutter</span><input id="ocrCleanupToggle" type="checkbox" checked></label>
       <div id="recipeImagePreviews" class="recipe-image-previews"></div>
@@ -554,9 +554,9 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.16.0"></script>
-  <script src="profile-storage.js?v=0.16.0"></script>
-  <script src="app.js?v=0.16.0"></script>
-  <script src="ocr-service.js?v=0.16.0"></script>
+  <script src="kitchen-engine.js?v=0.16.1"></script>
+  <script src="profile-storage.js?v=0.16.1"></script>
+  <script src="app.js?v=0.16.1"></script>
+  <script src="ocr-service.js?v=0.16.1"></script>
 </body>
 </html>
