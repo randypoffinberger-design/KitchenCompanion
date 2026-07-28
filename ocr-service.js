@@ -150,6 +150,8 @@
   function normalizeLine(line) {
     return line
       .replace(/[ \t]+/g,' ')
+      .replace(/^[•*▪◦«»+]+\s*/,'')
+      .replace(/^[.,]\s+(?=(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip)\b)/i,'')
       .replace(/\s+([,.;:!?])/g,'$1')
       .replace(/\bI\s*\/\s*2\b/gi,'1/2')
       .replace(/\bI\s*\/\s*4\b/gi,'1/4')
@@ -167,6 +169,7 @@
       .replace(/^(?:I|l|\[|\|)\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'1 ')
       .replace(/^[)}]\s*(?=(?:tbsp|tablespoons?)\s+sugar\b)/i,'3 ')
       .replace(/\b(?:cofice|coflee|coftee|collec|cotlee)\b/gi,'coffee')
+      .replace(/\bjalapefio\b/gi,'jalapeño')
       .replace(/\bcgg\b/gi,'egg')
       .replace(/\bhalr\b/gi,'half')
       .replace(/\bdivided in hall\b/gi,'divided in half')
@@ -204,13 +207,13 @@
   function cleanRecipeText(text, removeClutter=true) {
     const junk=[/^(save|share|print|rate|review|jump to recipe|skip to content|advertisement|sponsored|cookie settings|accept cookies|sign up|log in|subscribe)$/i,/^(facebook|pinterest|instagram|youtube|tiktok|x|twitter)$/i,/^©|all rights reserved|privacy policy|terms of use/i,/^(home|recipes|about|contact|menu)$/i,/^(open in app|download app|view comments)$/i];
     const repairedHeadings=String(text||'')
-      .replace(/\bI\s*N\s*G\s*R\s*E\s*D\s*I\s*E\s*N\s*T\s*S\s*[:.]?/gi,'\nINGREDIENTS\n')
-      .replace(/\bI\s*N\s*S\s*T\s*R\s*U\s*C\s*T\s*I\s*O\s*N\s*S\s*[:.]?/gi,'\nINSTRUCTIONS\n')
-      .replace(/\bF\s*I\s*L\s*L\s*I\s*N\s*G\s*[:.]?/gi,'\nFILLING:\n')
-      .replace(/\bF[I1]\s+in\s+N(?:G|6)?\s*[:.]?/gi,'\nFILLING:\n')
-      .replace(/\bT\s*O\s*P\s*P\s*I\s*N\s*G\s*[:.]?/gi,'\nTOPPING:\n')
-      .replace(/\b1?0\s+PPI\s*N\s*G5?\s*[:.]?/gi,'\nTOPPING:\n');
-    let lines=repairedHeadings.split(/\r?\n/).map(normalizeLine).filter(Boolean).filter(line=>!removeClutter||!junk.some(rx=>rx.test(line)));
+      .replace(/^[ \t]*I[ \t]*N[ \t]*G[ \t]*R[ \t]*E[ \t]*D[ \t]*I[ \t]*E[ \t]*N[ \t]*T[ \t]*S[ \t]*[:.]?[ \t]*$/gim,'\nINGREDIENTS\n')
+      .replace(/^[ \t]*I[ \t]*N[ \t]*S[ \t]*T[ \t]*R[ \t]*U[ \t]*C[ \t]*T[ \t]*I[ \t]*O[ \t]*N[ \t]*S[ \t]*[:.]?[ \t]*$/gim,'\nINSTRUCTIONS\n')
+      .replace(/^[ \t]*F[ \t]*I[ \t]*L[ \t]*L[ \t]*I[ \t]*N[ \t]*G[ \t]*[:.]?[ \t]*$/gim,'\nFILLING:\n')
+      .replace(/^[ \t]*F[I1][ \t]+in[ \t]+N(?:G|6)?[ \t]*[:.]?[ \t]*$/gim,'\nFILLING:\n')
+      .replace(/^[ \t]*T[ \t]*O[ \t]*P[ \t]*P[ \t]*I[ \t]*N[ \t]*G[ \t]*[:.]?[ \t]*$/gim,'\nTOPPING:\n')
+      .replace(/^[ \t]*1?0[ \t]+PPI[ \t]+N[ \t]*G5?[ \t]*[:.]?[ \t]*$/gim,'\nTOPPING:\n');
+    let lines=repairedHeadings.split(/\r?\n/).map(normalizeLine).filter(Boolean).filter(line=>!/^\d+$/.test(line)).filter(line=>!removeClutter||!junk.some(rx=>rx.test(line)));
     const dedup=[]; for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({line,key}); }
     return dedup.map(x=>x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?)\b)/gi,'\n\n');
   }

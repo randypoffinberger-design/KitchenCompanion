@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.19';
+    static version = '0.16.20';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -230,6 +230,7 @@
         return ingredientHeads.has(h)
           || instructionHeads.has(h)
           || /^(?:cake|filling|topping)\s*:?\s*$/i.test(line)
+          || /^[A-Z][A-Z &-]{2,30}:$/.test(line)
           || (index>0 && /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+\S+/i.test(line));
       });
       const titlePool = titleBoundary===0 ? [] : titleBoundary>0 ? nonblank.slice(0,titleBoundary) : nonblank.slice(0,12);
@@ -249,7 +250,7 @@
         if(words.length<2||words.length>10||visible&&letters/visible<.7||/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line))return -100;
         return (/\b(?:recipe|cake|pancakes?|rolls?|bread|soup|salad|sauce|cookies?|pie|pies|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
       };
-      const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
+      const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)+(index===0?40:0)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
       const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
       let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
       const groups = [currentGroup], description = [], notes = [];
@@ -303,6 +304,7 @@
           }
           return;
         }
+        if (groups.some(group => group.name && group.name.toLowerCase() === step.replace(/:$/, '').toLowerCase())) return;
         rawInstructions.push(step);
       });
       const mergedInstructions = [];
@@ -332,6 +334,7 @@
         });
         repaired = repaired.replace(/\)\s+(slowly|gradually)\s+(add|pour|mix|stir|whisk|beat)\b/gi, '). $1 $2');
         repaired = repaired.replace(/\bthen\s*[.]\s*$/i, '.');
+        repaired = repaired.replace(/([.!?])\1+/g, '$1');
         repaired = repaired.replace(/\s+([,.!?])/g, '$1');
         return repaired;
       };
