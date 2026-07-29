@@ -1,6 +1,24 @@
-# Kitchen Companion v0.16.21
+# Kitchen Companion v0.16.23
 
-## Webpage and multi-image OCR regression fixes (v0.16.21)
+## Exported-recipe OCR cleanup (v0.16.23)
+
+- Uses the actual Southern Biscuits export as a permanent regression case.
+- Removes ratings, difficulty, nutrition, and damaged webpage metadata from descriptions.
+- Retains valid Total time information while discarding the surrounding clutter.
+- Repairs attached and trailing step numbers plus parentheses split across OCR lines.
+- Keeps parenthetical comments with their relevant cooking action.
+
+## Previous v0.16.22 changes
+
+## Single-file recipe sharing
+
+- Shares only the `.kcrecipe` attachment on supported devices.
+- Prevents the filename from appearing as a separate text item on iPhone.
+- Retains the download fallback for browsers that cannot share files.
+
+## Previous v0.16.21 changes
+
+## Webpage and multi-image OCR regression fixes
 
 - Removes attribution banners, author continuations, photo credits, ingredient-selection controls, and common webpage clutter.
 - Separates merged yield, prep, active, cook, and total-time metadata.

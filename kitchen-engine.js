@@ -4,7 +4,7 @@
   const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   class KitchenCompanionEngine {
-    static version = '0.16.22';
+    static version = '0.16.23';
     constructor({ schemaVersion = 1, personalModuleId = 'my-recipes' } = {}) {
       this.schemaVersion = schemaVersion;
       this.personalModuleId = personalModuleId;
@@ -258,14 +258,24 @@
       const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
       let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
       const groups = [currentGroup], description = [], notes = [];
-      const stripBullet = line => line.trim().replace(/^[-•*▪◦]+\s*/, '').replace(/^\d+[.),]\s*/, '').trim();
+      const stepAction = '(?:preheat|grease|line|mix|combine|stir|add|make|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool|reform)';
+      const numberedAction = new RegExp(`^\\d{1,2}(?:[.),]|\\s+(?=${stepAction}\\b))\\s*`, 'i');
+      const stripBullet = line => line.trim().replace(/^[-•*▪◦]+\s*/, '').replace(numberedAction, '').replace(/\s+\d{1,2}[.)]\s*$/, '').trim();
       const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
-      const looksInstruction = line => /^\d+[.),]\s*/.test(line) || /^(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|in\s+(?:a|an|another|the)\b)\b/i.test(stripBullet(line));
+      const actionStart = new RegExp(`^(?:${stepAction}|in\\s+(?:a|an|another|the))\\b`, 'i');
+      const looksInstruction = line => /^\d+[.),]\s*/.test(line) || actionStart.test(stripBullet(line));
       const groupHeading = line => line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i) || (/^[A-Z][A-Z &-]{2,30}:?$/.test(line) ? [line, line.replace(/:$/, '')] : null);
       let seenTitle = false;
       lines.forEach((line,lineIndex) => {
         if (!line || clutter.test(line) || attribution.test(line) || /^\d+[.)]?$/.test(line)) return;
         if (!seenTitle && line === result.name) { seenTitle = true; return; }
+        const embeddedTotal=line.match(/\btotal(?:\s*time)?\s*[:：-]\s*(\d+(?:\s*(?:hours?|hrs?|minutes?|mins?))(?:\s*\d+\s*(?:minutes?|mins?))?)/i);
+        const webpageMeta=(line.match(/\b(?:reviews?|ratings?|level|nutrition\s*info|calories?)\b/gi)||[]).length;
+        if(embeddedTotal&&webpageMeta){
+          notes.push(`Total time: ${embeddedTotal[1].trim()}`);
+          return;
+        }
+        if(webpageMeta&&section==='meta'&&/^(?:\W*\w+\W*){1,8}$/i.test(line))return;
         const h = heading(line);
         if (ingredientHeads.has(h)) { section = 'ingredients'; return; }
         if (instructionHeads.has(h)) { section = 'instructions'; return; }
@@ -322,8 +332,6 @@
         }
       }
       const hasFillingGroup = groups.some(group => /^filling$/i.test(group.name));
-      const actionVerb = '(?:preheat|grease|line|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool)';
-      const actionStart = new RegExp(`^${actionVerb}\\b`, 'i');
       const repairInstruction = step => {
         let repaired = step.replace(/\s+/g, ' ').trim();
         if (hasFillingGroup) repaired = repaired.replace(/\ba layer of\s+on\b/gi, 'a layer of filling on');
@@ -338,13 +346,14 @@
         });
         repaired = repaired.replace(/\)\s+(slowly|gradually)\s+(add|pour|mix|stir|whisk|beat)\b/gi, '). $1 $2');
         repaired = repaired.replace(/\bthen\s*[.]\s*$/i, '.');
+        repaired = repaired.replace(/([.!?])\s+\)\s*/g, '$1) ');
         repaired = repaired.replace(/([.!?])\1+/g, '$1');
         repaired = repaired.replace(/\s+([,.!?])/g, '$1');
         return repaired;
       };
       const segmentInstruction = step => {
         const repaired = repairInstruction(step).replace(/\s+and\s+(?=(?:roll\s+back|freeze|chill|refrigerate|dip|tap)\b)/gi, '. ');
-        const sentences = repaired.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [repaired];
+        const sentences = repaired.match(/[^.!?]+[.!?]+[)"'’”]*|[^.!?]+$/g) || [repaired];
         const segments = [];
         sentences.forEach(sentence => {
           let value = sentence.trim();
