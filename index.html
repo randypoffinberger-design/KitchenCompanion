@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.16.26">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.26">
+  <link rel="manifest" href="app.webmanifest?v=0.16.26.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.26.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.16.26">
+  <link rel="stylesheet" href="styles.css?v=0.16.26.1">
 </head>
 <body>
   <div class="app-shell">
@@ -166,7 +166,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.26</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.26.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -510,6 +510,7 @@
         <button type="button" id="guidedNext" class="button">Next →</button>
       </footer>
       <label class="guided-speech-toggle"><input id="guidedSpeechEnabled" type="checkbox" checked><span>Read each step aloud</span></label>
+      <p id="guidedSaveStatus" class="guided-save-status" aria-live="polite"></p>
     </div>
   </dialog>
 
@@ -597,10 +598,10 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.16.26"></script>
-  <script src="profile-storage.js?v=0.16.26"></script>
-  <script src="url-recipe-import.js?v=0.16.26"></script>
-  <script src="app.js?v=0.16.26"></script>
-  <script src="ocr-service.js?v=0.16.26"></script>
+  <script src="kitchen-engine.js?v=0.16.26.1"></script>
+  <script src="profile-storage.js?v=0.16.26.1"></script>
+  <script src="url-recipe-import.js?v=0.16.26.1"></script>
+  <script src="app.js?v=0.16.26.1"></script>
+  <script src="ocr-service.js?v=0.16.26.1"></script>
 </body>
 </html>

@@ -501,8 +501,9 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .guided-cooking-controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;padding:1rem 1.2rem;border-top:1px solid var(--border);background:var(--panel)}
 .guided-cooking-controls .button{min-height:3.4rem}
 .guided-cooking-controls button:disabled{opacity:.38;cursor:default}
-.guided-speech-toggle{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:0 1rem 1rem;background:var(--panel);font-weight:700}
+.guided-speech-toggle{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:0 1rem .55rem;background:var(--panel);font-weight:700}
 .guided-speech-toggle input{width:1.2rem;height:1.2rem}
+.guided-save-status{min-height:1.1rem;margin:0;padding:0 1rem .7rem;background:var(--panel);color:var(--danger);font-size:.82rem;font-weight:750;text-align:center}
 @media(max-width:720px){
   .guided-cooking-dialog{width:100vw;height:100dvh;margin:0;border-radius:0}
   .guided-cooking-header{padding-top:max(1rem,env(safe-area-inset-top))}

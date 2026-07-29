@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.26';
+  const ENGINE_VERSION = '0.16.26.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -87,7 +87,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.guidedSpeechEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.guidedCookingProgress ||= {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.guidedSpeechEnabled ??= true; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -299,7 +299,7 @@
     document.querySelector('#guidedSpeak')?.addEventListener('click', speakGuidedStep);
     document.querySelector('#guidedSpeechEnabled')?.addEventListener('change', event => {
       state.settings.guidedSpeechEnabled = event.target.checked;
-      saveState();
+      persistGuidedProgress();
       if (!event.target.checked) stopGuidedSpeech();
       else speakGuidedStep();
     });
@@ -915,7 +915,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.26').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.26.1').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2164,9 +2164,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const dialog = document.querySelector('#guidedCookingDialog');
     const speechToggle = document.querySelector('#guidedSpeechEnabled');
     speechToggle.checked = state.settings.guidedSpeechEnabled !== false;
-    renderGuidedIngredients();
-    renderGuidedCooking();
     dialog.showModal();
+    try {
+      renderGuidedIngredients();
+      renderGuidedCooking();
+    } catch (error) {
+      console.error('Guided cooking could not open.', error);
+      dialog.close();
+      alert(`Guided cooking could not open: ${error.message}`);
+      return;
+    }
     updateWakeLock();
     if (speechToggle.checked) window.setTimeout(speakGuidedStep, 120);
   }
@@ -2188,15 +2195,28 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     document.querySelector('#guidedPrevious').disabled = guidedStepIndex === 0;
     document.querySelector('#guidedNext').textContent = guidedStepIndex === steps.length - 1 ? 'Finish ✓' : 'Next →';
     state.guidedCookingProgress[guidedRecipe.key] = { stepIndex:guidedStepIndex, updatedAt:new Date().toISOString() };
-    saveState();
+    persistGuidedProgress();
   }
 
   function renderGuidedIngredients() {
-    document.querySelector('#guidedIngredients').innerHTML = (guidedRecipe?.ingredientGroups || []).map(group => `
+    document.querySelector('#guidedIngredients').innerHTML = (guidedRecipe?.ingredientGroups || []).filter(Boolean).map(group => `
       <section class="guided-ingredient-group">
         ${group.name && group.name !== 'Main' ? `<h3>${escapeHtml(group.name)}</h3>` : ''}
-        <ul>${(group.ingredients || []).map(ingredient => `<li><label><input type="checkbox"><span>${formatIngredient(ingredient)}</span></label></li>`).join('')}</ul>
+        <ul>${(group.ingredients || []).filter(Boolean).map(ingredient => `<li><label><input type="checkbox"><span>${formatIngredient(ingredient)}</span></label></li>`).join('')}</ul>
       </section>`).join('');
+  }
+
+  function persistGuidedProgress() {
+    const status = document.querySelector('#guidedSaveStatus');
+    try {
+      saveState();
+      if (status) status.textContent = '';
+      return true;
+    } catch (error) {
+      console.warn('Guided cooking progress could not be saved.', error);
+      if (status) status.textContent = 'Guided cooking is working, but this step could not be saved for later.';
+      return false;
+    }
   }
 
   function moveGuidedStep(direction) {
@@ -2204,7 +2224,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const lastIndex = guidedRecipe.instructions.length - 1;
     if (direction > 0 && guidedStepIndex === lastIndex) {
       delete state.guidedCookingProgress[guidedRecipe.key];
-      saveState();
+      persistGuidedProgress();
       closeGuidedCooking();
       return;
     }
@@ -2292,7 +2312,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.26');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.26.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
