@@ -122,7 +122,7 @@
     await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300',tessedit_pageseg_mode:globalThis.Tesseract.PSM?.AUTO||'3'}); return worker;
   }
 
-  const instructionStart=/^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|spread|sprinkle|bring|reduce|cover|drain|store|take|melt|whip|grease|line|freeze|dip|unravel|roll)\b/i;
+  const instructionStart=/^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|store|take|melt|whip|grease|line|freeze|dip|unravel|roll)\b/i;
   const ingredientUnits=/\b(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash|eggs?|flour|sugar|butter|cream|chocolate|salt|vanilla|cocoa|coffee|oil)\b/i;
 
   function textEvidence(text) {
@@ -205,7 +205,17 @@
       .trim();
   }
   function cleanRecipeText(text, removeClutter=true) {
-    const junk=[/^(save|share|print|rate|review|jump to recipe|skip to content|advertisement|sponsored|cookie settings|accept cookies|sign up|log in|subscribe)$/i,/^(facebook|pinterest|instagram|youtube|tiktok|x|twitter)$/i,/^©|all rights reserved|privacy policy|terms of use/i,/^(home|recipes|about|contact|menu)$/i,/^(open in app|download app|view comments)$/i];
+    const junk=[
+      /^(?:save|share|print|rate|review|jump to recipe|skip to content|advertisement|sponsored|cookie settings|accept cookies|sign up|log in|subscribe)$/i,
+      /^(?:select all|deselect all|check all|uncheck all|copy ingredients?|add to (?:shopping )?list|cook mode|keep screen awake)$/i,
+      /^(?:facebook|pinterest|instagram|youtube|tiktok|x|twitter)$/i,
+      /^(?:©|all rights reserved|privacy policy|terms of use)/i,
+      /^(?:home|recipes|about|contact|menu)$/i,
+      /^(?:open in app|download app|view comments|read more|show less)$/i,
+      /^(?:recipe\s+)?courtesy\s+of\b/i,
+      /^(?:photo|photograph|image)\s+(?:by|courtesy|credit)\b/i,
+      /^(?:written|posted|updated|published|reviewed)\s+by\b/i
+    ];
     const repairedHeadings=String(text||'')
       .replace(/^[ \t]*I[ \t]*N[ \t]*G[ \t]*R[ \t]*E[ \t]*D[ \t]*I[ \t]*E[ \t]*N[ \t]*T[ \t]*S[ \t]*[:.]?[ \t]*$/gim,'\nINGREDIENTS\n')
       .replace(/^[ \t]*I[ \t]*N[ \t]*S[ \t]*T[ \t]*R[ \t]*U[ \t]*C[ \t]*T[ \t]*I[ \t]*O[ \t]*N[ \t]*S[ \t]*[:.]?[ \t]*$/gim,'\nINSTRUCTIONS\n')
@@ -213,13 +223,33 @@
       .replace(/^[ \t]*F[I1][ \t]+in[ \t]+N(?:G|6)?[ \t]*[:.]?[ \t]*$/gim,'\nFILLING:\n')
       .replace(/^[ \t]*T[ \t]*O[ \t]*P[ \t]*P[ \t]*I[ \t]*N[ \t]*G[ \t]*[:.]?[ \t]*$/gim,'\nTOPPING:\n')
       .replace(/^[ \t]*1?0[ \t]+PPI[ \t]+N[ \t]*G5?[ \t]*[:.]?[ \t]*$/gim,'\nTOPPING:\n');
-    let lines=repairedHeadings.split(/\r?\n/).map(normalizeLine).filter(Boolean).filter(line=>!/^\d+$/.test(line)).filter(line=>!removeClutter||!junk.some(rx=>rx.test(line)));
+    let lines=repairedHeadings
+      .split(/\r?\n/)
+      .flatMap(line=>line.split(/\s+(?=(?:(?:prep(?:aration)?|active|cook(?:ing)?)(?:\s*time)?|total\s*time)\s*[:：-]|(?:yield|serves|servings|makes)\s*[:：-])/i))
+      .map(normalizeLine)
+      .filter(Boolean)
+      .filter(line=>!/^\d+[.)]?$/.test(line));
+    if(removeClutter){
+      let dropAttributionContinuation=false;
+      lines=lines.filter(line=>{
+        const isAttribution=junk.slice(-3).some(rx=>rx.test(line));
+        if(isAttribution){dropAttributionContinuation=true;return false;}
+        if(dropAttributionContinuation&&/^[A-Z][A-Z'’-]{2,24}$/.test(line)){dropAttributionContinuation=false;return false;}
+        dropAttributionContinuation=false;
+        return !junk.some(rx=>rx.test(line));
+      });
+    }
     const dedup=[]; for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({line,key}); }
     return dedup.map(x=>x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?)\b)/gi,'\n\n');
   }
 
   function combinePages(pages) {
-    const result=[]; for(const page of pages){ const lines=page.split('\n').filter(Boolean); for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const duplicate=result.slice(-20).some(x=>x.key===key || (key.length>24 && (x.key.includes(key)||key.includes(x.key)))); if(!duplicate) result.push({line,key}); } result.push({line:'',key:`break-${result.length}`}); }
+    const result=[]; for(const page of pages){ const lines=page.split('\n').filter(Boolean); for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue;
+      const start=Math.max(0,result.length-20);
+      const duplicateIndex=result.findIndex((x,index)=>index>=start&&(x.key===key||(Math.min(key.length,x.key.length)>24&&(x.key.includes(key)||key.includes(x.key)))));
+      if(duplicateIndex<0) result.push({line,key});
+      else if(key.length>result[duplicateIndex].key.length) result[duplicateIndex]={line,key};
+    } result.push({line:'',key:`break-${result.length}`}); }
     return result.map(x=>x.line).join('\n').replace(/\n{3,}/g,'\n\n').trim();
   }
 
@@ -369,4 +399,5 @@
   openPaste?.addEventListener('click',()=>{ document.querySelector('#imageRecipeDialog')?.close(); const paste=document.querySelector('#pasteRecipeDialog'); const textarea=document.querySelector('#pastedRecipeText'); if(output.value.trim())textarea.value=output.value; paste?.showModal(); textarea?.focus(); });
   output.addEventListener('input',event=>{if(event.isTrusted&&output.dataset.ocrQuality==='low')output.dataset.ocrQuality='edited';});
   button.addEventListener('click',readImages,{capture:true}); window.addEventListener('pagehide',()=>{worker?.terminate?.();worker=null;});
+  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, qualityMessage, scoreText };
 })();
