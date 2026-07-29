@@ -8,10 +8,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.16.24">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.24">
+  <meta name="kc-url-import-endpoint" content="">
+  <link rel="manifest" href="app.webmanifest?v=0.16.25">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.25">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.16.24">
+  <link rel="stylesheet" href="styles.css?v=0.16.25">
 </head>
 <body>
   <div class="app-shell">
@@ -165,7 +166,7 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.24</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.25</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
@@ -418,6 +419,7 @@
         <button type="button" id="manualRecipeBtn" class="button">Enter manually</button>
         <button type="button" id="pasteRecipeBtn" class="button secondary">Paste recipe text</button>
         <button type="button" id="imageRecipeBtn" class="button secondary">Import from image</button>
+        <button type="button" id="urlRecipeBtn" class="button secondary">Import from website</button>
       </div>
       <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button></div>
     </form>
@@ -432,6 +434,16 @@
     </form>
   </dialog>
 
+  <dialog id="urlRecipeDialog">
+    <form id="urlRecipeForm" class="dialog-card recipe-import-card">
+      <div class="dialog-title-row"><h2>Import recipe from website</h2><button type="button" class="icon-btn" id="closeUrlRecipe" aria-label="Close">✕</button></div>
+      <p>Paste a link to a recipe page. Kitchen Companion looks for the page’s structured recipe data and opens the result for review before anything is saved.</p>
+      <label>Recipe website<input id="recipeUrl" type="url" inputmode="url" autocomplete="url" required placeholder="https://example.com/recipe"></label>
+      <p id="urlImportStatus" class="import-status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" class="button secondary" id="cancelUrlRecipe">Cancel</button><button type="submit" class="button" id="importRecipeUrl">Import and review</button></div>
+    </form>
+  </dialog>
+
   <dialog id="imageRecipeDialog">
     <form id="imageRecipeForm" class="dialog-card recipe-import-card">
       <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close">✕</button></div>
@@ -442,7 +454,7 @@
       <label>Recognized text<textarea id="recognizedRecipeText" rows="14" placeholder="Recognized text will appear here. You can correct it before continuing."></textarea></label>
       <p id="ocrStatus" class="import-status" aria-live="polite"></p>
       <div id="ocrFallbackActions" class="ocr-fallback-actions" hidden><button type="button" id="copyAiRecipePrompt" class="button secondary">Copy AI conversion instructions</button><button type="button" id="openPasteFromOcr" class="button secondary">Switch to pasted text</button></div>
-      <div class="dialog-actions"><button type="button" class="button secondary" id="cancelImageRecipe">Cancel</button><button type="button" class="button secondary" id="recognizeRecipeImages">Read images</button><button type="submit" class="button">Parse and review</button></div>
+      <div class="dialog-actions"><button type="button" class="button secondary" id="cancelImageRecipe">Cancel</button><button type="button" class="button secondary" id="recognizeRecipeImages">Read images</button><button type="submit" class="button" id="parseRecognizedRecipe" hidden>Parse and review</button></div>
     </form>
   </dialog>
 
@@ -560,9 +572,10 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.16.24"></script>
-  <script src="profile-storage.js?v=0.16.24"></script>
-  <script src="app.js?v=0.16.24"></script>
-  <script src="ocr-service.js?v=0.16.24"></script>
+  <script src="kitchen-engine.js?v=0.16.25"></script>
+  <script src="profile-storage.js?v=0.16.25"></script>
+  <script src="url-recipe-import.js?v=0.16.25"></script>
+  <script src="app.js?v=0.16.25"></script>
+  <script src="ocr-service.js?v=0.16.25"></script>
 </body>
 </html>
