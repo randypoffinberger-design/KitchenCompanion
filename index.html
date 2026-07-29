@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.16.26.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.26.1">
+  <link rel="manifest" href="app.webmanifest?v=0.16.27">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.27">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.16.26.1">
+  <link rel="stylesheet" href="styles.css?v=0.16.27">
 </head>
 <body>
   <div class="app-shell">
@@ -165,90 +165,66 @@
   </dialog>
 
   <dialog id="settingsDialog">
-    <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.26.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
-
-      <div class="setting-block">
-        <strong>Profiles</strong>
-        <p>Current profile: <b id="activeProfileName">My Profile</b></p>
-        <p class="setting-help">Favorites, notes, hidden recipes, personal recipes, shopping data, and personal settings are kept separately for each profile. Installed recipe modules remain shared on this device.</p>
-        <button type="button" id="manageProfilesBtn" class="button secondary">Manage profiles</button>
-      </div>
-      <div class="setting-block">
-        <strong>Offline image recognition</strong>
-        <p id="offlineOcrStatus" class="setting-help" aria-live="polite">Checking the local OCR package…</p>
-        <button type="button" id="repairOfflineOcrBtn" class="button secondary">Install or repair offline OCR</button>
-        <p class="setting-help">Kitchen Companion keeps its OCR engine and English model in a separate local cache so normal app updates do not remove them. Your device may still clear website data when storage is critically low.</p>
-      </div>
-      <label class="setting-row">
-        <span>Dark mode</span>
-        <input id="darkModeToggle" type="checkbox">
-      </label>
-      <label class="setting-row">
-        <span>Show metric helper amounts</span>
-        <input id="metricToggle" type="checkbox">
-      </label>
-      <div class="setting-block">
-        <strong>Layout color</strong>
-        <div class="color-presets" id="colorPresets">
-          <button type="button" class="color-swatch" data-color="#7b3f00" style="--swatch:#7b3f00" aria-label="Brown"></button>
-          <button type="button" class="color-swatch" data-color="#0ABAB5" style="--swatch:#0ABAB5" aria-label="Tiffany blue"></button>
-          <button type="button" class="color-swatch" data-color="#2563EB" style="--swatch:#2563EB" aria-label="Blue"></button>
-          <button type="button" class="color-swatch" data-color="#7C3AED" style="--swatch:#7C3AED" aria-label="Purple"></button>
-          <button type="button" class="color-swatch" data-color="#15803D" style="--swatch:#15803D" aria-label="Green"></button>
-          <button type="button" class="color-swatch" data-color="#BE123C" style="--swatch:#BE123C" aria-label="Rose"></button>
-        </div>
-        <label class="custom-color-row"><span>Custom color</span><input id="accentColorInput" type="color" value="#7b3f00"></label>
-      </div>
-      <div class="setting-block">
-        <strong>Timer alarm</strong>
-        <label class="setting-row"><span>Bell sound</span><input id="alarmSoundToggle" type="checkbox" checked></label>
-        <label class="setting-slider"><span>Bell volume</span><input id="alarmVolume" type="range" min="0.1" max="1" step="0.05" value="0.85"></label>
-        <button type="button" id="testBellBtn" class="button secondary">Test bell</button>
-        <p class="setting-help">Tap Test bell once on each device to authorize audio. A finished timer rings continuously while Kitchen Companion is active until the alarm is dismissed.</p>
-      </div>
-      <div class="setting-block">
-        <strong>Screen wake</strong>
-        <label class="setting-column"><span>Keep the screen awake</span><select id="wakeLockMode"><option value="never">Never</option><option value="recipes">Only while viewing a recipe</option><option value="recipes-and-timers" selected>While viewing recipes or using timers</option></select></label>
-        <p id="wakeLockStatus" class="setting-help">Wake lock reconnects automatically when you return to Kitchen Companion.</p>
-      </div>
-      <div class="setting-block">
-        <strong>Hidden recipes</strong>
-        <p>Restore recipes hidden from installed modules.</p>
-        <button type="button" id="hiddenRecipesBtn" class="button secondary">Manage hidden recipes</button>
-      </div>
-      <div class="setting-block backup-settings">
-        <strong>Backup and restore</strong>
-        <p>Protect your personal recipes, notes, favorites, shopping data, and settings.</p>
-        <div class="backup-actions">
-          <button type="button" id="createBackupBtn" class="button">Create full backup</button>
-          <button type="button" id="restoreBackupBtn" class="button secondary">Restore backup</button>
-          <button type="button" id="exportPersonalRecipesBtn" class="button secondary">Export my recipes</button>
-          <button type="button" id="importRecipeBtn" class="button secondary">Import shared recipe</button>
-        </div>
-      </div>
-      <div class="setting-block">
-        <strong>Feedback and support</strong>
-        <p>Report a problem or share an idea without leaving Kitchen Companion.</p>
-        <div class="feedback-launch-actions">
-          <button type="button" id="reportProblemBtn" class="button">Report a problem</button>
-          <button type="button" id="sendFeedbackBtn" class="button secondary">Send feedback</button>
-        </div>
-        <p class="setting-help">Reports never include personal recipes, notes, shopping lists, profile names, profile images, or backups.</p>
-      </div>
-      <div class="setting-block developer-safeguards">
-        <strong>Data safeguards</strong>
-        <p id="safeguardStatus" class="setting-help">Loading backup and storage status…</p>
-        <div id="safetyBackupList" class="safety-backup-list"></div>
-        <div class="backup-actions">
-          <button type="button" id="createSafetyBackupBtn" class="button secondary">Create safety checkpoint</button>
-          <button type="button" id="runDiagnosticsBtn" class="button secondary">Run diagnostics</button>
-          <button type="button" id="optimizeStorageBtn" class="button secondary">Clean up storage</button>
-        </div>
-        <pre id="diagnosticsOutput" class="diagnostics-output" hidden></pre>
-      </div>
-      <div class="dialog-actions">
-        <button class="button secondary" value="cancel">Close</button>
+    <form method="dialog" class="dialog-card settings-card">
+      <div class="settings-sticky-header"><h2>Settings</h2><button class="icon-btn" value="cancel" aria-label="Close settings">✕</button></div>
+      <div class="settings-sections">
+        <details class="settings-section" open>
+          <summary>App and updates</summary>
+          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.27</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+        </details>
+        <details class="settings-section">
+          <summary>Profiles and recipes</summary>
+          <div class="settings-section-content">
+            <div class="setting-block"><strong>Profiles</strong><p>Current profile: <b id="activeProfileName">My Profile</b></p><p class="setting-help">Favorites, notes, hidden recipes, personal recipes, shopping data, and personal settings are kept separately for each profile. Installed recipe modules remain shared on this device.</p><button type="button" id="manageProfilesBtn" class="button secondary">Manage profiles</button></div>
+            <div class="setting-block"><strong>Hidden recipes</strong><p>Restore recipes hidden from installed modules.</p><button type="button" id="hiddenRecipesBtn" class="button secondary">Manage hidden recipes</button></div>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary>Appearance and measurements</summary>
+          <div class="settings-section-content">
+            <label class="setting-row"><span>Dark mode</span><input id="darkModeToggle" type="checkbox"></label>
+            <label class="setting-row"><span>Show metric helper amounts</span><input id="metricToggle" type="checkbox"></label>
+            <div class="setting-block"><strong>Layout color</strong><div class="color-presets" id="colorPresets">
+              <button type="button" class="color-swatch" data-color="#7b3f00" style="--swatch:#7b3f00" aria-label="Brown"></button>
+              <button type="button" class="color-swatch" data-color="#0ABAB5" style="--swatch:#0ABAB5" aria-label="Tiffany blue"></button>
+              <button type="button" class="color-swatch" data-color="#2563EB" style="--swatch:#2563EB" aria-label="Blue"></button>
+              <button type="button" class="color-swatch" data-color="#7C3AED" style="--swatch:#7C3AED" aria-label="Purple"></button>
+              <button type="button" class="color-swatch" data-color="#15803D" style="--swatch:#15803D" aria-label="Green"></button>
+              <button type="button" class="color-swatch" data-color="#BE123C" style="--swatch:#BE123C" aria-label="Rose"></button>
+            </div><label class="custom-color-row"><span>Custom color</span><input id="accentColorInput" type="color" value="#7b3f00"></label></div>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary>Guided cooking and voice</summary>
+          <div class="settings-section-content">
+            <label class="setting-column"><span>Voice</span><select id="guidedVoiceSelect"><option value="">Device default</option></select></label>
+            <label class="setting-slider"><span>Speaking speed <b id="guidedSpeechRateValue">0.95×</b></span><input id="guidedSpeechRate" type="range" min="0.6" max="1.4" step="0.05" value="0.95"></label>
+            <label class="setting-slider"><span>Voice pitch <b id="guidedSpeechPitchValue">1.00</b></span><input id="guidedSpeechPitch" type="range" min="0.7" max="1.3" step="0.05" value="1"></label>
+            <button type="button" id="previewGuidedVoiceBtn" class="button secondary">Preview voice</button>
+            <p id="guidedVoiceStatus" class="setting-help" aria-live="polite">Voice choices come from this device.</p>
+            <label class="setting-column"><span>Keep the screen awake</span><select id="wakeLockMode"><option value="never">Never</option><option value="recipes">Only while viewing a recipe</option><option value="recipes-and-timers" selected>While viewing recipes or using timers</option></select></label>
+            <p id="wakeLockStatus" class="setting-help">Wake lock reconnects automatically when you return to Kitchen Companion.</p>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary>Timers and alarms</summary>
+          <div class="settings-section-content"><label class="setting-row"><span>Bell sound</span><input id="alarmSoundToggle" type="checkbox" checked></label><label class="setting-slider"><span>Bell volume</span><input id="alarmVolume" type="range" min="0.1" max="1" step="0.05" value="0.85"></label><button type="button" id="testBellBtn" class="button secondary">Test bell</button><p class="setting-help">Tap Test bell once on each device to authorize audio. A finished timer rings continuously while Kitchen Companion is active until the alarm is dismissed.</p></div>
+        </details>
+        <details class="settings-section">
+          <summary>Offline image recognition</summary>
+          <div class="settings-section-content"><p id="offlineOcrStatus" class="setting-help" aria-live="polite">Checking the local OCR package…</p><button type="button" id="repairOfflineOcrBtn" class="button secondary">Install or repair offline OCR</button><p class="setting-help">Kitchen Companion keeps its OCR engine and English model in a separate local cache so normal app updates do not remove them. Your device may still clear website data when storage is critically low.</p></div>
+        </details>
+        <details class="settings-section">
+          <summary>Backup, restore, and safeguards</summary>
+          <div class="settings-section-content">
+            <div class="setting-block backup-settings"><strong>Backup and restore</strong><p>Protect your personal recipes, notes, favorites, shopping data, and settings.</p><div class="backup-actions"><button type="button" id="createBackupBtn" class="button">Create full backup</button><button type="button" id="restoreBackupBtn" class="button secondary">Restore backup</button><button type="button" id="exportPersonalRecipesBtn" class="button secondary">Export my recipes</button><button type="button" id="importRecipeBtn" class="button secondary">Import shared recipe</button></div></div>
+            <div class="setting-block developer-safeguards"><strong>Data safeguards</strong><p id="safeguardStatus" class="setting-help">Loading backup and storage status…</p><div id="safetyBackupList" class="safety-backup-list"></div><div class="backup-actions"><button type="button" id="createSafetyBackupBtn" class="button secondary">Create safety checkpoint</button><button type="button" id="runDiagnosticsBtn" class="button secondary">Run diagnostics</button><button type="button" id="optimizeStorageBtn" class="button secondary">Clean up storage</button></div><pre id="diagnosticsOutput" class="diagnostics-output" hidden></pre></div>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary>Feedback and support</summary>
+          <div class="settings-section-content"><p>Report a problem or share an idea without leaving Kitchen Companion.</p><div class="feedback-launch-actions"><button type="button" id="reportProblemBtn" class="button">Report a problem</button><button type="button" id="sendFeedbackBtn" class="button secondary">Send feedback</button></div><p class="setting-help">Reports never include personal recipes, notes, shopping lists, profile names, profile images, or backups.</p></div>
+        </details>
       </div>
     </form>
   </dialog>
@@ -598,10 +574,10 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.16.26.1"></script>
-  <script src="profile-storage.js?v=0.16.26.1"></script>
-  <script src="url-recipe-import.js?v=0.16.26.1"></script>
-  <script src="app.js?v=0.16.26.1"></script>
-  <script src="ocr-service.js?v=0.16.26.1"></script>
+  <script src="kitchen-engine.js?v=0.16.27"></script>
+  <script src="profile-storage.js?v=0.16.27"></script>
+  <script src="url-recipe-import.js?v=0.16.27"></script>
+  <script src="app.js?v=0.16.27"></script>
+  <script src="ocr-service.js?v=0.16.27"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.26.1';
+  const ENGINE_VERSION = '0.16.27';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -87,7 +87,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.guidedSpeechEnabled ??= true; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -109,7 +109,7 @@
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
     moduleFile: document.querySelector('#moduleFile'), importBtn: document.querySelector('#importBtn'), moduleImportBtn: document.querySelector('#moduleImportBtn'),
     moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'),
-    settingsBtn: document.querySelector('#menuSettings'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'),
+    settingsBtn: document.querySelector('#menuSettings'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'), guidedVoiceSelect: document.querySelector('#guidedVoiceSelect'), guidedSpeechRate: document.querySelector('#guidedSpeechRate'), guidedSpeechRateValue: document.querySelector('#guidedSpeechRateValue'), guidedSpeechPitch: document.querySelector('#guidedSpeechPitch'), guidedSpeechPitchValue: document.querySelector('#guidedSpeechPitchValue'), previewGuidedVoiceBtn: document.querySelector('#previewGuidedVoiceBtn'), guidedVoiceStatus: document.querySelector('#guidedVoiceStatus'),
     reportProblemBtn: document.querySelector('#reportProblemBtn'), sendFeedbackBtn: document.querySelector('#sendFeedbackBtn'), feedbackDialog: document.querySelector('#feedbackDialog'), feedbackForm: document.querySelector('#feedbackForm'), feedbackDialogTitle: document.querySelector('#feedbackDialogTitle'), feedbackIntro: document.querySelector('#feedbackIntro'), feedbackReportId: document.querySelector('#feedbackReportId'), feedbackType: document.querySelector('#feedbackType'), feedbackSeverityField: document.querySelector('#feedbackSeverityField'), feedbackSeverity: document.querySelector('#feedbackSeverity'), feedbackSummary: document.querySelector('#feedbackSummary'), feedbackBugFields: document.querySelector('#feedbackBugFields'), feedbackActivity: document.querySelector('#feedbackActivity'), feedbackActual: document.querySelector('#feedbackActual'), feedbackExpected: document.querySelector('#feedbackExpected'), feedbackDetailsField: document.querySelector('#feedbackDetailsField'), feedbackDetails: document.querySelector('#feedbackDetails'), feedbackEmail: document.querySelector('#feedbackEmail'), feedbackScreenshot: document.querySelector('#feedbackScreenshot'), feedbackScreenshotStatus: document.querySelector('#feedbackScreenshotStatus'), feedbackIncludeDiagnostics: document.querySelector('#feedbackIncludeDiagnostics'), prepareFeedbackBtn: document.querySelector('#prepareFeedbackBtn'), feedbackPreviewField: document.querySelector('#feedbackPreviewField'), feedbackReportPreview: document.querySelector('#feedbackReportPreview'), feedbackStatus: document.querySelector('#feedbackStatus'), copyFeedbackBtn: document.querySelector('#copyFeedbackBtn'), downloadFeedbackBtn: document.querySelector('#downloadFeedbackBtn'), shareFeedbackBtn: document.querySelector('#shareFeedbackBtn'), closeFeedbackBtn: document.querySelector('#closeFeedbackBtn'),
     createRecipeBtn: document.querySelector('#menuCreateRecipe'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta'),
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
@@ -236,7 +236,7 @@
     els.browseGithubBtn.addEventListener('click', () => { els.importOptionsDialog.close(); currentView='modules'; showModules(); loadModuleCatalog(); });
     els.importFileBtn.addEventListener('click', () => { els.importOptionsDialog.close(); els.moduleFile.click(); });
     els.moduleFile.addEventListener('change', importModules);
-    els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); renderHiddenRecipes(); renderActiveProfile(); refreshOfflineOcrStatus(); els.settingsDialog.showModal(); });
+    els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); renderHiddenRecipes(); renderActiveProfile(); refreshOfflineOcrStatus(); populateSpeechVoices(); els.settingsDialog.showModal(); });
     els.repairOfflineOcrBtn?.addEventListener('click', repairOfflineOcr);
     els.reportProblemBtn?.addEventListener('click', () => openFeedbackDialog('bug'));
     els.sendFeedbackBtn?.addEventListener('click', () => openFeedbackDialog('suggestion'));
@@ -261,6 +261,13 @@
     els.alarmSoundToggle?.addEventListener('change', () => { state.settings.alarmSoundEnabled = els.alarmSoundToggle.checked; saveState(); if (!state.settings.alarmSoundEnabled) stopBell(); });
     els.alarmVolume?.addEventListener('input', () => { state.settings.alarmVolume = Number(els.alarmVolume.value); if (bellAudio) bellAudio.volume = state.settings.alarmVolume; saveState(); });
     els.testBellBtn?.addEventListener('click', testBell);
+    els.guidedVoiceSelect?.addEventListener('change', () => { state.settings.guidedVoiceURI = els.guidedVoiceSelect.value; saveState(); });
+    els.guidedSpeechRate?.addEventListener('input', updateGuidedVoiceLabels);
+    els.guidedSpeechRate?.addEventListener('change', () => { state.settings.guidedSpeechRate = Number(els.guidedSpeechRate.value); saveState(); });
+    els.guidedSpeechPitch?.addEventListener('input', updateGuidedVoiceLabels);
+    els.guidedSpeechPitch?.addEventListener('change', () => { state.settings.guidedSpeechPitch = Number(els.guidedSpeechPitch.value); saveState(); });
+    els.previewGuidedVoiceBtn?.addEventListener('click', previewGuidedVoice);
+    if ('speechSynthesis' in window) window.speechSynthesis.addEventListener('voiceschanged', populateSpeechVoices);
     els.manageProfilesBtn?.addEventListener('click', () => { renderProfiles(); els.settingsDialog.close(); els.profilesDialog.showModal(); });
     els.addProfileBtn?.addEventListener('click', createProfile);
     els.importProfileBtn?.addEventListener('click', () => els.profileImportFile?.click());
@@ -915,7 +922,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.26.1').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.27').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1311,12 +1318,78 @@
     if (els.wakeLockMode) els.wakeLockMode.value = state.settings.wakeLockMode || 'recipes-and-timers';
     if (els.alarmSoundToggle) els.alarmSoundToggle.checked = state.settings.alarmSoundEnabled !== false;
     if (els.alarmVolume) els.alarmVolume.value = String(state.settings.alarmVolume ?? 0.85);
+    if (els.guidedSpeechRate) els.guidedSpeechRate.value = String(state.settings.guidedSpeechRate ?? 0.95);
+    if (els.guidedSpeechPitch) els.guidedSpeechPitch.value = String(state.settings.guidedSpeechPitch ?? 1);
+    updateGuidedVoiceLabels();
     const accent = state.settings.accentColor || '#7b3f00';
     document.documentElement.style.setProperty('--accent', accent);
     document.documentElement.style.setProperty('--accent-2', adjustColor(accent, state.settings.darkMode ? 22 : -14));
     els.accentColorInput.value = accent;
     if (els.themeColorMeta) els.themeColorMeta.content = accent;
     document.querySelectorAll('.color-swatch').forEach(x => x.classList.toggle('active', x.dataset.color.toLowerCase() === accent.toLowerCase()));
+  }
+
+  function speechVoices() {
+    if (!('speechSynthesis' in window)) return [];
+    return window.speechSynthesis.getVoices().slice().sort((a, b) => {
+      const aEnglish = /^en(?:-|_)/i.test(a.lang) ? 0 : 1;
+      const bEnglish = /^en(?:-|_)/i.test(b.lang) ? 0 : 1;
+      return aEnglish - bEnglish || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
+    });
+  }
+
+  function populateSpeechVoices() {
+    if (!els.guidedVoiceSelect) return;
+    const voices = speechVoices();
+    const selected = state.settings.guidedVoiceURI || '';
+    els.guidedVoiceSelect.innerHTML = '<option value="">Device default</option>';
+    voices.forEach(voice => {
+      const option = document.createElement('option');
+      option.value = voice.voiceURI;
+      option.textContent = `${voice.name} — ${voice.lang}${voice.localService ? ' · On device' : ''}`;
+      els.guidedVoiceSelect.append(option);
+    });
+    els.guidedVoiceSelect.value = voices.some(voice => voice.voiceURI === selected) ? selected : '';
+    if (els.guidedVoiceStatus) {
+      els.guidedVoiceStatus.textContent = voices.length
+        ? `${voices.length} voice${voices.length === 1 ? '' : 's'} available on this device.`
+        : 'No selectable voices are available yet. KC will use the device default.';
+    }
+  }
+
+  function updateGuidedVoiceLabels() {
+    if (els.guidedSpeechRateValue && els.guidedSpeechRate) els.guidedSpeechRateValue.textContent = `${Number(els.guidedSpeechRate.value).toFixed(2)}×`;
+    if (els.guidedSpeechPitchValue && els.guidedSpeechPitch) els.guidedSpeechPitchValue.textContent = Number(els.guidedSpeechPitch.value).toFixed(2);
+  }
+
+  function configuredSpeechUtterance(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const selected = state.settings.guidedVoiceURI || '';
+    const voice = speechVoices().find(item => item.voiceURI === selected);
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    }
+    utterance.rate = Math.max(0.6, Math.min(1.4, Number(state.settings.guidedSpeechRate) || 0.95));
+    utterance.pitch = Math.max(0.7, Math.min(1.3, Number(state.settings.guidedSpeechPitch) || 1));
+    return utterance;
+  }
+
+  function previewGuidedVoice() {
+    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+      if (els.guidedVoiceStatus) els.guidedVoiceStatus.textContent = 'Spoken instructions are not supported on this device.';
+      return;
+    }
+    state.settings.guidedVoiceURI = els.guidedVoiceSelect?.value || '';
+    state.settings.guidedSpeechRate = Number(els.guidedSpeechRate?.value) || 0.95;
+    state.settings.guidedSpeechPitch = Number(els.guidedSpeechPitch?.value) || 1;
+    saveState();
+    window.speechSynthesis.cancel();
+    const utterance = configuredSpeechUtterance('Your guided cooking voice is ready. Let’s make something delicious.');
+    utterance.onstart = () => { if (els.guidedVoiceStatus) els.guidedVoiceStatus.textContent = 'Playing voice preview…'; };
+    utterance.onend = () => populateSpeechVoices();
+    utterance.onerror = () => { if (els.guidedVoiceStatus) els.guidedVoiceStatus.textContent = 'This voice could not play. Try another voice or use the device default.'; };
+    window.speechSynthesis.speak(utterance);
   }
 
   function setAccentColor(color) { state.settings.accentColor = color; applySettings(); saveState(); }
@@ -2241,8 +2314,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       return;
     }
     stopGuidedSpeech();
-    const utterance = new SpeechSynthesisUtterance(guidedRecipe.instructions[guidedStepIndex]);
-    utterance.rate = 0.95;
+    const utterance = configuredSpeechUtterance(guidedRecipe.instructions[guidedStepIndex]);
     utterance.onstart = () => { status.textContent = 'Reading this step aloud…'; };
     utterance.onend = () => { status.textContent = ''; };
     utterance.onerror = event => {
@@ -2312,7 +2384,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.26.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.27');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

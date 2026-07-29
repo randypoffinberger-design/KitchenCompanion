@@ -260,6 +260,22 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 body.menu-open { overflow: hidden; touch-action: none; }
 .import-choice-grid { display:grid; gap:.75rem; margin-top:1rem; }
 .version-card .button { margin-top:.5rem; }
+.settings-card{box-sizing:border-box;width:100%;min-width:0;max-height:92dvh;margin:0;padding:0 1rem 1rem;overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:none;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+#settingsDialog{box-sizing:border-box;width:min(94vw,720px);max-width:720px;max-height:92dvh;margin:auto;padding:0;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:var(--panel)}
+.settings-sticky-header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0 -1rem .75rem;padding:.85rem 1rem;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--panel) 96%,transparent);backdrop-filter:blur(12px)}
+.settings-sticky-header h2{margin:0}
+.settings-sections{display:grid;gap:.65rem;width:100%;min-width:0}
+.settings-section{width:100%;min-width:0;border:1px solid var(--border);border-radius:14px;background:var(--panel-2);overflow:hidden}
+.settings-section>summary{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 1rem;font-weight:850;cursor:pointer;list-style:none}
+.settings-section>summary::-webkit-details-marker{display:none}
+.settings-section>summary::after{content:'＋';flex:0 0 auto;color:var(--accent);font-size:1.15rem}
+.settings-section[open]>summary::after{content:'−'}
+.settings-section[open]>summary{border-bottom:1px solid var(--border)}
+.settings-section-content{min-width:0;padding:.25rem 1rem 1rem;background:var(--panel)}
+.settings-section-content>.setting-block:first-child{padding-top:.8rem}
+.settings-section-content .version-card{margin:.75rem 0 0}
+.settings-section-content select,.settings-section-content input{max-width:100%}
+@media(max-width:600px){#settingsDialog{width:calc(100vw - 1rem);max-height:calc(100dvh - 1rem)}.settings-card{max-height:calc(100dvh - 1rem)}}
 .ingredient-store-sticky { position:sticky; top:0; z-index:2; display:grid; gap:.45rem; padding:.85rem; margin:.5rem 0; border:1px solid var(--border); border-radius:12px; background:var(--panel); }
 .ingredient-store-sticky select,.row-store { width:100%; padding:.55rem .65rem; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text); }
 .shopping-row-actions { display:grid; gap:.35rem; min-width:130px; }
