@@ -15,6 +15,7 @@
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_CANVAS_EDGE = 10_000;
   const MIN_RECIPE_SCORE = 150;
+  const OCR_ASSET_ROOT = new URL('./vendor/tesseract-7.0.0/', document.baseURI).href;
   const AI_PROMPT = `Convert the attached recipe screenshot(s) into clean plain text. Include the recipe title, yield, prep and cook times, ingredients, instructions, and notes. Remove advertisements, navigation, social buttons, photo credits, repeated headers or footers, and duplicated text caused by overlapping screenshots. Preserve fractions and quantities exactly. Do not invent missing ingredients, quantities, times, or steps. Format the result with clear Ingredients and Instructions headings.`;
 
   function setStatus(message, showFallback = false) { status.textContent = message; if (fallbackActions) fallbackActions.hidden = !showFallback; }
@@ -28,9 +29,9 @@
       const timeout = window.setTimeout(() => {
         script.remove();
         libraryPromise = null;
-        reject(new Error('OCR download timed out. The rest of Kitchen Companion remains available offline.'));
+        reject(new Error('The local OCR engine took too long to load. Use Settings → Repair offline OCR, then try again.'));
       }, 30000);
-      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js';
+      script.src = `${OCR_ASSET_ROOT}tesseract.min.js`;
       script.async = true;
       script.onload = () => {
         window.clearTimeout(timeout);
@@ -43,7 +44,7 @@
       script.onerror = () => {
         window.clearTimeout(timeout);
         libraryPromise = null;
-        reject(new Error('Connect to the internet for the first OCR use, then try again.'));
+        reject(new Error('The local OCR package is missing. Connect once, then use Settings → Repair offline OCR.'));
       };
       document.head.append(script);
     });
@@ -117,8 +118,8 @@
   async function getWorker() {
     if(worker)return worker;
     await loadOcrLibrary();
-    setStatus('Preparing the OCR engine. First use can take a minute…');
-    worker=await globalThis.Tesseract.createWorker('eng',globalThis.Tesseract.OEM?.LSTM_ONLY,{logger:progressLabel,workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0',langPath:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int'});
+    setStatus('Preparing the local OCR engine…');
+    worker=await globalThis.Tesseract.createWorker('eng',globalThis.Tesseract.OEM?.LSTM_ONLY,{logger:progressLabel,workerPath:`${OCR_ASSET_ROOT}worker.min.js`,corePath:`${OCR_ASSET_ROOT}core`,langPath:`${OCR_ASSET_ROOT}lang`});
     await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300',tessedit_pageseg_mode:globalThis.Tesseract.PSM?.AUTO||'3'}); return worker;
   }
 

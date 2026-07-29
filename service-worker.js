@@ -1,17 +1,40 @@
-const CACHE_NAME = 'kitchen-companion-v0.16.23';
+const CACHE_NAME = 'kitchen-companion-v0.16.24';
+const OCR_CACHE_NAME = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.16.23', './kitchen-engine.js?v=0.16.23', './profile-storage.js?v=0.16.23', './app.js?v=0.16.23',
-  './ocr-service.js?v=0.16.23', './alarm-bell.wav?v=0.16.23', './app.webmanifest?v=0.16.23', './icon-180.png?v=0.16.23', './icon-192.png?v=0.16.23', './icon-512.png?v=0.16.23'
+  './', './index.html', './styles.css?v=0.16.24', './kitchen-engine.js?v=0.16.24', './profile-storage.js?v=0.16.24', './app.js?v=0.16.24',
+  './ocr-service.js?v=0.16.24', './alarm-bell.wav?v=0.16.24', './app.webmanifest?v=0.16.24', './icon-180.png?v=0.16.24', './icon-192.png?v=0.16.24', './icon-512.png?v=0.16.24'
 ];
+const OCR_ASSETS = [
+  './vendor/tesseract-7.0.0/tesseract.min.js',
+  './vendor/tesseract-7.0.0/worker.min.js',
+  './vendor/tesseract-7.0.0/core/tesseract-core-lstm.wasm.js',
+  './vendor/tesseract-7.0.0/core/tesseract-core-simd-lstm.wasm.js',
+  './vendor/tesseract-7.0.0/core/tesseract-core-relaxedsimd-lstm.wasm.js',
+  './vendor/tesseract-7.0.0/lang/eng.traineddata.gz'
+];
+
+async function installOfflineOcr() {
+  const cache = await caches.open(OCR_CACHE_NAME);
+  for (const asset of OCR_ASSETS) {
+    const request = new Request(new URL(asset, self.registration.scope).href);
+    if (await cache.match(request)) continue;
+    const response = await fetch(request, { cache:'no-store' });
+    if (!response.ok) throw new Error(`Offline OCR asset failed: ${asset}`);
+    await cache.put(request, response);
+  }
+}
 
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil(Promise.all([
+    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)),
+    installOfflineOcr().catch(error => console.warn('Offline OCR will finish on demand.', error))
+  ]));
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME && key !== OCR_CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -49,8 +72,7 @@ self.addEventListener('fetch', event => {
       if (cachedPage) return cachedPage;
     }
 
-    const cacheFirst = url.origin === self.location.origin
-      || url.hostname === 'cdn.jsdelivr.net';
+    const cacheFirst = url.origin === self.location.origin;
     if (cacheFirst) {
       const cached = await caches.match(event.request);
       if (cached) return cached;

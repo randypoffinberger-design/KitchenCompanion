@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="manifest" href="app.webmanifest?v=0.16.23">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.23">
+  <link rel="manifest" href="app.webmanifest?v=0.16.24">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.24">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.16.23">
+  <link rel="stylesheet" href="styles.css?v=0.16.24">
 </head>
 <body>
   <div class="app-shell">
@@ -165,13 +165,19 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card">
-      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.23</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
+      <h2>Settings</h2><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.24</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div>
 
       <div class="setting-block">
         <strong>Profiles</strong>
         <p>Current profile: <b id="activeProfileName">My Profile</b></p>
         <p class="setting-help">Favorites, notes, hidden recipes, personal recipes, shopping data, and personal settings are kept separately for each profile. Installed recipe modules remain shared on this device.</p>
         <button type="button" id="manageProfilesBtn" class="button secondary">Manage profiles</button>
+      </div>
+      <div class="setting-block">
+        <strong>Offline image recognition</strong>
+        <p id="offlineOcrStatus" class="setting-help" aria-live="polite">Checking the local OCR package…</p>
+        <button type="button" id="repairOfflineOcrBtn" class="button secondary">Install or repair offline OCR</button>
+        <p class="setting-help">Kitchen Companion keeps its OCR engine and English model in a separate local cache so normal app updates do not remove them. Your device may still clear website data when storage is critically low.</p>
       </div>
       <label class="setting-row">
         <span>Dark mode</span>
@@ -554,9 +560,9 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.16.23"></script>
-  <script src="profile-storage.js?v=0.16.23"></script>
-  <script src="app.js?v=0.16.23"></script>
-  <script src="ocr-service.js?v=0.16.23"></script>
+  <script src="kitchen-engine.js?v=0.16.24"></script>
+  <script src="profile-storage.js?v=0.16.24"></script>
+  <script src="app.js?v=0.16.24"></script>
+  <script src="ocr-service.js?v=0.16.24"></script>
 </body>
 </html>

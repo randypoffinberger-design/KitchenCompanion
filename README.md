@@ -1,6 +1,18 @@
-# Kitchen Companion v0.16.23
+# Kitchen Companion v0.16.24
 
-## Exported-recipe OCR cleanup (v0.16.23)
+## Durable local OCR package (v0.16.24)
+
+- Includes the complete pinned OCR runtime and English model inside KC.
+- Uses no external OCR runtime URLs.
+- Keeps OCR in a stable cache that normal KC version updates do not delete.
+- Shows offline OCR readiness and storage-protection status in Settings.
+- Provides an Install or repair offline OCR button for missing or damaged files.
+- Requests persistent browser storage where supported while acknowledging that users and operating systems can still clear website data.
+- Leaves OCR recognition and parsing behavior unchanged.
+
+## Previous v0.16.23 changes
+
+## Exported-recipe OCR cleanup
 
 - Uses the actual Southern Biscuits export as a permanent regression case.
 - Removes ratings, difficulty, nutrition, and damaged webpage metadata from descriptions.
@@ -281,7 +293,7 @@ This engine package intentionally does not replace the repository's current `cat
 
 ## OCR first-use requirement
 
-Tesseract.js, its WebAssembly core, and English language model are loaded from pinned jsDelivr URLs. The first OCR run therefore requires internet access. Recipe viewing, editing, timers, notes, shopping lists, and installed modules remain local browser features.
+Tesseract.js, its compatible LSTM processing cores, and the English language model are bundled under `vendor/tesseract-7.0.0/`. The service worker installs them into a dedicated cache that survives normal Kitchen Companion updates. Settings reports whether all required files are ready offline and can repair them while connected. A device or user can still clear browser website data, so KC cannot promise that locally cached files are literally undeletable.
 
 ## Updating an existing Home Screen installation
 

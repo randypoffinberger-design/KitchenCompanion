@@ -1,4 +1,19 @@
-# Kitchen Companion v0.16.23
+# Kitchen Companion v0.16.24
+
+## Durable local OCR package
+
+- Bundles the pinned Tesseract.js 7.0.0 API, worker, compatible LSTM WebAssembly cores, and English `best_int` model inside Kitchen Companion.
+- Removes all runtime dependence on external OCR CDN files.
+- Stores the six required OCR files in a dedicated versioned cache that normal Kitchen Companion updates preserve.
+- Attempts to install the offline OCR package when the service worker installs without blocking the rest of KC if the device is temporarily offline.
+- Adds an Offline image recognition status panel in Settings.
+- Adds an Install or repair offline OCR control that verifies and redownloads every required file.
+- Requests persistent browser storage during manual repair when the browser supports it.
+- Clearly explains that no browser can prevent the operating system or user from clearing website data under every circumstance.
+- Adds an automated cache-lifecycle regression proving the OCR package survives normal app-cache replacement.
+- Preserves the existing OCR recognition and parsing behavior.
+
+## Previous v0.16.23 changes
 
 ## Exported-recipe OCR cleanup
 
