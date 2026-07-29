@@ -90,6 +90,42 @@ const merged = ocr.combinePages([
 assert.match(merged, /mixture resembles coarse crumbs/);
 assert.doesNotMatch(merged, /mixture\n/);
 
+const exportedSouthernBiscuitsText = `Southern Biscuits
+WW WW W945 Reviews Level: Easy Total: 40 min Nutrition Info
+Prep: 20 min
+Cook: 20 min
+Yield: 1 dozen
+Ingredients
+2 cups flour
+4 teaspoons baking powder
+1/4 teaspoon baking soda
+3/4 teaspoon salt
+2 tablespoons butter
+2 tablespoons shortening
+1 cup buttermilk, chilled
+Directions
+1.
+Preheat oven to 450 degrees.
+In a large mixing bowl, combine flour, baking powder, baking soda and salt.
+Using your fingertips, rub butter and shortening into dry ingredients until mixture looks like crumbs. (The faster the better, you don't want the fats to melt.
+) Make a well in the center and pour in the chilled buttermilk.
+Stir just until the dough comes together. The dough will be very sticky.
+3 Turn dough onto floured surface, dust top with flour and gently fold dough over on itself 5 or 6 times. Press into a 1-inch thick round.
+Cut out biscuits with a 2-inch cutter, being sure to push straight down through the dough.
+Place biscuits on baking sheet so that they just touch.
+Reform scrap dough, working it as little as possible and continue cutting. (Biscuits from the second pass will not be quite as light as those from the first, but hey, that's life. ) 4.
+Bake until biscuits are tall and light gold on top, 15–20 minutes.`;
+
+const exportedRegression = engine.parseRecipeText(exportedSouthernBiscuitsText);
+assert.equal(exportedRegression.description, '');
+assert.match(exportedRegression.notes, /Total time: 40 min/);
+assert.ok(exportedRegression.instructions.every(step => !/^\d+[.)]?\s*/.test(step)));
+assert.ok(exportedRegression.instructions.every(step => !/\s\d+[.)]\s*$/.test(step)));
+assert.ok(exportedRegression.instructions.some(step => /^Turn dough/i.test(step)));
+assert.ok(exportedRegression.instructions.some(step => /crumbs\. \(The faster the better, you don't want the fats to melt\.\)$/i.test(step)));
+assert.ok(exportedRegression.instructions.some(step => /^Make a well/i.test(step)));
+assert.ok(exportedRegression.instructions.some(step => /second pass.+that's life\.\)$/i.test(step)));
+
 const clutterVariants = [
   'Deselect All', 'Select All', 'Copy Ingredients', 'Add to Shopping List',
   'ADVERTISEMENT', 'Open in App', 'View Comments', 'Photo by Example Studio'
