@@ -24,8 +24,10 @@ function loadOcrTextTools() {
   });
   const context = {
     console,
+    URL,
     globalThis: {},
     document: {
+      baseURI: 'https://example.test/kitchen-companion/',
       querySelector: () => element(),
       createElement: () => element(),
       head: { append() {} }
