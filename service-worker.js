@@ -5,12 +5,12 @@ const APP_SHELL = [
   './ocr-service.js?v=0.16.24', './alarm-bell.wav?v=0.16.24', './app.webmanifest?v=0.16.24', './icon-180.png?v=0.16.24', './icon-192.png?v=0.16.24', './icon-512.png?v=0.16.24'
 ];
 const OCR_ASSETS = [
-  './vendor/tesseract-7.0.0/tesseract.min.js',
-  './vendor/tesseract-7.0.0/worker.min.js',
-  './vendor/tesseract-7.0.0/core/tesseract-core-lstm.wasm.js',
-  './vendor/tesseract-7.0.0/core/tesseract-core-simd-lstm.wasm.js',
-  './vendor/tesseract-7.0.0/core/tesseract-core-relaxedsimd-lstm.wasm.js',
-  './vendor/tesseract-7.0.0/lang/eng.traineddata.gz'
+  './Vendor/tesseract-7.0.0/tesseract.min.js',
+  './Vendor/tesseract-7.0.0/worker.min.js',
+  './Vendor/tesseract-7.0.0/core/tesseract-core-lstm.wasm.js',
+  './Vendor/tesseract-7.0.0/core/tesseract-core-simd-lstm.wasm.js',
+  './Vendor/tesseract-7.0.0/core/tesseract-core-relaxedsimd-lstm.wasm.js',
+  './Vendor/tesseract-7.0.0/lang/eng.traineddata.gz'
 ];
 
 async function installOfflineOcr() {

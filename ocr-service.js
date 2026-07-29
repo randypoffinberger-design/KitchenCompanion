@@ -15,7 +15,7 @@
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_CANVAS_EDGE = 10_000;
   const MIN_RECIPE_SCORE = 150;
-  const OCR_ASSET_ROOT = new URL('./vendor/tesseract-7.0.0/', document.baseURI).href;
+  const OCR_ASSET_ROOT = new URL('./Vendor/tesseract-7.0.0/', document.baseURI).href;
   const AI_PROMPT = `Convert the attached recipe screenshot(s) into clean plain text. Include the recipe title, yield, prep and cook times, ingredients, instructions, and notes. Remove advertisements, navigation, social buttons, photo credits, repeated headers or footers, and duplicated text caused by overlapping screenshots. Preserve fractions and quantities exactly. Do not invent missing ingredients, quantities, times, or steps. Format the result with clear Ingredients and Instructions headings.`;
 
   function setStatus(message, showFallback = false) { status.textContent = message; if (fallbackActions) fallbackActions.hidden = !showFallback; }

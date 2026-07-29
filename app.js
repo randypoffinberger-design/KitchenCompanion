@@ -7,12 +7,12 @@
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
   const OFFLINE_OCR_ASSETS = [
-    './vendor/tesseract-7.0.0/tesseract.min.js',
-    './vendor/tesseract-7.0.0/worker.min.js',
-    './vendor/tesseract-7.0.0/core/tesseract-core-lstm.wasm.js',
-    './vendor/tesseract-7.0.0/core/tesseract-core-simd-lstm.wasm.js',
-    './vendor/tesseract-7.0.0/core/tesseract-core-relaxedsimd-lstm.wasm.js',
-    './vendor/tesseract-7.0.0/lang/eng.traineddata.gz'
+    './Vendor/tesseract-7.0.0/tesseract.min.js',
+    './Vendor/tesseract-7.0.0/worker.min.js',
+    './Vendor/tesseract-7.0.0/core/tesseract-core-lstm.wasm.js',
+    './Vendor/tesseract-7.0.0/core/tesseract-core-simd-lstm.wasm.js',
+    './Vendor/tesseract-7.0.0/core/tesseract-core-relaxedsimd-lstm.wasm.js',
+    './Vendor/tesseract-7.0.0/lang/eng.traineddata.gz'
   ];
   const builtInModule = {
     schemaVersion: 1,
