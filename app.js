@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.25';
+  const ENGINE_VERSION = '0.16.26';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -87,7 +87,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.guidedSpeechEnabled ??= true; state.customCategories ||= []; state.timers ||= []; state.guidedCookingProgress ||= {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -97,6 +97,8 @@
   let bellAudio = null;
   let wakeLockSentinel = null;
   let wakeLockRequestPending = false;
+  let guidedRecipe = null;
+  let guidedStepIndex = 0;
 
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
@@ -290,6 +292,17 @@
     els.urlRecipeForm?.addEventListener('submit', importRecipeFromUrl);
     els.imageRecipeForm.addEventListener('submit', parseRecognizedRecipe);
     els.recipeImageFiles.addEventListener('change', previewRecipeImages);
+    document.querySelector('#exitGuidedCooking')?.addEventListener('click', closeGuidedCooking);
+    document.querySelector('#guidedCookingDialog')?.addEventListener('close', finishGuidedCookingClose);
+    document.querySelector('#guidedPrevious')?.addEventListener('click', () => moveGuidedStep(-1));
+    document.querySelector('#guidedNext')?.addEventListener('click', () => moveGuidedStep(1));
+    document.querySelector('#guidedSpeak')?.addEventListener('click', speakGuidedStep);
+    document.querySelector('#guidedSpeechEnabled')?.addEventListener('change', event => {
+      state.settings.guidedSpeechEnabled = event.target.checked;
+      saveState();
+      if (!event.target.checked) stopGuidedSpeech();
+      else speakGuidedStep();
+    });
     els.closeRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.cancelRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.recipeEditorForm.addEventListener('submit', saveRecipeFromEditor);
@@ -902,7 +915,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.25').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.26').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1768,6 +1781,7 @@
     const incomingLinks = combinedLinks.incoming;
     const favorite = state.favorites.includes(recipe.key);
     const yieldText = recipe.yield ? `${formatNumber(recipe.yield.amount * activeScale)} ${recipe.yield.unit}` : '';
+    const guidedProgress = Number(state.guidedCookingProgress[recipe.key]?.stepIndex || 0);
 
     els.recipeDetail.innerHTML = `
       <section class="recipe-hero">
@@ -1782,7 +1796,7 @@
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
         ${renderRecipeRating(recipe)}
-        <div class="recipe-action-row"><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
+        <div class="recipe-action-row"><button id="startGuidedCookingBtn" class="button">🍳 ${guidedProgress > 0 ? `Resume at step ${guidedProgress + 1}` : 'Start guided cooking'}</button><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
@@ -1793,6 +1807,7 @@
       <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
+    document.querySelector('#startGuidedCookingBtn').addEventListener('click', () => openGuidedCooking(recipe));
     document.querySelectorAll('[data-recipe-rating]').forEach(button => button.addEventListener('click', () => setRecipeRating(recipe.key, Number(button.dataset.recipeRating))));
     document.querySelector('#clearRecipeRating')?.addEventListener('click', () => setRecipeRating(recipe.key, 0));
     document.querySelector('#editRecipeBtn').addEventListener('click', () => openRecipeEditor(recipe));
@@ -1894,6 +1909,7 @@
     state.favorites = state.favorites.filter(item => item !== key);
     delete state.recipeNotes[key];
     state.timers = state.timers.filter(timer => timer.recipeKey !== key);
+    delete state.guidedCookingProgress[key];
     state.shoppingList = state.shoppingList.map(item => ({...item, entries:(item.entries||[]).filter(entry=>entry.recipeKey!==key)})).filter(item=>(item.entries||[]).length);
   }
 
@@ -2138,6 +2154,102 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return els.editCategory.value || 'Uncategorized';
   }
 
+  function openGuidedCooking(recipe) {
+    if (!recipe?.instructions?.length) return alert('This recipe does not have any cooking steps yet.');
+    guidedRecipe = recipe;
+    guidedStepIndex = Math.min(
+      Math.max(0, Number(state.guidedCookingProgress[recipe.key]?.stepIndex || 0)),
+      recipe.instructions.length - 1
+    );
+    const dialog = document.querySelector('#guidedCookingDialog');
+    const speechToggle = document.querySelector('#guidedSpeechEnabled');
+    speechToggle.checked = state.settings.guidedSpeechEnabled !== false;
+    renderGuidedIngredients();
+    renderGuidedCooking();
+    dialog.showModal();
+    updateWakeLock();
+    if (speechToggle.checked) window.setTimeout(speakGuidedStep, 120);
+  }
+
+  function renderGuidedCooking() {
+    if (!guidedRecipe) return;
+    const steps = guidedRecipe.instructions || [];
+    const step = steps[guidedStepIndex] || '';
+    document.querySelector('#guidedRecipeName').textContent = guidedRecipe.name;
+    document.querySelector('#guidedStepProgress').textContent = `Step ${guidedStepIndex + 1} of ${steps.length}`;
+    document.querySelector('#guidedStepNumber').textContent = guidedStepIndex + 1;
+    const stepText = document.querySelector('#guidedStepText');
+    stepText.innerHTML = renderInstructionWithTimers(step, guidedRecipe, guidedStepIndex);
+    const timerButtons = [...stepText.querySelectorAll('.timer-link')];
+    document.querySelector('#guidedTimerActions').textContent = timerButtons.length
+      ? 'Tap the highlighted time to start a timer.'
+      : '';
+    timerButtons.forEach(button => button.addEventListener('click', () => offerTimer(button, guidedRecipe)));
+    document.querySelector('#guidedPrevious').disabled = guidedStepIndex === 0;
+    document.querySelector('#guidedNext').textContent = guidedStepIndex === steps.length - 1 ? 'Finish ✓' : 'Next →';
+    state.guidedCookingProgress[guidedRecipe.key] = { stepIndex:guidedStepIndex, updatedAt:new Date().toISOString() };
+    saveState();
+  }
+
+  function renderGuidedIngredients() {
+    document.querySelector('#guidedIngredients').innerHTML = (guidedRecipe?.ingredientGroups || []).map(group => `
+      <section class="guided-ingredient-group">
+        ${group.name && group.name !== 'Main' ? `<h3>${escapeHtml(group.name)}</h3>` : ''}
+        <ul>${(group.ingredients || []).map(ingredient => `<li><label><input type="checkbox"><span>${formatIngredient(ingredient)}</span></label></li>`).join('')}</ul>
+      </section>`).join('');
+  }
+
+  function moveGuidedStep(direction) {
+    if (!guidedRecipe) return;
+    const lastIndex = guidedRecipe.instructions.length - 1;
+    if (direction > 0 && guidedStepIndex === lastIndex) {
+      delete state.guidedCookingProgress[guidedRecipe.key];
+      saveState();
+      closeGuidedCooking();
+      return;
+    }
+    guidedStepIndex = Math.max(0, Math.min(lastIndex, guidedStepIndex + direction));
+    stopGuidedSpeech();
+    renderGuidedCooking();
+    if (state.settings.guidedSpeechEnabled !== false) speakGuidedStep();
+  }
+
+  function speakGuidedStep() {
+    const status = document.querySelector('#guidedSpeechStatus');
+    if (!guidedRecipe || !('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+      if (status) status.textContent = 'Spoken instructions are not supported on this device.';
+      return;
+    }
+    stopGuidedSpeech();
+    const utterance = new SpeechSynthesisUtterance(guidedRecipe.instructions[guidedStepIndex]);
+    utterance.rate = 0.95;
+    utterance.onstart = () => { status.textContent = 'Reading this step aloud…'; };
+    utterance.onend = () => { status.textContent = ''; };
+    utterance.onerror = event => {
+      if (event.error !== 'canceled' && event.error !== 'interrupted') status.textContent = 'This device could not read the step aloud. You can continue using the on-screen controls.';
+    };
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function stopGuidedSpeech() {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    const status = document.querySelector('#guidedSpeechStatus');
+    if (status) status.textContent = '';
+  }
+
+  function finishGuidedCookingClose() {
+    stopGuidedSpeech();
+    guidedRecipe = null;
+    guidedStepIndex = 0;
+    updateWakeLock();
+  }
+
+  function closeGuidedCooking() {
+    const dialog = document.querySelector('#guidedCookingDialog');
+    if (dialog?.open) dialog.close();
+    else finishGuidedCookingClose();
+  }
+
   function renderInstructionWithTimers(step, recipe, stepIndex) {
     const escaped = escapeHtml(step);
     const pattern = /\b(?:(\d+)\s*(?:hours?|hrs?|hr)\s*(?:and\s*)?)?(\d+(?:\s*(?:[–-]|to)\s*\d+)?)\s*(minutes?|mins?|min)\b|\b(\d+(?:\s*(?:[–-]|to)\s*\d+)?)\s*(hours?|hrs?|hr)\b/gi;
@@ -2180,7 +2292,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.25');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.26');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
