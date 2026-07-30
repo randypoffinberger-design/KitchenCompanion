@@ -1,4 +1,14 @@
-# Kitchen Companion v0.16.29
+# Kitchen Companion v0.16.30
+
+## Selectable timer alarms (v0.16.30)
+
+- Adds five alarm choices: Classic bell, Digital timer, Kitchen chime, Gentle
+  reminder, and Urgent alarm.
+- Saves the selected alarm with the active profile.
+- Generates four tones in code, adding no new audio-file storage.
+- Plays three complete cycles during preview and then stops automatically.
+- Allows an active preview to be stopped early.
+- Keeps a real completed timer repeating until it is dismissed.
 
 ## Mobile dialog stability (v0.16.29)
 

@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.16.29">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.29">
+  <link rel="manifest" href="app.webmanifest?v=0.16.30">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.30">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.16.29">
+  <link rel="stylesheet" href="styles.css?v=0.16.30">
 </head>
 <body>
   <div class="app-shell">
@@ -170,7 +170,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.29</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.30</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -208,7 +208,14 @@
         </details>
         <details class="settings-section">
           <summary>Timers and alarms</summary>
-          <div class="settings-section-content"><label class="setting-row"><span>Bell sound</span><input id="alarmSoundToggle" type="checkbox" checked></label><label class="setting-slider"><span>Bell volume</span><input id="alarmVolume" type="range" min="0.1" max="1" step="0.05" value="0.85"></label><button type="button" id="testBellBtn" class="button secondary">Test bell</button><p class="setting-help">Tap Test bell once on each device to authorize audio. A finished timer rings continuously while Kitchen Companion is active until the alarm is dismissed.</p></div>
+          <div class="settings-section-content">
+            <label class="setting-row"><span>Alarm sound</span><input id="alarmSoundToggle" type="checkbox" checked></label>
+            <label class="setting-column"><span>Alarm tone</span><select id="alarmToneSelect"><option value="bell">Classic bell</option><option value="digital">Digital timer</option><option value="chime">Kitchen chime</option><option value="gentle">Gentle reminder</option><option value="urgent">Urgent alarm</option></select></label>
+            <label class="setting-slider"><span>Alarm volume</span><input id="alarmVolume" type="range" min="0.1" max="1" step="0.05" value="0.85"></label>
+            <button type="button" id="testBellBtn" class="button secondary">Preview alarm</button>
+            <p id="alarmPreviewStatus" class="setting-help" aria-live="polite">Preview plays three alarm cycles, then stops automatically.</p>
+            <p class="setting-help">Tap Preview alarm once on each device to authorize audio. A finished timer repeats continuously while Kitchen Companion is active until the alarm is dismissed.</p>
+          </div>
         </details>
         <details class="settings-section">
           <summary>Offline image recognition</summary>
@@ -574,10 +581,10 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.16.29"></script>
-  <script src="profile-storage.js?v=0.16.29"></script>
-  <script src="url-recipe-import.js?v=0.16.29"></script>
-  <script src="app.js?v=0.16.29"></script>
-  <script src="ocr-service.js?v=0.16.29"></script>
+  <script src="kitchen-engine.js?v=0.16.30"></script>
+  <script src="profile-storage.js?v=0.16.30"></script>
+  <script src="url-recipe-import.js?v=0.16.30"></script>
+  <script src="app.js?v=0.16.30"></script>
+  <script src="ocr-service.js?v=0.16.30"></script>
 </body>
 </html>

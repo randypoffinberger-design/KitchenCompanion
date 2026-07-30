@@ -1,4 +1,13 @@
-# Kitchen Companion v0.16.29
+# Kitchen Companion v0.16.30
+
+## v0.16.30
+
+- Adds five selectable timer alarm tones in Settings.
+- Saves alarm selection separately for each profile.
+- Uses code-generated tones for four choices, avoiding additional sound files.
+- Changes Preview alarm to play three complete cycles before stopping.
+- Lets the user stop a preview early.
+- Preserves continuous completed-timer alarms until dismissal.
 
 ## v0.16.29
 

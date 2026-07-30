@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.29';
+  const ENGINE_VERSION = '0.16.30';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -85,9 +85,17 @@
     ]
   };
 
+  const ALARM_TONES = Object.freeze({
+    bell: { name:'Classic bell', kind:'audio', cycleMs:4800 },
+    digital: { name:'Digital timer', pattern:[[880,.16,.10],[880,.16,.58]] },
+    chime: { name:'Kitchen chime', pattern:[[659,.24,.04],[784,.24,.04],[1047,.50,.62]] },
+    gentle: { name:'Gentle reminder', pattern:[[523,.34,.06],[659,.34,.06],[784,.48,.82]] },
+    urgent: { name:'Urgent alarm', pattern:[[980,.16,.07],[720,.16,.07],[980,.16,.07],[720,.16,.48]] }
+  });
+
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -95,6 +103,11 @@
   let activeScale = 1;
   let timerTicker = null;
   let bellAudio = null;
+  let alarmAudioContext = null;
+  let alarmCycleTimer = null;
+  let alarmStopTimer = null;
+  let alarmPlaybackMode = '';
+  const alarmOscillators = new Set();
   let wakeLockSentinel = null;
   let wakeLockRequestPending = false;
   let guidedRecipe = null;
@@ -115,7 +128,7 @@
     timersBtn: document.querySelector('#timersBtn'), timerCount: document.querySelector('#timerCount'), timerDock: document.querySelector('#timerDock'), timerList: document.querySelector('#timerList'), closeTimerDock: document.querySelector('#closeTimerDock'),
     editCategory: document.querySelector('#editCategory'), addCustomCategory: document.querySelector('#addCustomCategory'), customCategoryInput: document.querySelector('#customCategoryInput'),
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
-    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), shareShoppingDialog: document.querySelector('#shareShoppingDialog'), shareShoppingFileBtn: document.querySelector('#shareShoppingFileBtn'), copyShoppingMessageBtn: document.querySelector('#copyShoppingMessageBtn'), shoppingShareStatus: document.querySelector('#shoppingShareStatus'), importShoppingBtn: document.querySelector('#importShoppingBtn'), importShoppingDialog: document.querySelector('#importShoppingDialog'), chooseShoppingFileBtn: document.querySelector('#chooseShoppingFileBtn'), shoppingMessageText: document.querySelector('#shoppingMessageText'), shoppingPasteError: document.querySelector('#shoppingPasteError'), importPastedShoppingBtn: document.querySelector('#importPastedShoppingBtn'), shoppingImportFile: document.querySelector('#shoppingImportFile'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), shoppingItemDialogTitle: document.querySelector('#shoppingItemDialogTitle'), shoppingItemEditId: document.querySelector('#shoppingItemEditId'), shoppingItemSubmitBtn: document.querySelector('#shoppingItemSubmitBtn'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), urlRecipeBtn: document.querySelector('#urlRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), urlRecipeDialog: document.querySelector('#urlRecipeDialog'), urlRecipeForm: document.querySelector('#urlRecipeForm'), recipeUrl: document.querySelector('#recipeUrl'), urlImportStatus: document.querySelector('#urlImportStatus'), importRecipeUrl: document.querySelector('#importRecipeUrl'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), parseRecognizedRecipe: document.querySelector('#parseRecognizedRecipe'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn'), addKitchenProfileBtn: document.querySelector('#addKitchenProfileBtn'), profileSetupDialog: document.querySelector('#profileSetupDialog'), profileSetupForm: document.querySelector('#profileSetupForm'), profileSetupName: document.querySelector('#profileSetupName'), importProfileBtn: document.querySelector('#importProfileBtn'), profileImportFile: document.querySelector('#profileImportFile'), profileStorageSummary: document.querySelector('#profileStorageSummary'), headerProfileBtn: document.querySelector('#headerProfileBtn'), headerProfileAvatar: document.querySelector('#headerProfileAvatar'), headerProfileName: document.querySelector('#headerProfileName'), profileQuickMenu: document.querySelector('#profileQuickMenu'), profileEditDialog: document.querySelector('#profileEditDialog'), profileEditForm: document.querySelector('#profileEditForm'), profileEditName: document.querySelector('#profileEditName'), profileEditEmoji: document.querySelector('#profileEditEmoji'), profileEditImage: document.querySelector('#profileEditImage'), profileEditImageInput: document.querySelector('#profileEditImageInput'), profileEditImageBtn: document.querySelector('#profileEditImageBtn'), profileEditRemoveImageBtn: document.querySelector('#profileEditRemoveImageBtn'), profileEditPreview: document.querySelector('#profileEditPreview'), profileEditColorChoices: document.querySelector('#profileEditColorChoices'), cancelProfileEdit: document.querySelector('#cancelProfileEdit'), safeguardStatus: document.querySelector('#safeguardStatus'), safetyBackupList: document.querySelector('#safetyBackupList'), createSafetyBackupBtn: document.querySelector('#createSafetyBackupBtn'), runDiagnosticsBtn: document.querySelector('#runDiagnosticsBtn'), optimizeStorageBtn: document.querySelector('#optimizeStorageBtn'), diagnosticsOutput: document.querySelector('#diagnosticsOutput'), offlineOcrStatus: document.querySelector('#offlineOcrStatus'), repairOfflineOcrBtn: document.querySelector('#repairOfflineOcrBtn')
+    menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), shareShoppingDialog: document.querySelector('#shareShoppingDialog'), shareShoppingFileBtn: document.querySelector('#shareShoppingFileBtn'), copyShoppingMessageBtn: document.querySelector('#copyShoppingMessageBtn'), shoppingShareStatus: document.querySelector('#shoppingShareStatus'), importShoppingBtn: document.querySelector('#importShoppingBtn'), importShoppingDialog: document.querySelector('#importShoppingDialog'), chooseShoppingFileBtn: document.querySelector('#chooseShoppingFileBtn'), shoppingMessageText: document.querySelector('#shoppingMessageText'), shoppingPasteError: document.querySelector('#shoppingPasteError'), importPastedShoppingBtn: document.querySelector('#importPastedShoppingBtn'), shoppingImportFile: document.querySelector('#shoppingImportFile'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), shoppingItemDialogTitle: document.querySelector('#shoppingItemDialogTitle'), shoppingItemEditId: document.querySelector('#shoppingItemEditId'), shoppingItemSubmitBtn: document.querySelector('#shoppingItemSubmitBtn'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), urlRecipeBtn: document.querySelector('#urlRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), urlRecipeDialog: document.querySelector('#urlRecipeDialog'), urlRecipeForm: document.querySelector('#urlRecipeForm'), recipeUrl: document.querySelector('#recipeUrl'), urlImportStatus: document.querySelector('#urlImportStatus'), importRecipeUrl: document.querySelector('#importRecipeUrl'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), parseRecognizedRecipe: document.querySelector('#parseRecognizedRecipe'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmToneSelect: document.querySelector('#alarmToneSelect'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), alarmPreviewStatus: document.querySelector('#alarmPreviewStatus'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn'), addKitchenProfileBtn: document.querySelector('#addKitchenProfileBtn'), profileSetupDialog: document.querySelector('#profileSetupDialog'), profileSetupForm: document.querySelector('#profileSetupForm'), profileSetupName: document.querySelector('#profileSetupName'), importProfileBtn: document.querySelector('#importProfileBtn'), profileImportFile: document.querySelector('#profileImportFile'), profileStorageSummary: document.querySelector('#profileStorageSummary'), headerProfileBtn: document.querySelector('#headerProfileBtn'), headerProfileAvatar: document.querySelector('#headerProfileAvatar'), headerProfileName: document.querySelector('#headerProfileName'), profileQuickMenu: document.querySelector('#profileQuickMenu'), profileEditDialog: document.querySelector('#profileEditDialog'), profileEditForm: document.querySelector('#profileEditForm'), profileEditName: document.querySelector('#profileEditName'), profileEditEmoji: document.querySelector('#profileEditEmoji'), profileEditImage: document.querySelector('#profileEditImage'), profileEditImageInput: document.querySelector('#profileEditImageInput'), profileEditImageBtn: document.querySelector('#profileEditImageBtn'), profileEditRemoveImageBtn: document.querySelector('#profileEditRemoveImageBtn'), profileEditPreview: document.querySelector('#profileEditPreview'), profileEditColorChoices: document.querySelector('#profileEditColorChoices'), cancelProfileEdit: document.querySelector('#cancelProfileEdit'), safeguardStatus: document.querySelector('#safeguardStatus'), safetyBackupList: document.querySelector('#safetyBackupList'), createSafetyBackupBtn: document.querySelector('#createSafetyBackupBtn'), runDiagnosticsBtn: document.querySelector('#runDiagnosticsBtn'), optimizeStorageBtn: document.querySelector('#optimizeStorageBtn'), diagnosticsOutput: document.querySelector('#diagnosticsOutput'), offlineOcrStatus: document.querySelector('#offlineOcrStatus'), repairOfflineOcrBtn: document.querySelector('#repairOfflineOcrBtn')
   };
 
   const startupIssues = [];
@@ -165,7 +178,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true } };
+    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true, alarmTone: 'bell' } };
   }
 
   function saveState() { profileStore.saveCombinedState(state); }
@@ -258,8 +271,16 @@
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
     els.wakeLockMode?.addEventListener('change', () => { state.settings.wakeLockMode = els.wakeLockMode.value; saveState(); updateWakeLock(); });
-    els.alarmSoundToggle?.addEventListener('change', () => { state.settings.alarmSoundEnabled = els.alarmSoundToggle.checked; saveState(); if (!state.settings.alarmSoundEnabled) stopBell(); });
+    els.alarmSoundToggle?.addEventListener('change', () => { state.settings.alarmSoundEnabled = els.alarmSoundToggle.checked; saveState(); if (state.settings.alarmSoundEnabled) updateAlarmLoop(); else stopBell(); });
     els.alarmVolume?.addEventListener('input', () => { state.settings.alarmVolume = Number(els.alarmVolume.value); if (bellAudio) bellAudio.volume = state.settings.alarmVolume; saveState(); });
+    els.alarmToneSelect?.addEventListener('change', () => {
+      state.settings.alarmTone = ALARM_TONES[els.alarmToneSelect.value] ? els.alarmToneSelect.value : 'bell';
+      saveState();
+      const ringing = state.timers.some(timer => timer.done && !timer.dismissed);
+      stopBell();
+      if (ringing) startBell();
+      if (els.alarmPreviewStatus) els.alarmPreviewStatus.textContent = `${ALARM_TONES[state.settings.alarmTone].name} selected. Preview plays three cycles.`;
+    });
     els.testBellBtn?.addEventListener('click', testBell);
     els.guidedVoiceSelect?.addEventListener('change', () => { state.settings.guidedVoiceURI = els.guidedVoiceSelect.value; saveState(); });
     els.guidedSpeechRate?.addEventListener('input', updateGuidedVoiceLabels);
@@ -922,7 +943,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.29').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.16.30').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1318,6 +1339,7 @@
     if (els.wakeLockMode) els.wakeLockMode.value = state.settings.wakeLockMode || 'recipes-and-timers';
     if (els.alarmSoundToggle) els.alarmSoundToggle.checked = state.settings.alarmSoundEnabled !== false;
     if (els.alarmVolume) els.alarmVolume.value = String(state.settings.alarmVolume ?? 0.85);
+    if (els.alarmToneSelect) els.alarmToneSelect.value = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell';
     if (els.guidedSpeechRate) els.guidedSpeechRate.value = String(state.settings.guidedSpeechRate ?? 0.95);
     if (els.guidedSpeechPitch) els.guidedSpeechPitch.value = String(state.settings.guidedSpeechPitch ?? 1);
     updateGuidedVoiceLabels();
@@ -2384,10 +2406,21 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.29');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.16.30');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
+  }
+
+  function selectedAlarmTone() {
+    return ALARM_TONES[state.settings.alarmTone] || ALARM_TONES.bell;
+  }
+
+  function ensureAlarmAudioContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!alarmAudioContext) alarmAudioContext = new AudioContextClass();
+    return alarmAudioContext;
   }
 
   async function unlockBellAudio() {
@@ -2404,35 +2437,128 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     } finally {
       bellAudio.volume = previousVolume;
     }
+    const context = ensureAlarmAudioContext();
+    if (context?.state === 'suspended') {
+      try { await context.resume(); } catch (error) { console.warn('Synthesized alarm audio could not be unlocked.', error); }
+    }
+  }
+
+  function finishAlarmPreview(message = 'Preview finished after three cycles.') {
+    stopBell();
+    if (els.alarmPreviewStatus) els.alarmPreviewStatus.textContent = message;
+  }
+
+  function scheduleSynthAlarmCycle(tone, cyclesRemaining) {
+    if (!alarmPlaybackMode) return;
+    const context = ensureAlarmAudioContext();
+    if (!context) {
+      finishAlarmPreview('Synthesized tones are not supported on this device. Try Classic bell.');
+      return;
+    }
+    const volume = Math.max(0.01, Math.min(1, Number(state.settings.alarmVolume) || 0.85));
+    let offset = 0;
+    tone.pattern.forEach(([frequency, duration, pause]) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const startsAt = context.currentTime + offset;
+      const endsAt = startsAt + duration;
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, startsAt);
+      gain.gain.setValueAtTime(0.0001, startsAt);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.001, volume * 0.16), startsAt + Math.min(0.025, duration / 3));
+      gain.gain.exponentialRampToValueAtTime(0.0001, endsAt);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      alarmOscillators.add(oscillator);
+      oscillator.onended = () => alarmOscillators.delete(oscillator);
+      oscillator.start(startsAt);
+      oscillator.stop(endsAt + 0.01);
+      offset += duration + pause;
+    });
+    const cycleMs = Math.max(350, Math.round(offset * 1000));
+    alarmCycleTimer = setTimeout(() => {
+      if (!alarmPlaybackMode) return;
+      if (cyclesRemaining === Infinity || cyclesRemaining > 1) {
+        scheduleSynthAlarmCycle(tone, cyclesRemaining === Infinity ? Infinity : cyclesRemaining - 1);
+      } else finishAlarmPreview();
+    }, cycleMs);
+  }
+
+  async function startAlarmPlayback(mode = 'timer', previewCycles = Infinity) {
+    if (!state.settings.alarmSoundEnabled || document.visibilityState !== 'visible') return;
+    if (alarmPlaybackMode === mode) return;
+    stopBell();
+    alarmPlaybackMode = mode;
+    const tone = selectedAlarmTone();
+    if (mode === 'preview') {
+      els.testBellBtn.textContent = 'Stop preview';
+      if (els.alarmPreviewStatus) els.alarmPreviewStatus.textContent = `Playing ${tone.name} three times…`;
+    }
+    if (tone.kind === 'audio') {
+      if (!bellAudio) initBellAudio();
+      bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
+      try {
+        await bellAudio.play();
+        if (mode === 'preview') alarmStopTimer = setTimeout(() => finishAlarmPreview(), tone.cycleMs * previewCycles);
+      } catch (error) {
+        stopBell();
+        if (mode === 'preview') alert('The alarm could not start. Make sure media volume is turned up, then tap Preview alarm again.');
+        else console.warn('Unable to start timer alarm. Use Preview alarm in Settings once to enable sound.', error);
+      }
+      return;
+    }
+    const context = ensureAlarmAudioContext();
+    if (!context) {
+      stopBell();
+      if (els.alarmPreviewStatus) els.alarmPreviewStatus.textContent = 'This device cannot play synthesized tones. Try Classic bell.';
+      return;
+    }
+    try {
+      if (context.state === 'suspended') await context.resume();
+      scheduleSynthAlarmCycle(tone, previewCycles);
+    } catch (error) {
+      stopBell();
+      if (mode === 'preview') alert('The alarm could not start. Make sure media volume is turned up, then tap Preview alarm again.');
+      else console.warn('Unable to start synthesized timer alarm.', error);
+    }
   }
 
   async function startBell() {
-    if (!state.settings.alarmSoundEnabled || document.visibilityState !== 'visible') return;
-    if (!bellAudio) initBellAudio();
-    bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
-    try { await bellAudio.play(); }
-    catch (error) { console.warn('Unable to start timer bell. Use Test Bell in Settings once to enable sound.', error); }
+    return startAlarmPlayback('timer', Infinity);
   }
 
   function stopBell() {
-    if (!bellAudio) return;
-    bellAudio.pause();
-    bellAudio.currentTime = 0;
+    if (alarmCycleTimer) clearTimeout(alarmCycleTimer);
+    if (alarmStopTimer) clearTimeout(alarmStopTimer);
+    alarmCycleTimer = null;
+    alarmStopTimer = null;
+    alarmOscillators.forEach(oscillator => {
+      try { oscillator.stop(); } catch {}
+    });
+    alarmOscillators.clear();
+    if (bellAudio) {
+      bellAudio.pause();
+      bellAudio.currentTime = 0;
+    }
+    alarmPlaybackMode = '';
+    if (els.testBellBtn) els.testBellBtn.textContent = 'Preview alarm';
   }
 
   async function testBell() {
+    if (alarmPlaybackMode === 'preview') {
+      finishAlarmPreview('Preview stopped.');
+      return;
+    }
+    if (state.timers.some(timer => timer.done && !timer.dismissed)) {
+      if (els.alarmPreviewStatus) els.alarmPreviewStatus.textContent = 'Dismiss the active timer alarm before previewing another tone.';
+      return;
+    }
     if (!bellAudio) initBellAudio();
     state.settings.alarmSoundEnabled = true;
     if (els.alarmSoundToggle) els.alarmSoundToggle.checked = true;
     saveState();
-    bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
-    try {
-      await bellAudio.play();
-      els.testBellBtn.textContent = 'Bell enabled ✓';
-      setTimeout(() => { if (!state.timers.some(timer => timer.done && !timer.dismissed)) stopBell(); els.testBellBtn.textContent = 'Test bell'; }, 2200);
-    } catch (error) {
-      alert('The bell could not start. Make sure media volume is turned up, then tap Test bell again.');
-    }
+    await unlockBellAudio();
+    await startAlarmPlayback('preview', 3);
   }
 
   function updateAlarmLoop() {
