@@ -71,7 +71,7 @@ async function runLifecycle(type) {
   assert.ok(!stores.has('kitchen-companion-v-old'), 'obsolete app cache should still be removed');
 
   const ocrService = fs.readFileSync(path.join(root, 'ocr-service.js'), 'utf8');
-  assert.match(ocrService, /vendor\/tesseract-7[.]0[.]0/);
+  assert.match(ocrService, /Vendor\/tesseract-7[.]0[.]0/);
   assert.doesNotMatch(ocrService, /cdn[.]jsdelivr[.]net/);
   console.log('Offline OCR cache regression passed: six local assets survive app activation.');
 })().catch(error => {
