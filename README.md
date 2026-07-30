@@ -1,4 +1,15 @@
-# Kitchen Companion v0.16.28
+# Kitchen Companion v0.16.29
+
+## Mobile dialog stability (v0.16.29)
+
+- Keeps Create Recipe, Edit Recipe, imports, profiles, shopping tools, and other
+  standard dialogs centered while scrolling on phones.
+- Locks open dialogs to vertical touch scrolling and contains horizontal
+  overflow.
+- Prevents iPhone from automatically zooming into dialog fields by using a
+  mobile-safe 16-pixel form font.
+- Preserves the existing Settings and full-screen Guided Cooking layouts.
+- Leaves OCR and website recipe parsing unchanged.
 
 ## Website recipe metadata cleanup (v0.16.28)
 

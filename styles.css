@@ -30,7 +30,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { color: inherit; }
 
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 66px 1fr; }
@@ -569,6 +569,34 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .feedback-actions .button{flex:1 1 11rem}
 #feedbackPreviewField[hidden],#feedbackBugFields[hidden],#feedbackDetailsField[hidden],#feedbackSeverityField[hidden]{display:none!important}
 @media(max-width:560px){.feedback-form-grid{grid-template-columns:1fr}.feedback-actions .button{flex-basis:100%}}
+
+/* v0.16.29 mobile dialog centering and iOS focus stability */
+dialog:not(.guided-cooking-dialog){
+  box-sizing:border-box;
+  max-width:calc(100vw - 1rem);
+  max-height:calc(100dvh - 1rem);
+  margin:auto;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:pan-y;
+}
+dialog:not(.guided-cooking-dialog)>.dialog-card{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+  max-height:calc(100dvh - 1rem);
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior-x:none;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y;
+  -webkit-overflow-scrolling:touch;
+}
+@media(max-width:600px){
+  dialog:not(.guided-cooking-dialog){width:calc(100vw - 1rem)}
+  dialog:not(.guided-cooking-dialog)>.dialog-card{width:100%}
+  dialog input,dialog select,dialog textarea{font-size:16px}
+}
 
 /* v0.12.0 smart shopping list */
 .shopping-group-heading{margin:.75rem 0 .1rem;padding:.38rem .15rem .3rem;border-bottom:1px solid var(--border);color:var(--accent);font-size:.82rem;font-weight:850;letter-spacing:.045em;text-transform:uppercase}

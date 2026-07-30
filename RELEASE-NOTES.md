@@ -1,4 +1,13 @@
-# Kitchen Companion v0.16.28
+# Kitchen Companion v0.16.29
+
+## v0.16.29
+
+- Keeps all standard modal screens horizontally contained and centered on
+  phones.
+- Limits dialog gestures to vertical scrolling.
+- Prevents iPhone's automatic input-focus zoom inside dialogs.
+- Excludes full-screen Guided Cooking from the generic modal sizing rules.
+- Preserves OCR and website recipe extraction behavior.
 
 ## v0.16.28
 
