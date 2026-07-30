@@ -1,4 +1,53 @@
-# Kitchen Companion v0.16.24
+# Kitchen Companion v0.16.28
+
+## v0.16.28
+
+- Fixes extended ISO durations such as Food Network's 20-minute values.
+- Converts category slugs such as `side-dish` to **Side Dishes**.
+- Adds recipe author, total time, difficulty, and Cook's Note metadata when
+  supplied by the page.
+- Preserves the existing OCR engine and OCR parsing behavior.
+
+## v0.16.27
+
+- Replaces the long Settings page with eight collapsible sections.
+- Keeps the Settings Close control visible while scrolling.
+- Prevents sideways Settings movement during touch scrolling.
+- Adds device voice selection and preview for Guided Cooking.
+- Adds saved speaking-rate and pitch controls.
+- Preserves all existing settings and actions.
+
+## v0.16.26.1
+
+- Fixes Guided Cooking silently doing nothing when its initial local progress
+  write fails.
+- Makes guided progress persistence best-effort instead of blocking.
+- Adds visible fallback errors for unexpected guided-mode opening failures.
+
+## v0.16.26
+
+- Adds full-screen Guided Cooking Mode.
+- Displays one large instruction at a time with Back, Repeat, Next, Finish,
+  and Exit controls.
+- Adds optional on-device spoken instructions through browser speech synthesis.
+- Offers timers for recognized cooking durations within guided steps.
+- Includes a collapsible ingredient checklist.
+- Saves guided progress locally per recipe and resumes at the saved step.
+- Preserves the existing OCR, URL import, recipe parser, and timer behavior.
+
+## v0.16.25
+
+- Adds deterministic website recipe import from Recipe JSON-LD.
+- Sends imported website recipes through the standard review editor before
+  saving.
+- Adds a constrained, deployable page-fetch worker for websites blocked by
+  browser cross-origin rules.
+- Shows **Read images** before OCR, then replaces it with **Parse and review**
+  only after recognition succeeds.
+- Resets the image import actions whenever the selected images change.
+- Leaves OCR recognition and parsing rules unchanged.
+
+## v0.16.24
 
 ## Durable local OCR package
 

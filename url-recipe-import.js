@@ -45,17 +45,69 @@
 
   function duration(value) {
     const raw = String(value || '').trim();
-    const match = raw.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
+    const match = raw.match(/^P(?:(\d+(?:\.\d+)?)Y)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/i);
     if (!match) return text(raw);
     const parts = [];
-    if (+match[1]) parts.push(`${+match[1]} day${+match[1] === 1 ? '' : 's'}`);
-    if (+match[2]) parts.push(`${+match[2]} hour${+match[2] === 1 ? '' : 's'}`);
-    if (+match[3]) parts.push(`${+match[3]} minute${+match[3] === 1 ? '' : 's'}`);
-    if (+match[4]) parts.push(`${+match[4]} second${+match[4] === 1 ? '' : 's'}`);
+    const add = (amount, unit) => {
+      const number = +amount;
+      if (number) parts.push(`${number} ${unit}${number === 1 ? '' : 's'}`);
+    };
+    add(match[1], 'year');
+    add(match[2], 'month');
+    add(match[3], 'day');
+    add(match[4], 'hour');
+    add(match[5], 'minute');
+    add(match[6], 'second');
     return parts.join(' ');
   }
 
-  function normalizeRecipe(recipe, sourceUrl = '') {
+  function category(value) {
+    const raw = text(value);
+    if (!raw) return '';
+    const spaced = raw.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const key = spaced.toLowerCase();
+    const canonical = {
+      appetizer: 'Appetizers',
+      appetizers: 'Appetizers',
+      bread: 'Breads',
+      breads: 'Breads',
+      breakfast: 'Breakfast',
+      dessert: 'Desserts',
+      desserts: 'Desserts',
+      drink: 'Drinks',
+      drinks: 'Drinks',
+      entree: 'Main Course',
+      entrees: 'Main Course',
+      'main course': 'Main Course',
+      salad: 'Salads',
+      salads: 'Salads',
+      'side dish': 'Side Dishes',
+      'side dishes': 'Side Dishes',
+      soup: 'Soups',
+      soups: 'Soups'
+    };
+    return canonical[key] || spaced.replace(/\b\w/g, letter => letter.toUpperCase());
+  }
+
+  function extractCookNote(document) {
+    const headingPattern = /^cook(?:'|’)?s?\s+notes?[:\s]*$/i;
+    const headings = document?.querySelectorAll?.('h1,h2,h3,h4,h5,h6') || [];
+    for (const heading of headings) {
+      if (!headingPattern.test(text(heading.textContent))) continue;
+      let candidate = heading.nextElementSibling || heading.parentElement?.nextElementSibling;
+      const collected = [];
+      while (candidate && collected.join(' ').length < 2000) {
+        if (/^H[1-6]$/i.test(candidate.tagName || '')) break;
+        const value = text(candidate.textContent);
+        if (value) collected.push(value);
+        candidate = candidate.nextElementSibling;
+      }
+      if (collected.length) return collected.join('\n');
+    }
+    return '';
+  }
+
+  function normalizeRecipe(recipe, sourceUrl = '', supplementalCookNote = '') {
     const ingredients = (Array.isArray(recipe.recipeIngredient) ? recipe.recipeIngredient : [recipe.recipeIngredient])
       .map(text).filter(Boolean);
     const instructions = instructionLines(recipe.recipeInstructions);
@@ -65,15 +117,26 @@
     const keywords = Array.isArray(recipe.keywords)
       ? recipe.keywords.map(text)
       : String(recipe.keywords || '').split(',');
+    const difficulty = text(recipe.recipeDifficulty);
+    const tags = keywords.map(text).filter(Boolean);
+    if (difficulty && !tags.some(tag => tag.toLowerCase() === difficulty.toLowerCase())) tags.push(difficulty);
+    const noteParts = [];
+    const author = text(recipe.author);
+    if (author) noteParts.push(`Recipe by ${author}.`);
+    const totalTime = duration(recipe.totalTime);
+    if (totalTime) noteParts.push(`Total time: ${totalTime}.`);
+    const cookNote = text(supplementalCookNote || recipe.cookNote);
+    if (cookNote) noteParts.push(`Cook's Note: ${cookNote}`);
+    if (sourceUrl) noteParts.push(`Imported from ${sourceUrl}`);
     return {
       name: text(recipe.name),
       description: text(recipe.description),
-      notes: sourceUrl ? `Imported from ${sourceUrl}` : '',
+      notes: noteParts.join('\n\n'),
       prepTime: duration(recipe.prepTime),
       cookTime: duration(recipe.cookTime),
       yieldText: text(recipe.recipeYield),
-      category: text(recipe.recipeCategory),
-      tags: keywords.map(text).filter(Boolean),
+      category: category(recipe.recipeCategory),
+      tags,
       ingredients,
       instructions
     };
@@ -92,12 +155,13 @@
       ((b.recipeIngredient?.length || 0) + (b.recipeInstructions?.length || 0))
       - ((a.recipeIngredient?.length || 0) + (a.recipeInstructions?.length || 0)));
     let lastError;
+    const cookNote = extractCookNote(document);
     for (const recipe of ranked) {
-      try { return normalizeRecipe(recipe, sourceUrl); }
+      try { return normalizeRecipe(recipe, sourceUrl, cookNote); }
       catch (error) { lastError = error; }
     }
     throw lastError || new Error('No complete recipe was found on this page.');
   }
 
-  globalThis.KCUrlRecipeImport = { parseHtml, normalizeRecipe, duration, findRecipes };
+  globalThis.KCUrlRecipeImport = { parseHtml, normalizeRecipe, duration, category, extractCookNote, findRecipes };
 })();

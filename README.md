@@ -1,4 +1,53 @@
-# Kitchen Companion v0.16.24
+# Kitchen Companion v0.16.28
+
+## Website recipe metadata cleanup (v0.16.28)
+
+- Converts extended ISO recipe durations into readable times.
+- Normalizes common website category slugs to Kitchen Companion categories.
+- Preserves recipe author, total time, difficulty, and Cook's Note metadata.
+- Keeps imported website recipes in the existing review editor before saving.
+- Leaves OCR recognition and OCR recipe parsing unchanged.
+
+## Settings organization and guided voice controls (v0.16.27)
+
+- Reorganizes the long Settings dialog into eight collapsible sections.
+- Keeps App and updates expanded while other sections start collapsed.
+- Adds a sticky Settings header with an always-available Close button.
+- Locks touch scrolling to the vertical axis so the dialog stays centered.
+- Adds a device voice selector, voice preview, speaking speed, and pitch.
+- Saves guided voice preferences with the active profile.
+- Uses the selected voice and adjustments throughout Guided Cooking.
+
+## Guided Cooking opening hotfix (v0.16.26.1)
+
+- Opens Guided Cooking before attempting any optional progress write.
+- Prevents full or unavailable local storage from silently blocking the mode.
+- Shows a non-blocking warning when resume progress cannot be saved.
+- Repairs invalid legacy guided-progress state and safely skips malformed
+  ingredient entries.
+
+## Guided Cooking Mode (v0.16.26)
+
+- Adds a phone-friendly, full-screen guided mode with one instruction at a time.
+- Provides Back, Repeat, Next, Finish, and Exit controls.
+- Reads steps aloud with the device's built-in speech synthesis when available.
+- Reuses existing instruction-time detection so highlighted times can start KC
+  timers without leaving guided mode.
+- Keeps an ingredient checklist available in a collapsible panel.
+- Remembers the current step locally when guided mode is exited.
+- Uses KC's existing screen-wake setting and wake-lock recovery.
+- Requires no AI, account, server, or paid service.
+
+## Website recipe import and clearer OCR flow (v0.16.25)
+
+- Adds **Import from website** to recipe creation.
+- Extracts standard Recipe JSON-LD without AI and opens every result in the
+  existing recipe editor for review.
+- Includes a deployable fetch worker for recipe sites that block direct browser
+  access. Add its URL to the `kc-url-import-endpoint` meta tag after deployment.
+- Keeps **Parse and review** hidden until image recognition succeeds. Selecting
+  or changing an image restores **Read images** and hides the parse action.
+- Does not change OCR recognition or cleanup behavior.
 
 ## Durable local OCR package (v0.16.24)
 
@@ -293,7 +342,7 @@ This engine package intentionally does not replace the repository's current `cat
 
 ## OCR first-use requirement
 
-Tesseract.js, its compatible LSTM processing cores, and the English language model are bundled under `vendor/tesseract-7.0.0/`. The service worker installs them into a dedicated cache that survives normal Kitchen Companion updates. Settings reports whether all required files are ready offline and can repair them while connected. A device or user can still clear browser website data, so KC cannot promise that locally cached files are literally undeletable.
+Tesseract.js, its compatible LSTM processing cores, and the English language model are bundled under `Vendor/tesseract-7.0.0/`. The service worker installs them into a dedicated cache that survives normal Kitchen Companion updates. Settings reports whether all required files are ready offline and can repair them while connected. A device or user can still clear browser website data, so KC cannot promise that locally cached files are literally undeletable.
 
 ## Updating an existing Home Screen installation
 
