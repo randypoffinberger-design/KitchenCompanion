@@ -22,6 +22,11 @@ for (let day = 0; day < 7; day += 1) {
   assert.equal(plan.slots[planner.slotKey(day, 'lunch', 'main')].kind, 'eat-out');
   assert.equal(plan.slots[planner.slotKey(day, 'lunch', 'side1')].kind, 'eat-out');
 }
+const normalizedTemplatePlan = planner.normalizePlan(plan, '2026-07-27', template);
+assert.equal(normalizedTemplatePlan.slots[planner.slotKey(0, 'lunch', 'main')].source, 'template', 'default schedule entries must remain identifiable for empty-week cleanup');
+assert.equal(planner.weekOffset('2026-06-29', '2026-07-27'), -4);
+assert.equal(planner.weekOffset('2026-10-19', '2026-07-27'), 12);
+assert.equal(planner.weekOffset('2026-10-26', '2026-07-27'), 13);
 
 const recipes = [
   { key:'test:breakfast', name:'Breakfast Eggs', category:'Breakfast' },
