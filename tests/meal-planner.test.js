@@ -52,4 +52,14 @@ assert.deepEqual(
   'clearing every placement must keep a recipe out of random generation'
 );
 
+const classificationCases = [
+  [{ name:'Pizza Sauce', category:'Sauces' }, []],
+  [{ name:'Stuffed Peppers', category:'Main Course', tags:['Vegetables'] }, ['lunch','dinner']],
+  [{ name:'Creamy Polenta', category:'Side Dishes' }, ['side']],
+  [{ name:'Baked Zucchini and Yellow Squash in Tomato Sauce', category:'Side Dishes' }, ['side']]
+];
+classificationCases.forEach(([recipe, expected]) => {
+  assert.deepEqual(Array.from(planner.inferredMealTypes(recipe)).sort(), expected.sort(), `${recipe.name} was classified incorrectly`);
+});
+
 console.log('Meal planner regression passed: seven-day mains, side slots, defaults, manual locks, and weighted exclusions work.');
