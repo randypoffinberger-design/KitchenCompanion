@@ -15,7 +15,7 @@ assert.match(html, /id="mealPlannerPreferencesDialog"/);
 assert.match(html, /id="mealShoppingDialog"/);
 assert.match(app, /KCMealPlanner\.MEAL_PARTS\[meal\]/);
 assert.match(html, /Side dishes are included with their meal/);
-assert.match(worker, /meal-planner[.]js[?]v=0[.]17[.]1/);
+assert.match(worker, /meal-planner[.]js[?]v=0[.]17[.]2/);
 assert.match(profiles, /mealPlans/);
 assert.match(profiles, /mealPlannerPreferences/);
 assert.match(profiles, /mealPlanHistory/);
