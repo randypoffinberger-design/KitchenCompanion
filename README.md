@@ -1,7 +1,8 @@
-# Kitchen Companion v0.17.2
+# Kitchen Companion v0.17.3
 
-## Weekly meal planner (v0.17.2)
+## Weekly meal planner (v0.17.3)
 
+- Ensures locked mains and sides survive both individual and whole-day rerolls.
 - Makes the Kitchen Companion header name a consistent Home button that
   returns to the unfiltered All Recipes screen from anywhere in the app.
 - Prevents sauces, gravies, marinades, dressings, and other standalone

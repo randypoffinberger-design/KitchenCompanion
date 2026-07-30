@@ -1,7 +1,10 @@
-# Kitchen Companion v0.17.2
+# Kitchen Companion v0.17.3
 
-## v0.17.2
+## v0.17.3
 
+- Fixes day and individual rerolls so locked planner choices are never cleared
+  or replaced.
+- Shows whether a reroll preserved one or more locked choices.
 - Makes the Kitchen Companion header name return to the main All Recipes
   screen from the planner, shopping list, modules, and recipe details.
 - Corrects automatic meal placement so standalone components such as Pizza

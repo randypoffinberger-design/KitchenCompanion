@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.17.2';
+  const ENGINE_VERSION = '0.17.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -954,7 +954,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.17.2').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.17.3').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2444,7 +2444,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.17.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.17.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3023,7 +3023,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         ${meta ? `<span class="meal-part-meta">${escapeHtml(meta)}</span>` : ''}
       </button>
       <div class="meal-part-actions">
-        ${recipe ? `<select data-meal-scale="${escapeHtml(key)}" aria-label="Recipe amount">${[0.5,1,1.5,2,3].map(value => `<option value="${value}"${value===scale?' selected':''}>${value}×</option>`).join('')}</select><button type="button" data-meal-lock="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock':'Lock'}">${slot.locked?'🔒':'🔓'}</button><button type="button" data-meal-reroll="${escapeHtml(key)}" aria-label="Reroll">↻</button>` : ''}
+        ${recipe ? `<select data-meal-scale="${escapeHtml(key)}" aria-label="Recipe amount">${[0.5,1,1.5,2,3].map(value => `<option value="${value}"${value===scale?' selected':''}>${value}×</option>`).join('')}</select><button type="button" data-meal-lock="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock':'Lock'}">${slot.locked?'🔒':'🔓'}</button><button type="button" data-meal-reroll="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock before rerolling':'Reroll'}"${slot.locked?' disabled':''}>↻</button>` : ''}
         ${slot.kind !== 'empty' ? `<button type="button" data-meal-clear="${escapeHtml(key)}" aria-label="Clear">✕</button>` : ''}
       </div>
     </div>`;
@@ -3140,17 +3140,25 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function rerollMealSlots(keys) {
     const plan = currentMealPlan();
     const before = JSON.parse(JSON.stringify(plan));
+    const eligibleKeys = [];
     keys.forEach(key => {
       const parsed = parseMealSlotKey(key);
       if (!parsed) return;
+      if (plan.slots[key]?.locked) return;
       const main = plan.slots[KCMealPlanner.slotKey(parsed.day, parsed.meal, 'main')];
       if (['skip','eat-out','leftovers'].includes(main?.kind)) return;
       plan.slots[key] = KCMealPlanner.emptySlot();
+      eligibleKeys.push(key);
     });
-    const generated = KCMealPlanner.generate(plan, getAllRecipes(), mealPlannerContext(), { onlyEmpty:true, slotKeys:keys });
+    if (!eligibleKeys.length) {
+      els.mealPlannerStatus.textContent = 'Nothing was rerolled. Locked choices were preserved.';
+      return;
+    }
+    const generated = KCMealPlanner.generate(plan, getAllRecipes(), mealPlannerContext(), { onlyEmpty:true, slotKeys:eligibleKeys });
     state.mealPlans[mealPlannerWeek] = generated;
     saveGeneratedMealHistory(before, generated);
     saveState(); renderMealPlanner();
+    if (eligibleKeys.length < keys.length) els.mealPlannerStatus.textContent = 'The unlocked choices were rerolled. Locked choices were preserved.';
   }
 
   function clearMealSlot(key) {

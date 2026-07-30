@@ -600,7 +600,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   dialog input,dialog select,dialog textarea{font-size:16px}
 }
 
-/* v0.17.2 weekly meal planner */
+/* v0.17.3 weekly meal planner */
 .meal-planner-pane{width:min(1180px,100%);margin:0 auto;padding:clamp(1rem,3vw,2rem)}
 .meal-planner-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .meal-planner-header h1{margin:0}.meal-planner-header p{margin:.35rem 0 0;color:var(--muted)}
@@ -624,6 +624,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
 .meal-part-meta{display:block;color:var(--muted);font-size:.75rem}
 .meal-part-actions{display:flex;align-items:center;gap:.25rem}
 .meal-part-actions button{min-width:2rem;min-height:2rem;padding:.25rem;border:0;border-radius:8px;background:var(--panel-2);cursor:pointer}
+.meal-part-actions button:disabled{opacity:.38;cursor:not-allowed}
 .meal-part-actions select{max-width:4.4rem;padding:.3rem;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
 .meal-empty .meal-part-name{color:var(--muted);font-weight:650}
 .meal-special{border-left-color:var(--muted)}
