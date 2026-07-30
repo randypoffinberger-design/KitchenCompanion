@@ -1,7 +1,11 @@
-# Kitchen Companion v0.17.0
+# Kitchen Companion v0.17.1
 
-## Weekly meal planner (v0.17.0)
+## Weekly meal planner (v0.17.1)
 
+- Prevents sauces, gravies, marinades, dressings, and other standalone
+  components from being generated as complete meals.
+- Gives complete entrées such as stuffed peppers priority over vegetable
+  keywords so they do not fill side slots.
 - Adds a seven-day planner with breakfast, lunch, dinner, and snack.
 - Gives breakfast and lunch one side slot each and dinner two side slots.
 - Supports manual choices, full-week generation, empty-slot filling, individual

@@ -1,7 +1,11 @@
-# Kitchen Companion v0.17.0
+# Kitchen Companion v0.17.1
 
-## v0.17.0
+## v0.17.1
 
+- Corrects automatic meal placement so standalone components such as Pizza
+  Sauce are not generated as meals.
+- Recognizes complete vegetable-based entrées such as Stuffed Peppers as mains
+  instead of side dishes.
 - Adds a profile-specific, locally stored weekly meal planner.
 - Plans breakfast, lunch, dinner, and snack for Monday through Sunday.
 - Adds one side slot to breakfast and lunch and two side slots to dinner.

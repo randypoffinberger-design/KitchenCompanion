@@ -101,13 +101,26 @@
   }
 
   function inferredMealTypes(recipe) {
-    const text = [recipe?.name, recipe?.category, ...(recipe?.tags || [])].filter(Boolean).join(' ').toLowerCase();
+    const name = String(recipe?.name || '').toLowerCase();
+    const category = String(recipe?.category || '').toLowerCase();
+    const tags = (recipe?.tags || []).join(' ').toLowerCase();
+    const text = `${name} ${category} ${tags}`;
     const types = new Set();
+
+    // Standalone components remain available for manual planning, but should
+    // never become a generated meal merely because their name contains words
+    // such as "pizza" or "chicken."
+    const componentOnly = /\b(sauce|gravy|glaze|marinade|rub|seasoning|dressing|vinaigrette|syrup|jam|jelly|stock|broth|dough|crust|batter)\b/.test(name)
+      && !/\b(with|in|over)\b.+\b(sauce|gravy|glaze|marinade|dressing)\b/.test(name);
+    if (componentOnly) return [];
+
     if (/(breakfast|brunch|pancake|waffle|oatmeal|cereal|egg|biscuit|muffin|french toast)/.test(text)) types.add('breakfast');
     if (/(snack|dessert|cookie|cake|brownie|bar|candy|popcorn|dip|appetizer|smoothie)/.test(text)) types.add('snack');
-    if (/(side dish|sides|vegetable|vegetables|potato|rice|bread|roll|biscuit|salad)/.test(text)) types.add('side');
-    if (/(lunch|sandwich|wrap|salad|soup|burger|pizza)/.test(text)) types.add('lunch');
-    if (/(dinner|main course|entree|entrée|chicken|beef|pork|turkey|pasta|casserole|pot roast|seafood|fish)/.test(text)) types.add('dinner');
+    const mainDish = /(main course|main dish|entree|entrée|dinner)/.test(category)
+      || /\b(stuffed (pepper|peppers|shell|shells)|chili|stew|meatloaf|casserole|lasagna|enchilada|enchiladas|taco|tacos|burger|burgers|chicken|beef|pork|turkey|ham|lamb|seafood|fish|shrimp|meatball|meatballs|pot roast)\b/.test(name);
+    if (!mainDish && /(side dish|sides|vegetable|vegetables|potato|potatoes|rice|polenta|bread|roll|biscuit|salad|zucchini|squash)/.test(text)) types.add('side');
+    if (mainDish || /(lunch|sandwich|wrap|salad|soup|burger|pizza|pasta)/.test(text)) types.add('lunch');
+    if (mainDish || /(dinner|main course|entree|entrée|chicken|beef|pork|turkey|pasta|casserole|pot roast|seafood|fish)/.test(text)) types.add('dinner');
     if (!types.size) { types.add('lunch'); types.add('dinner'); }
     return [...types];
   }
