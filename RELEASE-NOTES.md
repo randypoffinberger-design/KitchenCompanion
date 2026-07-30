@@ -1,7 +1,9 @@
-# Kitchen Companion v0.17.1
+# Kitchen Companion v0.17.2
 
-## v0.17.1
+## v0.17.2
 
+- Makes the Kitchen Companion header name return to the main All Recipes
+  screen from the planner, shopping list, modules, and recipe details.
 - Corrects automatic meal placement so standalone components such as Pizza
   Sauce are not generated as meals.
 - Recognizes complete vegetable-based entrées such as Stuffed Peppers as mains

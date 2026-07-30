@@ -9,20 +9,20 @@
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.17.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.17.1">
+  <link rel="manifest" href="app.webmanifest?v=0.17.2">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.17.2">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.17.1">
+  <link rel="stylesheet" href="styles.css?v=0.17.2">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <button id="menuBtn" class="icon-btn mobile-only" aria-label="Open navigation">☰</button>
       <div class="brand-wrap">
-        <div class="brand">
+        <button id="homeBrandBtn" type="button" class="brand brand-home" aria-label="Go to all recipes">
           <strong>Kitchen Companion</strong>
           <span id="moduleCount">0 modules</span>
-        </div>
+        </button>
         <div class="header-profile-wrap">
           <button id="headerProfileBtn" type="button" class="header-profile-button" aria-haspopup="menu" aria-expanded="false" aria-label="Switch profile">
             <span id="headerProfileAvatar" class="header-profile-avatar">M</span>
@@ -237,7 +237,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.17.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.17.2</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -648,11 +648,11 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.17.1"></script>
-  <script src="profile-storage.js?v=0.17.1"></script>
-  <script src="url-recipe-import.js?v=0.17.1"></script>
-  <script src="meal-planner.js?v=0.17.1"></script>
-  <script src="app.js?v=0.17.1"></script>
-  <script src="ocr-service.js?v=0.17.1"></script>
+  <script src="kitchen-engine.js?v=0.17.2"></script>
+  <script src="profile-storage.js?v=0.17.2"></script>
+  <script src="url-recipe-import.js?v=0.17.2"></script>
+  <script src="meal-planner.js?v=0.17.2"></script>
+  <script src="app.js?v=0.17.2"></script>
+  <script src="ocr-service.js?v=0.17.2"></script>
 </body>
 </html>

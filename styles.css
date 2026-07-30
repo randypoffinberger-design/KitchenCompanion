@@ -36,6 +36,8 @@ button { color: inherit; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 66px 1fr; }
 .topbar { grid-column: 1 / -1; position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 18px; background: color-mix(in srgb, var(--panel) 94%, transparent); border-bottom: 1px solid var(--border); backdrop-filter: blur(14px); }
 .brand { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-home { min-width:0; padding:4px 6px; border:0; border-radius:10px; background:transparent; color:inherit; text-align:left; cursor:pointer; touch-action:manipulation; }
+.brand-home:hover, .brand-home:focus-visible { background:var(--panel-2); outline:none; }
 .brand strong { font-size: 1.1rem; }
 .brand span { margin-top: 4px; font-size: .76rem; color: var(--muted); }
 .top-actions { display: flex; align-items: center; gap: 10px; }
@@ -598,7 +600,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   dialog input,dialog select,dialog textarea{font-size:16px}
 }
 
-/* v0.17.1 weekly meal planner */
+/* v0.17.2 weekly meal planner */
 .meal-planner-pane{width:min(1180px,100%);margin:0 auto;padding:clamp(1rem,3vw,2rem)}
 .meal-planner-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .meal-planner-header h1{margin:0}.meal-planner-header p{margin:.35rem 0 0;color:var(--muted)}

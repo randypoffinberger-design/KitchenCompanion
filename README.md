@@ -1,7 +1,9 @@
-# Kitchen Companion v0.17.1
+# Kitchen Companion v0.17.2
 
-## Weekly meal planner (v0.17.1)
+## Weekly meal planner (v0.17.2)
 
+- Makes the Kitchen Companion header name a consistent Home button that
+  returns to the unfiltered All Recipes screen from anywhere in the app.
 - Prevents sauces, gravies, marinades, dressings, and other standalone
   components from being generated as complete meals.
 - Gives complete entrées such as stuffed peppers priority over vegetable
