@@ -1,7 +1,9 @@
-# Kitchen Companion v0.17.4
+# Kitchen Companion v0.17.4.1
 
-## v0.17.4
+## v0.17.4.1
 
+- Fixes squeezed and truncated meal names on phones by moving slot controls to
+  a dedicated row below the recipe information.
 - Makes planned recipe names open their complete recipe page.
 - Returns from a planned recipe to the same week in Meal Planner.
 - Adds a dedicated change-recipe control beside each planned recipe.

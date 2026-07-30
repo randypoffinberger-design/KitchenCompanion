@@ -600,7 +600,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   dialog input,dialog select,dialog textarea{font-size:16px}
 }
 
-/* v0.17.4 weekly meal planner */
+/* v0.17.4.1 weekly meal planner */
 .meal-planner-pane{width:min(1180px,100%);margin:0 auto;padding:clamp(1rem,3vw,2rem)}
 .meal-planner-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .meal-planner-header h1{margin:0}.meal-planner-header p{margin:.35rem 0 0;color:var(--muted)}
@@ -658,6 +658,12 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   .meal-default-day{grid-template-columns:1fr 1fr}
   .meal-default-day strong{grid-column:1/-1}
   .meal-preference-row{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .meal-part{grid-template-columns:minmax(0,1fr);align-items:stretch}
+  .meal-part-actions{display:grid;grid-template-columns:2.25rem minmax(4.4rem,1fr) repeat(3,2.25rem);justify-content:stretch;flex-wrap:nowrap}
+  .meal-part-actions button{width:100%}
+  .meal-part-actions select{width:100%;max-width:none}
 }
 @media(max-width:430px){.meal-planner-toolbar{grid-template-columns:1fr}.meal-special-actions .button{flex:1 1 42%}}
 

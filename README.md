@@ -1,7 +1,10 @@
-# Kitchen Companion v0.17.4
+# Kitchen Companion v0.17.4.1
 
-## Weekly meal planner (v0.17.4)
+## Weekly meal planner (v0.17.4.1)
 
+- Stacks mobile meal-slot information above its controls so recipe names retain
+  the full card width.
+- Places edit, scale, lock, reroll, and clear controls in a stable second row.
 - Opens a planned recipe directly from its meal slot and returns Back to the
   same planner week.
 - Adds a separate edit control for replacing a planned recipe.
