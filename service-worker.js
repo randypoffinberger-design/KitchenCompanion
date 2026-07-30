@@ -1,8 +1,8 @@
-const CACHE_NAME = 'kitchen-companion-v0.17.3';
+const CACHE_NAME = 'kitchen-companion-v0.17.4';
 const OCR_CACHE_NAME = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.17.3', './kitchen-engine.js?v=0.17.3', './profile-storage.js?v=0.17.3', './meal-planner.js?v=0.17.3', './app.js?v=0.17.3',
-  './url-recipe-import.js?v=0.17.3', './ocr-service.js?v=0.17.3', './alarm-bell.wav?v=0.17.3', './app.webmanifest?v=0.17.3', './icon-180.png?v=0.17.3', './icon-192.png?v=0.17.3', './icon-512.png?v=0.17.3'
+  './', './index.html', './styles.css?v=0.17.4', './kitchen-engine.js?v=0.17.4', './profile-storage.js?v=0.17.4', './meal-planner.js?v=0.17.4', './app.js?v=0.17.4',
+  './url-recipe-import.js?v=0.17.4', './ocr-service.js?v=0.17.4', './alarm-bell.wav?v=0.17.4', './app.webmanifest?v=0.17.4', './icon-180.png?v=0.17.4', './icon-192.png?v=0.17.4', './icon-512.png?v=0.17.4'
 ];
 const OCR_ASSETS = [
   './Vendor/tesseract-7.0.0/tesseract.min.js',

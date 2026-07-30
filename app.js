@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.17.3';
+  const ENGINE_VERSION = '0.17.4';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -100,6 +100,7 @@
   let selectedCategory = null;
   let selectedRecipeKey = null;
   let recipeNavigationStack = [];
+  let recipeReturnView = 'list';
   let activeScale = 1;
   let timerTicker = null;
   let bellAudio = null;
@@ -190,7 +191,25 @@
     return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], mealPlans:{}, mealPlannerPreferences:{template:{},recipes:{}}, mealPlanHistory:[], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true, alarmTone: 'bell' } };
   }
 
-  function saveState() { profileStore.saveCombinedState(state); }
+  function pruneUnusedMealPlans() {
+    Object.entries(state.mealPlans || {}).forEach(([weekStart, plan]) => {
+      const offset = KCMealPlanner.weekOffset(weekStart);
+      if (offset < -4 || offset > 12) {
+        delete state.mealPlans[weekStart];
+        return;
+      }
+      const hasUserContent = Object.entries(plan?.slots || {}).some(([slotKey, slot]) => {
+        if (slot?.kind === 'recipe' || slot?.kind === 'custom') return true;
+        if (!['skip','eat-out','leftovers'].includes(slot?.kind)) return false;
+        const parsed = parseMealSlotKey(slotKey);
+        const savedDefault = parsed ? state.mealPlannerPreferences?.template?.[KCMealPlanner.templateKey(parsed.day, parsed.meal)] : null;
+        return slot.source !== 'template' && !(slot.source == null && savedDefault === slot.kind);
+      });
+      if (!hasUserContent) delete state.mealPlans[weekStart];
+    });
+  }
+
+  function saveState() { pruneUnusedMealPlans(); profileStore.saveCombinedState(state); }
 
   function normalizeRatingRecord(entry) {
     const rawValue = typeof entry === 'number' ? entry : entry?.value;
@@ -954,7 +973,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.17.3').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.17.4').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1575,6 +1594,7 @@
     currentView = 'all';
     selectedCategory = null;
     recipeNavigationStack = [];
+    recipeReturnView = 'list';
     if (els.searchInput) els.searchInput.value = '';
     if (els.moduleFilter) els.moduleFilter.value = 'all';
     if (els.categoryFilter) els.categoryFilter.value = 'all';
@@ -1641,7 +1661,7 @@
         const span = document.createElement('span'); span.textContent = text; meta.append(span);
       });
       fragment.querySelector('.recipe-source').textContent = recipe.moduleName;
-      const openCard = () => { recipeNavigationStack = []; selectedRecipeKey = recipe.key; activeScale = 1; showDetail(); };
+      const openCard = () => { recipeNavigationStack = []; recipeReturnView = 'list'; selectedRecipeKey = recipe.key; activeScale = 1; showDetail(); };
       card.addEventListener('click', openCard);
       card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCard(); } });
       els.recipeGrid.append(fragment);
@@ -1652,6 +1672,7 @@
 
   function showList() {
     recipeNavigationStack = [];
+    recipeReturnView = 'list';
     selectedRecipeKey = null;
     els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
     renderRecipeList(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1664,7 +1685,13 @@
 
   function navigateBackFromRecipe() {
     const previous = recipeNavigationStack.pop();
-    if (!previous) return showList();
+    if (!previous) {
+      if (recipeReturnView === 'meal-planner') {
+        recipeReturnView = 'list';
+        return showMealPlanner();
+      }
+      return showList();
+    }
     selectedRecipeKey = previous;
     activeScale = 1;
     showDetail();
@@ -2444,7 +2471,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.17.3');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.17.4');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3017,13 +3044,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const classes = ['meal-part', part === 'main' ? 'meal-part-main' : '', slot.kind === 'empty' ? 'meal-empty' : '', ['skip','eat-out','leftovers'].includes(slot.kind) ? 'meal-special' : ''].filter(Boolean).join(' ');
     const scale = Number(slot.scale) || 1;
     return `<div class="${classes}" data-meal-slot="${escapeHtml(key)}">
-      <button type="button" class="meal-part-choice" data-meal-choose="${escapeHtml(key)}">
+      <button type="button" class="meal-part-choice"${recipe ? ` data-meal-open-recipe="${escapeHtml(key)}"` : ` data-meal-choose="${escapeHtml(key)}"`}>
         <span class="meal-part-label">${escapeHtml(mealPartLabel(meal, part))}</span>
         <span class="meal-part-name">${escapeHtml(name)}</span>
         ${meta ? `<span class="meal-part-meta">${escapeHtml(meta)}</span>` : ''}
       </button>
       <div class="meal-part-actions">
-        ${recipe ? `<select data-meal-scale="${escapeHtml(key)}" aria-label="Recipe amount">${[0.5,1,1.5,2,3].map(value => `<option value="${value}"${value===scale?' selected':''}>${value}×</option>`).join('')}</select><button type="button" data-meal-lock="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock':'Lock'}">${slot.locked?'🔒':'🔓'}</button><button type="button" data-meal-reroll="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock before rerolling':'Reroll'}"${slot.locked?' disabled':''}>↻</button>` : ''}
+        ${recipe ? `<button type="button" data-meal-change="${escapeHtml(key)}" aria-label="Change recipe">✎</button><select data-meal-scale="${escapeHtml(key)}" aria-label="Recipe amount">${[0.5,1,1.5,2,3].map(value => `<option value="${value}"${value===scale?' selected':''}>${value}×</option>`).join('')}</select><button type="button" data-meal-lock="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock':'Lock'}">${slot.locked?'🔒':'🔓'}</button><button type="button" data-meal-reroll="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock before rerolling':'Reroll'}"${slot.locked?' disabled':''}>↻</button>` : ''}
         ${slot.kind !== 'empty' ? `<button type="button" data-meal-clear="${escapeHtml(key)}" aria-label="Clear">✕</button>` : ''}
       </div>
     </div>`;
@@ -3061,6 +3088,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function bindRenderedMealPlanner() {
     els.mealPlannerDays.querySelectorAll('[data-meal-choose]').forEach(button => button.addEventListener('click', () => openMealSlot(button.dataset.mealChoose)));
+    els.mealPlannerDays.querySelectorAll('[data-meal-change]').forEach(button => button.addEventListener('click', () => openMealSlot(button.dataset.mealChange)));
+    els.mealPlannerDays.querySelectorAll('[data-meal-open-recipe]').forEach(button => button.addEventListener('click', () => openPlannedRecipe(button.dataset.mealOpenRecipe)));
     els.mealPlannerDays.querySelectorAll('[data-meal-group]').forEach(button => button.addEventListener('click', () => {
       const match = button.dataset.mealGroup.match(/^([0-6])-(.+)$/);
       openMealSlot(KCMealPlanner.slotKey(Number(match[1]), match[2], 'main'));
@@ -3083,6 +3112,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         rerollMealSlots(keys);
       }
     }));
+  }
+
+  function openPlannedRecipe(slotKey) {
+    const slot = currentMealPlan().slots[slotKey];
+    if (slot?.kind !== 'recipe' || !mealPlannerRecipeMap().has(slot.recipeKey)) return;
+    recipeNavigationStack = [];
+    recipeReturnView = 'meal-planner';
+    selectedRecipeKey = slot.recipeKey;
+    activeScale = Number(slot.scale) || 1;
+    showDetail();
   }
 
   function recordMealHistory(slotKey, recipeKey) {

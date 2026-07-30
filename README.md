@@ -1,7 +1,14 @@
-# Kitchen Companion v0.17.3
+# Kitchen Companion v0.17.4
 
-## Weekly meal planner (v0.17.3)
+## Weekly meal planner (v0.17.4)
 
+- Opens a planned recipe directly from its meal slot and returns Back to the
+  same planner week.
+- Adds a separate edit control for replacing a planned recipe.
+- Stops calendar browsing from retaining completely empty weeks while keeping
+  planned weeks within a rolling local-storage window.
+- Retains the previous four weeks, current week, and next twelve weeks—a
+  maximum of seventeen saved plans per profile.
 - Ensures locked mains and sides survive both individual and whole-day rerolls.
 - Makes the Kitchen Companion header name a consistent Home button that
   returns to the unfiltered All Recipes screen from anywhere in the app.

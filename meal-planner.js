@@ -36,6 +36,12 @@
     return dateIso(date);
   }
 
+  function weekOffset(weekStart, baseWeek = startOfWeek()) {
+    const target = new Date(`${startOfWeek(`${weekStart}T12:00:00`)}T12:00:00`);
+    const base = new Date(`${startOfWeek(`${baseWeek}T12:00:00`)}T12:00:00`);
+    return Math.round((target.getTime() - base.getTime()) / 604800000);
+  }
+
   function slotKey(dayIndex, meal, part = 'main') {
     return `${Number(dayIndex)}-${meal}-${part}`;
   }
@@ -84,6 +90,7 @@
       kind,
       ...(kind === 'recipe' ? { recipeKey:String(slot.recipeKey), source:slot.source === 'random' ? 'random' : 'manual' } : {}),
       ...(kind === 'custom' ? { text:String(slot.text).trim(), source:'manual' } : {}),
+      ...(SPECIAL_KINDS.includes(kind) ? { source:slot.source === 'template' ? 'template' : 'manual' } : {}),
       locked:kind === 'empty' ? false : slot.locked !== false,
       scale:[0.5,1,1.5,2,3].includes(Number(slot.scale)) ? Number(slot.scale) : 1
     };
@@ -199,7 +206,7 @@
   }
 
   globalThis.KCMealPlanner = {
-    DAYS, MEALS, MEAL_PARTS, PLACEMENTS, FREQUENCIES, SPECIAL_KINDS, startOfWeek, shiftWeek, slotKey, templateKey,
+    DAYS, MEALS, MEAL_PARTS, PLACEMENTS, FREQUENCIES, SPECIAL_KINDS, startOfWeek, shiftWeek, weekOffset, slotKey, templateKey,
     emptySlot, normalizeTemplate, createPlan, normalizeSlot, normalizePlan,
     inferredMealTypes, recipePreference, recipeWeight, weightedChoice, generate
   };

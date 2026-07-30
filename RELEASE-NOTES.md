@@ -1,7 +1,13 @@
-# Kitchen Companion v0.17.3
+# Kitchen Companion v0.17.4
 
-## v0.17.3
+## v0.17.4
 
+- Makes planned recipe names open their complete recipe page.
+- Returns from a planned recipe to the same week in Meal Planner.
+- Adds a dedicated change-recipe control beside each planned recipe.
+- Automatically removes unused empty calendar weeks from local profile storage.
+- Caps each profile at a rolling seventeen-week planning window: four previous
+  weeks, the current week, and twelve future weeks.
 - Fixes day and individual rerolls so locked planner choices are never cleared
   or replaced.
 - Shows whether a reroll preserved one or more locked choices.
