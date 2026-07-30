@@ -1,4 +1,21 @@
-# Kitchen Companion v0.16.30
+# Kitchen Companion v0.17.0
+
+## Weekly meal planner (v0.17.0)
+
+- Adds a seven-day planner with breakfast, lunch, dinner, and snack.
+- Gives breakfast and lunch one side slot each and dinner two side slots.
+- Supports manual choices, full-week generation, empty-slot filling, individual
+  and day rerolls, locks, custom entries, leftovers, eating out, and skipped
+  meals or days.
+- Adds reusable weekly defaults such as eating out for every lunch.
+- Adds per-recipe Often, Weekly, Occasionally, Rarely, and Never frequencies
+  plus breakfast, lunch, dinner, snack, and side placement controls.
+- Weights random choices using frequency, favorites, ratings, and recent plan
+  history while avoiding unwanted repeats.
+- Sends selected planned days and meals, including their side dishes, to the
+  existing consolidated shopping list.
+- Saves plans, preferences, and history locally per profile and includes them
+  in profile backups.
 
 ## Selectable timer alarms (v0.16.30)
 

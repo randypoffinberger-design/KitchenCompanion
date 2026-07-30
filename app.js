@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.16.30';
+  const ENGINE_VERSION = '0.17.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -95,7 +95,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.ratings = normalizeRatingMap(state.ratings);
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -112,6 +112,8 @@
   let wakeLockRequestPending = false;
   let guidedRecipe = null;
   let guidedStepIndex = 0;
+  let mealPlannerWeek = KCMealPlanner.startOfWeek();
+  let editingMealSlotKey = '';
 
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
@@ -130,6 +132,13 @@
     rangeTimerDialog: document.querySelector('#rangeTimerDialog'), rangeTimerLabel: document.querySelector('#rangeTimerLabel'), rangeTimerChoices: document.querySelector('#rangeTimerChoices'),
     menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), shareShoppingDialog: document.querySelector('#shareShoppingDialog'), shareShoppingFileBtn: document.querySelector('#shareShoppingFileBtn'), copyShoppingMessageBtn: document.querySelector('#copyShoppingMessageBtn'), shoppingShareStatus: document.querySelector('#shoppingShareStatus'), importShoppingBtn: document.querySelector('#importShoppingBtn'), importShoppingDialog: document.querySelector('#importShoppingDialog'), chooseShoppingFileBtn: document.querySelector('#chooseShoppingFileBtn'), shoppingMessageText: document.querySelector('#shoppingMessageText'), shoppingPasteError: document.querySelector('#shoppingPasteError'), importPastedShoppingBtn: document.querySelector('#importPastedShoppingBtn'), shoppingImportFile: document.querySelector('#shoppingImportFile'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), shoppingItemDialogTitle: document.querySelector('#shoppingItemDialogTitle'), shoppingItemEditId: document.querySelector('#shoppingItemEditId'), shoppingItemSubmitBtn: document.querySelector('#shoppingItemSubmitBtn'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), urlRecipeBtn: document.querySelector('#urlRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), urlRecipeDialog: document.querySelector('#urlRecipeDialog'), urlRecipeForm: document.querySelector('#urlRecipeForm'), recipeUrl: document.querySelector('#recipeUrl'), urlImportStatus: document.querySelector('#urlImportStatus'), importRecipeUrl: document.querySelector('#importRecipeUrl'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), parseRecognizedRecipe: document.querySelector('#parseRecognizedRecipe'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmToneSelect: document.querySelector('#alarmToneSelect'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), alarmPreviewStatus: document.querySelector('#alarmPreviewStatus'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn'), addKitchenProfileBtn: document.querySelector('#addKitchenProfileBtn'), profileSetupDialog: document.querySelector('#profileSetupDialog'), profileSetupForm: document.querySelector('#profileSetupForm'), profileSetupName: document.querySelector('#profileSetupName'), importProfileBtn: document.querySelector('#importProfileBtn'), profileImportFile: document.querySelector('#profileImportFile'), profileStorageSummary: document.querySelector('#profileStorageSummary'), headerProfileBtn: document.querySelector('#headerProfileBtn'), headerProfileAvatar: document.querySelector('#headerProfileAvatar'), headerProfileName: document.querySelector('#headerProfileName'), profileQuickMenu: document.querySelector('#profileQuickMenu'), profileEditDialog: document.querySelector('#profileEditDialog'), profileEditForm: document.querySelector('#profileEditForm'), profileEditName: document.querySelector('#profileEditName'), profileEditEmoji: document.querySelector('#profileEditEmoji'), profileEditImage: document.querySelector('#profileEditImage'), profileEditImageInput: document.querySelector('#profileEditImageInput'), profileEditImageBtn: document.querySelector('#profileEditImageBtn'), profileEditRemoveImageBtn: document.querySelector('#profileEditRemoveImageBtn'), profileEditPreview: document.querySelector('#profileEditPreview'), profileEditColorChoices: document.querySelector('#profileEditColorChoices'), cancelProfileEdit: document.querySelector('#cancelProfileEdit'), safeguardStatus: document.querySelector('#safeguardStatus'), safetyBackupList: document.querySelector('#safetyBackupList'), createSafetyBackupBtn: document.querySelector('#createSafetyBackupBtn'), runDiagnosticsBtn: document.querySelector('#runDiagnosticsBtn'), optimizeStorageBtn: document.querySelector('#optimizeStorageBtn'), diagnosticsOutput: document.querySelector('#diagnosticsOutput'), offlineOcrStatus: document.querySelector('#offlineOcrStatus'), repairOfflineOcrBtn: document.querySelector('#repairOfflineOcrBtn')
   };
+  Object.assign(els, {
+    mealPlannerPane:document.querySelector('#mealPlannerPane'), mealPlannerWeekLabel:document.querySelector('#mealPlannerWeekLabel'), mealPlannerDays:document.querySelector('#mealPlannerDays'), mealPlannerStatus:document.querySelector('#mealPlannerStatus'),
+    mealPreviousWeek:document.querySelector('#mealPreviousWeek'), mealCurrentWeek:document.querySelector('#mealCurrentWeek'), mealNextWeek:document.querySelector('#mealNextWeek'), mealGenerateWeek:document.querySelector('#mealGenerateWeek'), mealFillEmpty:document.querySelector('#mealFillEmpty'), mealAddShopping:document.querySelector('#mealAddShopping'), mealPlannerSettings:document.querySelector('#mealPlannerSettings'),
+    mealSlotDialog:document.querySelector('#mealSlotDialog'), mealSlotDialogTitle:document.querySelector('#mealSlotDialogTitle'), closeMealSlotDialog:document.querySelector('#closeMealSlotDialog'), cancelMealSlot:document.querySelector('#cancelMealSlot'), mealRecipeSearch:document.querySelector('#mealRecipeSearch'), mealRecipeChoices:document.querySelector('#mealRecipeChoices'),
+    mealPlannerPreferencesDialog:document.querySelector('#mealPlannerPreferencesDialog'), closeMealPreferences:document.querySelector('#closeMealPreferences'), doneMealPreferences:document.querySelector('#doneMealPreferences'), mealDefaultSchedule:document.querySelector('#mealDefaultSchedule'), applyMealDefaults:document.querySelector('#applyMealDefaults'), mealPreferenceSearch:document.querySelector('#mealPreferenceSearch'), mealRecipePreferences:document.querySelector('#mealRecipePreferences'),
+    mealShoppingDialog:document.querySelector('#mealShoppingDialog'), closeMealShopping:document.querySelector('#closeMealShopping'), cancelMealShopping:document.querySelector('#cancelMealShopping'), mealShoppingDays:document.querySelector('#mealShoppingDays'), mealShoppingStatus:document.querySelector('#mealShoppingStatus'), confirmMealShopping:document.querySelector('#confirmMealShopping')
+  });
 
   const startupIssues = [];
   function startupStep(label, action) {
@@ -178,7 +187,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true, alarmTone: 'bell' } };
+    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], mealPlans:{}, mealPlannerPreferences:{template:{},recipes:{}}, mealPlanHistory:[], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true, alarmTone: 'bell' } };
   }
 
   function saveState() { profileStore.saveCombinedState(state); }
@@ -412,6 +421,7 @@
     els.shareRecipeTextBtn?.addEventListener('click', () => shareSelectedRecipe('text'));
 
 
+    bindMealPlannerEvents();
     document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => {
       if (!button.dataset.view) return;
       currentView = button.dataset.view;
@@ -420,7 +430,7 @@
       document.querySelectorAll('.category-button').forEach(x => x.classList.remove('active'));
       toggleSidebar(false);
       syncFavoriteFilterButton();
-      if (currentView === 'modules') showModules(); else if (currentView === 'shopping') showShopping(); else showList();
+      if (currentView === 'modules') showModules(); else if (currentView === 'shopping') showShopping(); else if (currentView === 'meal-planner') showMealPlanner(); else showList();
     }));
   }
 
@@ -943,7 +953,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.16.30').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.17.0').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1457,6 +1467,9 @@
       ...(state.manualCrossLinks || []).flatMap(link => [link.sourceKey, link.targetKey]),
       ...(state.timers || []).map(timer => timer.recipeKey),
       ...(state.shoppingList || []).flatMap(item => (item.entries || []).map(entry => entry.recipeKey)),
+      ...Object.keys(state.mealPlannerPreferences?.recipes || {}),
+      ...(state.mealPlanHistory || []).map(item => item.recipeKey),
+      ...Object.values(state.mealPlans || {}).flatMap(plan => Object.values(plan?.slots || {}).map(slot => slot?.recipeKey)),
       ...(state.modules.find(module => module.moduleId === 'my-recipes')?.recipes || []).map(recipe => recipe.copiedFrom)
     ].filter(key => typeof key === 'string' && key));
     const keyMap = new Map();
@@ -1622,12 +1635,12 @@
   function showList() {
     recipeNavigationStack = [];
     selectedRecipeKey = null;
-    els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
+    els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
     renderRecipeList(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function showDetail() {
-    els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true;
+    els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
     renderRecipeDetail(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1650,7 +1663,7 @@
 
   function showModules() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true;
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
     renderModules(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -2006,6 +2019,13 @@
     state.timers = state.timers.filter(timer => timer.recipeKey !== key);
     delete state.guidedCookingProgress[key];
     state.shoppingList = state.shoppingList.map(item => ({...item, entries:(item.entries||[]).filter(entry=>entry.recipeKey!==key)})).filter(item=>(item.entries||[]).length);
+    delete state.mealPlannerPreferences.recipes[key];
+    state.mealPlanHistory = state.mealPlanHistory.filter(item => item.recipeKey !== key);
+    Object.values(state.mealPlans).forEach(plan => {
+      Object.entries(plan?.slots || {}).forEach(([slotKey, slot]) => {
+        if (slot?.recipeKey === key) plan.slots[slotKey] = KCMealPlanner.emptySlot();
+      });
+    });
   }
 
   function deletePersonalRecipe(recipe) {
@@ -2406,7 +2426,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.16.30');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.17.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2907,9 +2927,376 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     showShoppingUndo(`${selected.length} item${selected.length===1?'':'s'} removed.`, snapshot);
   }
 
+  function bindMealPlannerEvents() {
+    els.mealPreviousWeek?.addEventListener('click', () => { mealPlannerWeek = KCMealPlanner.shiftWeek(mealPlannerWeek, -1); renderMealPlanner(); });
+    els.mealCurrentWeek?.addEventListener('click', () => { mealPlannerWeek = KCMealPlanner.startOfWeek(); renderMealPlanner(); });
+    els.mealNextWeek?.addEventListener('click', () => { mealPlannerWeek = KCMealPlanner.shiftWeek(mealPlannerWeek, 1); renderMealPlanner(); });
+    els.mealGenerateWeek?.addEventListener('click', () => generateMealPlan(false));
+    els.mealFillEmpty?.addEventListener('click', () => generateMealPlan(true));
+    els.mealPlannerSettings?.addEventListener('click', openMealPlannerPreferences);
+    els.mealAddShopping?.addEventListener('click', openMealShoppingDialog);
+    els.closeMealSlotDialog?.addEventListener('click', () => els.mealSlotDialog.close());
+    els.cancelMealSlot?.addEventListener('click', () => els.mealSlotDialog.close());
+    els.mealRecipeSearch?.addEventListener('input', renderMealRecipeChoices);
+    document.querySelectorAll('[data-meal-special]').forEach(button => button.addEventListener('click', () => setMealSpecial(button.dataset.mealSpecial)));
+    els.closeMealPreferences?.addEventListener('click', () => els.mealPlannerPreferencesDialog.close());
+    els.doneMealPreferences?.addEventListener('click', () => els.mealPlannerPreferencesDialog.close());
+    els.applyMealDefaults?.addEventListener('click', applyMealDefaultsToCurrentWeek);
+    els.mealPreferenceSearch?.addEventListener('input', renderMealRecipePreferences);
+    els.closeMealShopping?.addEventListener('click', () => els.mealShoppingDialog.close());
+    els.cancelMealShopping?.addEventListener('click', () => els.mealShoppingDialog.close());
+    els.confirmMealShopping?.addEventListener('click', addMealPlanToShoppingList);
+  }
+
+  function mealPlanDate(dayIndex) {
+    const date = new Date(`${mealPlannerWeek}T12:00:00`);
+    date.setDate(date.getDate() + dayIndex);
+    return date;
+  }
+
+  function mealDateLabel(dayIndex) {
+    return mealPlanDate(dayIndex).toLocaleDateString(undefined, { month:'short', day:'numeric' });
+  }
+
+  function currentMealPlan() {
+    const normalized = KCMealPlanner.normalizePlan(state.mealPlans[mealPlannerWeek], mealPlannerWeek, state.mealPlannerPreferences.template);
+    state.mealPlans[mealPlannerWeek] = normalized;
+    return normalized;
+  }
+
+  function mealPlannerRecipeMap() {
+    return new Map(getAllRecipes().map(recipe => [recipe.key, recipe]));
+  }
+
+  function showMealPlanner() {
+    selectedRecipeKey = null;
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = false;
+    renderMealPlanner();
+    updateWakeLock();
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+
+  function mealPartLabel(meal, part) {
+    if (part === 'main') return meal === 'snack' ? 'Snack' : 'Main';
+    return part === 'side2' ? 'Side 2' : 'Side';
+  }
+
+  function parseMealSlotKey(key) {
+    const match = String(key).match(/^([0-6])-(breakfast|lunch|dinner|snack)-(main|side1|side2)$/);
+    return match ? { day:Number(match[1]), meal:match[2], part:match[3] } : null;
+  }
+
+  function specialMealLabel(kind) {
+    return ({ skip:'Skipped', 'eat-out':'Eating out', leftovers:'Leftovers' })[kind] || '';
+  }
+
+  function renderMealPart(day, meal, part, slot, recipes) {
+    const key = KCMealPlanner.slotKey(day, meal, part);
+    const recipe = slot.kind === 'recipe' ? recipes.get(slot.recipeKey) : null;
+    const name = recipe?.name || (slot.kind === 'custom' ? slot.text : specialMealLabel(slot.kind)) || 'Choose a recipe';
+    const missing = slot.kind === 'recipe' && !recipe;
+    const meta = missing ? 'Recipe is unavailable' : recipe ? `${recipe.moduleName || 'Recipe'}${slot.locked ? ' · Locked' : slot.source === 'random' ? ' · Random' : ''}` : slot.kind === 'empty' ? 'Empty' : '';
+    const classes = ['meal-part', part === 'main' ? 'meal-part-main' : '', slot.kind === 'empty' ? 'meal-empty' : '', ['skip','eat-out','leftovers'].includes(slot.kind) ? 'meal-special' : ''].filter(Boolean).join(' ');
+    const scale = Number(slot.scale) || 1;
+    return `<div class="${classes}" data-meal-slot="${escapeHtml(key)}">
+      <button type="button" class="meal-part-choice" data-meal-choose="${escapeHtml(key)}">
+        <span class="meal-part-label">${escapeHtml(mealPartLabel(meal, part))}</span>
+        <span class="meal-part-name">${escapeHtml(name)}</span>
+        ${meta ? `<span class="meal-part-meta">${escapeHtml(meta)}</span>` : ''}
+      </button>
+      <div class="meal-part-actions">
+        ${recipe ? `<select data-meal-scale="${escapeHtml(key)}" aria-label="Recipe amount">${[0.5,1,1.5,2,3].map(value => `<option value="${value}"${value===scale?' selected':''}>${value}×</option>`).join('')}</select><button type="button" data-meal-lock="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock':'Lock'}">${slot.locked?'🔒':'🔓'}</button><button type="button" data-meal-reroll="${escapeHtml(key)}" aria-label="Reroll">↻</button>` : ''}
+        ${slot.kind !== 'empty' ? `<button type="button" data-meal-clear="${escapeHtml(key)}" aria-label="Clear">✕</button>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function renderMealPlanner() {
+    const plan = currentMealPlan();
+    const recipes = mealPlannerRecipeMap();
+    const end = mealPlanDate(6);
+    const start = mealPlanDate(0);
+    els.mealPlannerWeekLabel.textContent = `${start.toLocaleDateString(undefined,{month:'long',day:'numeric'})} – ${end.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}`;
+    els.mealPlannerDays.innerHTML = '';
+    KCMealPlanner.DAYS.forEach((dayName, day) => {
+      const allKeys = KCMealPlanner.MEALS.flatMap(meal => KCMealPlanner.MEAL_PARTS[meal].map(part => KCMealPlanner.slotKey(day, meal, part)));
+      const daySkipped = allKeys.every(key => plan.slots[key]?.kind === 'skip');
+      const card = document.createElement('details');
+      card.className = 'meal-day-card';
+      const today = new Date();
+      const todayDay = today.getDay() === 0 ? 6 : today.getDay() - 1;
+      card.open = mealPlannerWeek === KCMealPlanner.startOfWeek(today) ? day === todayDay : day === 0;
+      card.innerHTML = `<summary><span class="meal-day-title"><strong>${escapeHtml(dayName)}</strong><span>${escapeHtml(mealDateLabel(day))}</span></span><span>${daySkipped?'Skipped':'▾'}</span></summary>
+        <div class="meal-day-actions"><button type="button" class="button secondary" data-meal-day="${day}" data-day-action="${daySkipped?'restore':'skip'}">${daySkipped?'Restore day':'Skip day'}</button><button type="button" class="button secondary" data-meal-day="${day}" data-day-action="reroll">Reroll day</button></div>
+        <div class="meal-day-slots">${KCMealPlanner.MEALS.map(meal => {
+          const main = plan.slots[KCMealPlanner.slotKey(day, meal, 'main')];
+          const special = ['skip','eat-out','leftovers'].includes(main?.kind);
+          return `<section class="meal-group"><div class="meal-group-heading"><h3>${escapeHtml(meal)}</h3><button type="button" class="text-button" data-meal-group="${day}-${meal}">${special?'Plan meal':'Options'}</button></div>${special
+            ? renderMealPart(day, meal, 'main', main, recipes)
+            : KCMealPlanner.MEAL_PARTS[meal].map(part => renderMealPart(day, meal, part, plan.slots[KCMealPlanner.slotKey(day, meal, part)], recipes)).join('')}</section>`;
+        }).join('')}</div>`;
+      els.mealPlannerDays.append(card);
+    });
+    bindRenderedMealPlanner();
+    saveState();
+  }
+
+  function bindRenderedMealPlanner() {
+    els.mealPlannerDays.querySelectorAll('[data-meal-choose]').forEach(button => button.addEventListener('click', () => openMealSlot(button.dataset.mealChoose)));
+    els.mealPlannerDays.querySelectorAll('[data-meal-group]').forEach(button => button.addEventListener('click', () => {
+      const match = button.dataset.mealGroup.match(/^([0-6])-(.+)$/);
+      openMealSlot(KCMealPlanner.slotKey(Number(match[1]), match[2], 'main'));
+    }));
+    els.mealPlannerDays.querySelectorAll('[data-meal-clear]').forEach(button => button.addEventListener('click', () => clearMealSlot(button.dataset.mealClear)));
+    els.mealPlannerDays.querySelectorAll('[data-meal-lock]').forEach(button => button.addEventListener('click', () => {
+      const slot = currentMealPlan().slots[button.dataset.mealLock];
+      slot.locked = !slot.locked; slot.updatedAt = new Date().toISOString(); saveState(); renderMealPlanner();
+    }));
+    els.mealPlannerDays.querySelectorAll('[data-meal-scale]').forEach(select => select.addEventListener('change', () => {
+      currentMealPlan().slots[select.dataset.mealScale].scale = Number(select.value) || 1; saveState();
+    }));
+    els.mealPlannerDays.querySelectorAll('[data-meal-reroll]').forEach(button => button.addEventListener('click', () => rerollMealSlots([button.dataset.mealReroll])));
+    els.mealPlannerDays.querySelectorAll('[data-day-action]').forEach(button => button.addEventListener('click', () => {
+      const day = Number(button.dataset.mealDay);
+      if (button.dataset.dayAction === 'skip') setWholeMealDay(day, 'skip');
+      else if (button.dataset.dayAction === 'restore') restoreMealDay(day);
+      else {
+        const keys = KCMealPlanner.MEALS.flatMap(meal => KCMealPlanner.MEAL_PARTS[meal].map(part => KCMealPlanner.slotKey(day, meal, part)));
+        rerollMealSlots(keys);
+      }
+    }));
+  }
+
+  function recordMealHistory(slotKey, recipeKey) {
+    state.mealPlanHistory.push({ recipeKey, slotKey, weekStart:mealPlannerWeek, plannedAt:new Date().toISOString() });
+    state.mealPlanHistory = state.mealPlanHistory.slice(-400);
+  }
+
+  function setWholeMealDay(day, kind) {
+    const plan = currentMealPlan();
+    KCMealPlanner.MEALS.forEach(meal => KCMealPlanner.MEAL_PARTS[meal].forEach(part => {
+      plan.slots[KCMealPlanner.slotKey(day, meal, part)] = { kind, locked:true, source:'manual', scale:1 };
+    }));
+    plan.updatedAt = new Date().toISOString(); saveState(); renderMealPlanner();
+  }
+
+  function restoreMealDay(day) {
+    const plan = currentMealPlan();
+    KCMealPlanner.MEALS.forEach(meal => {
+      const defaultKind = state.mealPlannerPreferences.template[KCMealPlanner.templateKey(day, meal)] || 'plan';
+      KCMealPlanner.MEAL_PARTS[meal].forEach(part => {
+        plan.slots[KCMealPlanner.slotKey(day, meal, part)] = defaultKind === 'plan' ? KCMealPlanner.emptySlot() : { kind:defaultKind, locked:true, source:'template', scale:1 };
+      });
+    });
+    plan.updatedAt = new Date().toISOString(); saveState(); renderMealPlanner();
+  }
+
+  function mealPlannerContext() {
+    return {
+      preferences:state.mealPlannerPreferences.recipes,
+      template:state.mealPlannerPreferences.template,
+      ratings:state.ratings,
+      favorites:state.favorites,
+      history:state.mealPlanHistory
+    };
+  }
+
+  function saveGeneratedMealHistory(before, after) {
+    Object.entries(after.slots).forEach(([key, slot]) => {
+      if (slot.kind === 'recipe' && slot.source === 'random' && before.slots[key]?.recipeKey !== slot.recipeKey) recordMealHistory(key, slot.recipeKey);
+    });
+  }
+
+  function generateMealPlan(onlyEmpty) {
+    const plan = currentMealPlan();
+    const before = JSON.parse(JSON.stringify(plan));
+    if (!onlyEmpty && Object.values(plan.slots).some(slot => slot.kind === 'recipe' && slot.source === 'random' && !slot.locked)
+      && !confirm('Generate a new week? Unlocked random choices will be replaced. Manual, locked, skipped, eat-out, leftover, and custom entries will stay.')) return;
+    const generated = KCMealPlanner.generate(plan, getAllRecipes(), mealPlannerContext(), { onlyEmpty });
+    state.mealPlans[mealPlannerWeek] = generated;
+    saveGeneratedMealHistory(before, generated);
+    saveState(); renderMealPlanner();
+    els.mealPlannerStatus.textContent = onlyEmpty ? 'Empty planner slots were filled where matching recipes were available.' : 'The week was generated. Manual and locked choices were preserved.';
+  }
+
+  function rerollMealSlots(keys) {
+    const plan = currentMealPlan();
+    const before = JSON.parse(JSON.stringify(plan));
+    keys.forEach(key => {
+      const parsed = parseMealSlotKey(key);
+      if (!parsed) return;
+      const main = plan.slots[KCMealPlanner.slotKey(parsed.day, parsed.meal, 'main')];
+      if (['skip','eat-out','leftovers'].includes(main?.kind)) return;
+      plan.slots[key] = KCMealPlanner.emptySlot();
+    });
+    const generated = KCMealPlanner.generate(plan, getAllRecipes(), mealPlannerContext(), { onlyEmpty:true, slotKeys:keys });
+    state.mealPlans[mealPlannerWeek] = generated;
+    saveGeneratedMealHistory(before, generated);
+    saveState(); renderMealPlanner();
+  }
+
+  function clearMealSlot(key) {
+    const parsed = parseMealSlotKey(key);
+    if (!parsed) return;
+    const plan = currentMealPlan();
+    if (parsed.part === 'main' && ['skip','eat-out','leftovers'].includes(plan.slots[key]?.kind)) {
+      KCMealPlanner.MEAL_PARTS[parsed.meal].forEach(part => { plan.slots[KCMealPlanner.slotKey(parsed.day, parsed.meal, part)] = KCMealPlanner.emptySlot(); });
+    } else plan.slots[key] = KCMealPlanner.emptySlot();
+    plan.updatedAt = new Date().toISOString(); saveState(); renderMealPlanner();
+  }
+
+  function openMealSlot(key) {
+    const parsed = parseMealSlotKey(key);
+    if (!parsed) return;
+    editingMealSlotKey = key;
+    els.mealSlotDialogTitle.textContent = `${KCMealPlanner.DAYS[parsed.day]} ${parsed.meal} — ${mealPartLabel(parsed.meal, parsed.part)}`;
+    els.mealRecipeSearch.value = '';
+    renderMealRecipeChoices();
+    els.mealSlotDialog.showModal();
+  }
+
+  function renderMealRecipeChoices() {
+    const parsed = parseMealSlotKey(editingMealSlotKey);
+    if (!parsed) return;
+    const query = els.mealRecipeSearch.value.trim().toLowerCase();
+    const recipes = getAllRecipes().filter(recipe => !query || recipeSearchText(recipe).includes(query)).sort((a,b) => a.name.localeCompare(b.name));
+    els.mealRecipeChoices.innerHTML = recipes.slice(0, 250).map(recipe => {
+      const preference = KCMealPlanner.recipePreference(recipe, state.mealPlannerPreferences.recipes);
+      return `<button type="button" class="meal-recipe-choice" data-meal-recipe="${escapeHtml(recipe.key)}"><span><strong>${escapeHtml(recipe.name)}</strong><small>${escapeHtml(recipe.moduleName)} · ${escapeHtml(preference.frequency)}</small></span><span>Choose</span></button>`;
+    }).join('') || '<p class="empty-state">No matching recipes.</p>';
+    els.mealRecipeChoices.querySelectorAll('[data-meal-recipe]').forEach(button => button.addEventListener('click', () => {
+      const plan = currentMealPlan();
+      if (parsed.part === 'main' && ['skip','eat-out','leftovers'].includes(plan.slots[editingMealSlotKey]?.kind)) {
+        KCMealPlanner.MEAL_PARTS[parsed.meal].forEach(part => {
+          plan.slots[KCMealPlanner.slotKey(parsed.day, parsed.meal, part)] = KCMealPlanner.emptySlot();
+        });
+      }
+      plan.slots[editingMealSlotKey] = { kind:'recipe', recipeKey:button.dataset.mealRecipe, source:'manual', locked:true, scale:1 };
+      recordMealHistory(editingMealSlotKey, button.dataset.mealRecipe);
+      plan.updatedAt = new Date().toISOString(); saveState(); els.mealSlotDialog.close(); renderMealPlanner();
+    }));
+  }
+
+  function setMealSpecial(kind) {
+    const parsed = parseMealSlotKey(editingMealSlotKey);
+    if (!parsed) return;
+    const plan = currentMealPlan();
+    if (kind === 'clear') {
+      clearMealSlot(editingMealSlotKey); els.mealSlotDialog.close(); return;
+    }
+    if (kind === 'custom') {
+      const value = prompt('What should appear in this meal slot?', plan.slots[editingMealSlotKey]?.text || '');
+      if (!value?.trim()) return;
+      if (parsed.part === 'main' && ['skip','eat-out','leftovers'].includes(plan.slots[editingMealSlotKey]?.kind)) {
+        KCMealPlanner.MEAL_PARTS[parsed.meal].forEach(part => {
+          plan.slots[KCMealPlanner.slotKey(parsed.day, parsed.meal, part)] = KCMealPlanner.emptySlot();
+        });
+      }
+      plan.slots[editingMealSlotKey] = { kind:'custom', text:value.trim(), source:'manual', locked:true, scale:1 };
+    } else if (parsed.part === 'main') {
+      KCMealPlanner.MEAL_PARTS[parsed.meal].forEach(part => { plan.slots[KCMealPlanner.slotKey(parsed.day, parsed.meal, part)] = { kind, source:'manual', locked:true, scale:1 }; });
+    } else plan.slots[editingMealSlotKey] = { kind, source:'manual', locked:true, scale:1 };
+    plan.updatedAt = new Date().toISOString(); saveState(); els.mealSlotDialog.close(); renderMealPlanner();
+  }
+
+  function openMealPlannerPreferences() {
+    renderMealDefaultSchedule();
+    els.mealPreferenceSearch.value = '';
+    renderMealRecipePreferences();
+    els.mealPlannerPreferencesDialog.showModal();
+  }
+
+  function renderMealDefaultSchedule() {
+    const labels = { plan:'Plan', skip:'Skip', 'eat-out':'Eat out' };
+    els.mealDefaultSchedule.innerHTML = KCMealPlanner.DAYS.map((dayName, day) => `<div class="meal-default-day"><strong>${escapeHtml(dayName)}</strong>${KCMealPlanner.MEALS.map(meal => {
+      const key = KCMealPlanner.templateKey(day, meal);
+      const selected = state.mealPlannerPreferences.template[key] || 'plan';
+      return `<label>${escapeHtml(meal)}<select data-meal-template="${escapeHtml(key)}">${Object.entries(labels).map(([value,label]) => `<option value="${value}"${value===selected?' selected':''}>${label}</option>`).join('')}</select></label>`;
+    }).join('')}</div>`).join('');
+    els.mealDefaultSchedule.querySelectorAll('[data-meal-template]').forEach(select => select.addEventListener('change', () => {
+      state.mealPlannerPreferences.template[select.dataset.mealTemplate] = select.value; saveState();
+    }));
+  }
+
+  function applyMealDefaultsToCurrentWeek() {
+    const plan = currentMealPlan();
+    let changed = 0;
+    for (let day = 0; day < 7; day += 1) KCMealPlanner.MEALS.forEach(meal => {
+      const kind = state.mealPlannerPreferences.template[KCMealPlanner.templateKey(day, meal)] || 'plan';
+      KCMealPlanner.MEAL_PARTS[meal].forEach(part => {
+        const key = KCMealPlanner.slotKey(day, meal, part);
+        if (plan.slots[key]?.kind !== 'empty') return;
+        if (kind !== 'plan') { plan.slots[key] = { kind, source:'template', locked:true, scale:1 }; changed += 1; }
+      });
+    });
+    plan.updatedAt = new Date().toISOString(); saveState(); renderMealPlanner();
+    els.mealPlannerStatus.textContent = changed ? 'Weekly defaults were applied to empty slots.' : 'No empty slots needed a saved default.';
+  }
+
+  function renderMealRecipePreferences() {
+    const query = els.mealPreferenceSearch.value.trim().toLowerCase();
+    const recipes = getAllRecipes().filter(recipe => !query || recipeSearchText(recipe).includes(query)).sort((a,b) => a.name.localeCompare(b.name));
+    const frequencyLabels = { often:'Often', weekly:'Weekly', occasionally:'Occasionally', rarely:'Rarely', never:'Never' };
+    const placementLabels = { breakfast:'Breakfast', lunch:'Lunch', dinner:'Dinner', snack:'Snack', side:'Side' };
+    els.mealRecipePreferences.innerHTML = recipes.slice(0, 300).map(recipe => {
+      const preference = KCMealPlanner.recipePreference(recipe, state.mealPlannerPreferences.recipes);
+      return `<div class="meal-preference-row" data-preference-recipe="${escapeHtml(recipe.key)}"><span class="meal-preference-name"><strong>${escapeHtml(recipe.name)}</strong><small>${escapeHtml(recipe.moduleName)}</small></span><div class="meal-preference-controls"><select data-preference-frequency>${Object.entries(frequencyLabels).map(([value,label]) => `<option value="${value}"${value===preference.frequency?' selected':''}>${label}</option>`).join('')}</select><div class="meal-placement-checks">${Object.entries(placementLabels).map(([value,label]) => `<label><input type="checkbox" data-preference-placement="${value}"${preference.mealTypes.includes(value)?' checked':''}> ${label}</label>`).join('')}</div></div></div>`;
+    }).join('') || '<p class="empty-state">No matching recipes.</p>';
+    els.mealRecipePreferences.querySelectorAll('[data-preference-recipe]').forEach(row => {
+      const key = row.dataset.preferenceRecipe;
+      const save = () => {
+        const mealTypes = [...row.querySelectorAll('[data-preference-placement]:checked')].map(input => input.dataset.preferencePlacement);
+        state.mealPlannerPreferences.recipes[key] = { frequency:row.querySelector('[data-preference-frequency]').value, mealTypes };
+        saveState();
+      };
+      row.querySelector('[data-preference-frequency]').addEventListener('change', save);
+      row.querySelectorAll('[data-preference-placement]').forEach(input => input.addEventListener('change', save));
+    });
+  }
+
+  function openMealShoppingDialog() {
+    els.mealShoppingDays.innerHTML = KCMealPlanner.DAYS.map((day, index) => `<label><input type="checkbox" value="${index}" checked> ${escapeHtml(day)} ${escapeHtml(mealDateLabel(index))}</label>`).join('');
+    els.mealShoppingStatus.textContent = '';
+    els.mealShoppingDialog.showModal();
+  }
+
+  function plannerIngredientQuantity(ingredient, scale) {
+    let amount = '';
+    if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
+    else if (typeof ingredient.quantity === 'number') amount = formatFraction(ingredient.scalable === false ? ingredient.quantity : ingredient.quantity * scale);
+    return [amount, ingredient.unit].filter(Boolean).join(' ').trim();
+  }
+
+  function addMealPlanToShoppingList() {
+    const days = new Set([...els.mealShoppingDays.querySelectorAll('input:checked')].map(input => Number(input.value)));
+    const meals = new Set([...els.mealShoppingDialog.querySelectorAll('.meal-shopping-meals input:checked')].map(input => input.value));
+    if (!days.size || !meals.size) { els.mealShoppingStatus.textContent = 'Select at least one day and meal type.'; return; }
+    const plan = currentMealPlan();
+    const recipes = mealPlannerRecipeMap();
+    let recipesAdded = 0;
+    let ingredientsAdded = 0;
+    days.forEach(day => meals.forEach(meal => KCMealPlanner.MEAL_PARTS[meal].forEach(part => {
+      const slot = plan.slots[KCMealPlanner.slotKey(day, meal, part)];
+      if (slot?.kind !== 'recipe') return;
+      const recipe = recipes.get(slot.recipeKey);
+      if (!recipe) return;
+      recipesAdded += 1;
+      (recipe.ingredientGroups || []).forEach(group => (group.ingredients || []).forEach(ingredient => {
+        const embedded = extractEmbeddedShoppingQuantity(ingredient.item);
+        const name = cleanShoppingName(embedded.name);
+        const quantity = plannerIngredientQuantity(ingredient, Number(slot.scale) || 1) || embedded.quantity;
+        addShoppingEntry({ name, quantity, source:`Meal plan · ${KCMealPlanner.DAYS[day]} ${meal} · ${recipe.name}`, recipeKey:recipe.key });
+        ingredientsAdded += 1;
+      }));
+    })));
+    saveState(); renderCounts();
+    els.mealShoppingStatus.textContent = recipesAdded ? `${ingredientsAdded} ingredient entries from ${recipesAdded} planned recipe${recipesAdded===1?'':'s'} were added and consolidated.` : 'No recipes were planned in the selected meals.';
+    if (recipesAdded) setTimeout(() => els.mealShoppingDialog.close(), 1200);
+  }
+
   function showShopping() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false;
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false; els.mealPlannerPane.hidden = true;
     shoppingSelectionMode=false; shoppingSelectedIds.clear(); populateStoreSelects(); updateShoppingBulkBar(); renderShoppingList(); updateWakeLock(); window.scrollTo({top:0,behavior:'smooth'});
   }
 
@@ -3490,6 +3877,18 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       ...item,
       entries:(item.entries || []).map(entry => ({ ...entry, recipeKey:remap(entry.recipeKey) }))
     }));
+    const plannerPreferences = {};
+    Object.entries(state.mealPlannerPreferences?.recipes || {}).forEach(([key, value]) => {
+      const repairedKey = remap(key);
+      if (plannerPreferences[repairedKey] === undefined) plannerPreferences[repairedKey] = value;
+    });
+    state.mealPlannerPreferences.recipes = plannerPreferences;
+    Object.values(state.mealPlans || {}).forEach(plan => {
+      Object.values(plan?.slots || {}).forEach(slot => {
+        if (slot?.recipeKey) slot.recipeKey = remap(slot.recipeKey);
+      });
+    });
+    state.mealPlanHistory = (state.mealPlanHistory || []).map(item => ({ ...item, recipeKey:remap(item.recipeKey) }));
     const personal = state.modules.find(module => module.moduleId === 'my-recipes');
     if (personal) personal.recipes = (personal.recipes || []).map(recipe => ({ ...recipe, copiedFrom:remap(recipe.copiedFrom) }));
   }
@@ -3627,10 +4026,10 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         recipeIds.add(recipe.id);
       });
     });
-    for (const key of ['favorites','shoppingList','regularItems','stores','manualCrossLinks']) {
+    for (const key of ['favorites','shoppingList','regularItems','stores','manualCrossLinks','mealPlanHistory']) {
       if (incoming[key] !== undefined && !Array.isArray(incoming[key])) throw new Error(`Backup field ${key} is damaged.`);
     }
-    for (const key of ['recipeNotes','settings','moduleSources','backupMeta','ratings']) {
+    for (const key of ['recipeNotes','settings','moduleSources','backupMeta','ratings','mealPlans','mealPlannerPreferences']) {
       if (incoming[key] !== undefined && (!incoming[key] || typeof incoming[key] !== 'object' || Array.isArray(incoming[key]))) throw new Error(`Backup field ${key} is damaged.`);
     }
     Object.entries(incoming.ratings || {}).forEach(([recipeKey, entry]) => {
@@ -3652,7 +4051,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function mergeBackupState(current, incoming) {
     const result=JSON.parse(JSON.stringify(current)); const incomingPersonal=incoming.modules.find(m=>m.moduleId==='my-recipes'); const personal=result.modules.find(m=>m.moduleId==='my-recipes') || ensurePersonalModule();
     if(incomingPersonal){ const byId=new Map(personal.recipes.map(r=>[r.id,r])); incomingPersonal.recipes.forEach(r=>byId.set(r.id,r)); personal.recipes=[...byId.values()]; }
-    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
+    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; result.mealPlans={...(incoming.mealPlans||{}),...(result.mealPlans||{})}; result.mealPlannerPreferences={template:{...(incoming.mealPlannerPreferences?.template||{}),...(result.mealPlannerPreferences?.template||{})},recipes:{...(incoming.mealPlannerPreferences?.recipes||{}),...(result.mealPlannerPreferences?.recipes||{})}}; result.mealPlanHistory=[...(incoming.mealPlanHistory||[]),...(result.mealPlanHistory||[])].slice(-400); const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
   }
 
   function restoreSelectedBackup(event) {

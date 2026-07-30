@@ -1,4 +1,20 @@
-# Kitchen Companion v0.16.30
+# Kitchen Companion v0.17.0
+
+## v0.17.0
+
+- Adds a profile-specific, locally stored weekly meal planner.
+- Plans breakfast, lunch, dinner, and snack for Monday through Sunday.
+- Adds one side slot to breakfast and lunch and two side slots to dinner.
+- Supports manual planning, weighted random generation, rerolls, locks, meal
+  and day skipping, eating out, leftovers, and custom text.
+- Adds recurring weekly defaults and per-recipe frequency and placement
+  preferences.
+- Uses favorites, ratings, recent use, and saved frequency when generating.
+- Transfers selected planned meals and sides into the consolidated shopping
+  list with each planned recipe's scale.
+- Preserves planner data through profile exports, backups, recipe module
+  updates, and normal app upgrades.
+- Leaves OCR, website extraction, Guided Cooking, and alarm behavior unchanged.
 
 ## v0.16.30
 

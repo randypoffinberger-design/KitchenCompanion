@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.16.30">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.16.30">
+  <link rel="manifest" href="app.webmanifest?v=0.17.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.17.0">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.16.30">
+  <link rel="stylesheet" href="styles.css?v=0.17.0">
 </head>
 <body>
   <div class="app-shell">
@@ -45,6 +45,7 @@
       <nav class="nav-section" aria-label="Library navigation">
         <button class="nav-item active" data-view="all">All recipes <span id="allCount">0</span></button>
         <button class="nav-item" data-view="favorites">Favorites <span id="favoriteCount">0</span></button>
+        <button class="nav-item" data-view="meal-planner">Meal planner</button>
         <button class="nav-item" data-view="shopping">Shopping list <span id="shoppingCount">0</span></button>
         <button class="nav-item" id="menuCreateRecipe">＋ Create recipe</button>
         <button class="nav-item" data-view="modules">Modules <span id="navModuleCount">0</span></button>
@@ -125,8 +126,74 @@
         <div id="shoppingGroups"></div>
         <div id="shoppingUndoToast" class="shopping-undo-toast" hidden><span id="shoppingUndoMessage"></span><button id="shoppingUndoBtn" type="button" class="text-button">Undo</button></div>
       </section>
+
+      <section id="mealPlannerPane" class="meal-planner-pane" hidden>
+        <div class="meal-planner-header">
+          <div><h1>Meal planner</h1><p id="mealPlannerWeekLabel">Plan one week at a time.</p></div>
+          <div class="meal-week-controls"><button id="mealPreviousWeek" type="button" class="button secondary" aria-label="Previous week">←</button><button id="mealCurrentWeek" type="button" class="button secondary">This week</button><button id="mealNextWeek" type="button" class="button secondary" aria-label="Next week">→</button></div>
+        </div>
+        <div class="meal-planner-toolbar">
+          <button id="mealGenerateWeek" type="button" class="button">Generate week</button>
+          <button id="mealFillEmpty" type="button" class="button secondary">Fill empty slots</button>
+          <button id="mealAddShopping" type="button" class="button secondary">Add to shopping list</button>
+          <button id="mealPlannerSettings" type="button" class="button secondary">Planner preferences</button>
+        </div>
+        <p id="mealPlannerStatus" class="setting-help" aria-live="polite"></p>
+        <div id="mealPlannerDays" class="meal-planner-days"></div>
+      </section>
     </main>
   </div>
+
+  <dialog id="mealSlotDialog">
+    <form method="dialog" class="dialog-card meal-slot-dialog-card">
+      <div class="dialog-title-row"><h2 id="mealSlotDialogTitle">Choose meal</h2><button type="button" id="closeMealSlotDialog" class="icon-btn" aria-label="Close">✕</button></div>
+      <div class="meal-special-actions">
+        <button type="button" class="button secondary" data-meal-special="skip">Skip</button>
+        <button type="button" class="button secondary" data-meal-special="eat-out">Eat out</button>
+        <button type="button" class="button secondary" data-meal-special="leftovers">Leftovers</button>
+        <button type="button" class="button secondary" data-meal-special="custom">Custom text</button>
+        <button type="button" class="button secondary" data-meal-special="clear">Clear</button>
+      </div>
+      <label class="meal-recipe-search">Search recipes<input id="mealRecipeSearch" type="search" placeholder="Search all enabled modules…" autocomplete="off"></label>
+      <div id="mealRecipeChoices" class="meal-recipe-choices"></div>
+      <div class="dialog-actions"><button type="button" id="cancelMealSlot" class="button secondary">Cancel</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="mealPlannerPreferencesDialog">
+    <form method="dialog" class="dialog-card meal-preferences-card">
+      <div class="dialog-title-row"><h2>Planner preferences</h2><button type="button" id="closeMealPreferences" class="icon-btn" aria-label="Close">✕</button></div>
+      <details class="meal-preference-section" open>
+        <summary>Default weekly schedule</summary>
+        <p class="setting-help">New weeks use these defaults. Choose Plan, Skip, or Eat out for each meal.</p>
+        <div id="mealDefaultSchedule" class="meal-default-schedule"></div>
+        <button type="button" id="applyMealDefaults" class="button secondary">Apply defaults to empty slots this week</button>
+      </details>
+      <details class="meal-preference-section">
+        <summary>Recipe frequency and placement</summary>
+        <p class="setting-help">Control random planning. Manual selection can still use any recipe.</p>
+        <label class="meal-recipe-search">Search recipes<input id="mealPreferenceSearch" type="search" placeholder="Search preferences…" autocomplete="off"></label>
+        <div id="mealRecipePreferences" class="meal-recipe-preferences"></div>
+      </details>
+      <div class="dialog-actions"><button type="button" id="doneMealPreferences" class="button">Done</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="mealShoppingDialog">
+    <form method="dialog" class="dialog-card meal-shopping-card">
+      <div class="dialog-title-row"><h2>Add planned meals</h2><button type="button" id="closeMealShopping" class="icon-btn" aria-label="Close">✕</button></div>
+      <p>Select the days and meal types to send to the shopping list. Side dishes are included with their meal.</p>
+      <div id="mealShoppingDays" class="meal-shopping-options"></div>
+      <div class="meal-shopping-meals">
+        <label><input type="checkbox" value="breakfast" checked> Breakfast</label>
+        <label><input type="checkbox" value="lunch" checked> Lunch</label>
+        <label><input type="checkbox" value="dinner" checked> Dinner</label>
+        <label><input type="checkbox" value="snack" checked> Snack</label>
+      </div>
+      <p id="mealShoppingStatus" class="setting-help" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" id="cancelMealShopping" class="button secondary">Cancel</button><button type="button" id="confirmMealShopping" class="button">Add ingredients</button></div>
+    </form>
+  </dialog>
 
   <dialog id="shoppingMoveDialog">
     <form method="dialog" class="dialog-card compact-dialog">
@@ -170,7 +237,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.16.30</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.17.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -581,10 +648,11 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.16.30"></script>
-  <script src="profile-storage.js?v=0.16.30"></script>
-  <script src="url-recipe-import.js?v=0.16.30"></script>
-  <script src="app.js?v=0.16.30"></script>
-  <script src="ocr-service.js?v=0.16.30"></script>
+  <script src="kitchen-engine.js?v=0.17.0"></script>
+  <script src="profile-storage.js?v=0.17.0"></script>
+  <script src="url-recipe-import.js?v=0.17.0"></script>
+  <script src="meal-planner.js?v=0.17.0"></script>
+  <script src="app.js?v=0.17.0"></script>
+  <script src="ocr-service.js?v=0.17.0"></script>
 </body>
 </html>
