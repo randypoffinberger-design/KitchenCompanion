@@ -1,0 +1,2853 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "kc-rndy5",
+  "name": "Slow Cooker Favorites",
+  "version": "1.0.0",
+  "publisher": "Randy & Family",
+  "license": "Private family use",
+  "description": "A dependable collection of classic slow-cooker comfort food, family dinners, soups, sandwiches, pasta, and original flavor-forward creations.",
+  "recipes": [
+    {
+      "name": "Mississippi Pot Roast",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Pot Roast",
+        "Classic",
+        "Dump-and-Go"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3.5,
+              "unit": "pounds",
+              "item": "boneless beef chuck roast",
+              "scalable": true,
+              "displayQuantity": "3–4"
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "Ranch Seasoning Mix",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "ounces",
+              "item": "au jus or brown gravy seasoning mix",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "pepperoncini peppers",
+              "scalable": true,
+              "displayQuantity": "6–8"
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "pepperoncini brine",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "unsalted butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Pat the roast dry and season it with black pepper. Place it in the slow cooker.",
+        "Sprinkle the Ranch Seasoning Mix and gravy seasoning evenly over the roast.",
+        "Add the pepperoncini and brine, then place the butter on top.",
+        "Cover and cook on low for 8–10 hours or high for 5–6 hours, until the beef is fork-tender.",
+        "Shred or slice the beef and stir it through the cooking juices before serving."
+      ],
+      "description": "Fork-tender chuck roast slowly cooked with ranch seasoning, savory gravy seasoning, pepperoncini, and butter.",
+      "notes": "The seasoning mixes and pepperoncini are salty, so do not add extra salt until after cooking.",
+      "prepTime": "10 minutes",
+      "cookTime": "8–10 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000001"
+    },
+    {
+      "name": "Classic Pot Roast with Vegetables",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Pot Roast",
+        "Classic",
+        "Vegetables"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3.5,
+              "unit": "pounds",
+              "item": "boneless beef chuck roast",
+              "scalable": true,
+              "displayQuantity": "3–4"
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "neutral oil",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "Yukon Gold potatoes, cut into large pieces",
+              "scalable": true
+            },
+            {
+              "quantity": 5,
+              "unit": "",
+              "item": "carrots, cut into large pieces",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large onion, cut into wedges",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "tomato paste",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried rosemary",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "cornstarch",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "cold water",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Season the roast with salt and pepper. Brown it in the oil in a hot skillet for 3–4 minutes per side, then transfer to the slow cooker.",
+        "Arrange the potatoes, carrots, onion, and garlic around the roast.",
+        "Whisk the broth, Worcestershire, tomato paste, thyme, and rosemary and pour into the cooker.",
+        "Cover and cook on low for 8–10 hours or high for 5–6 hours, until the beef and vegetables are tender.",
+        "Transfer the meat and vegetables to a platter. Stir together the cornstarch and cold water, add it to the juices, and cook on high for 10–15 minutes, until thickened."
+      ],
+      "description": "A traditional chuck roast cooked with potatoes, carrots, onion, herbs, and rich beef gravy.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "8–10 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000002"
+    },
+    {
+      "name": "Beef Tips with Mushroom Gravy",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Gravy",
+        "Mushrooms",
+        "Comfort Food"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "pounds",
+              "item": "beef stew meat or sirloin tips",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "neutral oil",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 12,
+              "unit": "ounces",
+              "item": "mushrooms, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 2.5,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "tomato paste",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cornstarch",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cold water",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the beef in oil in batches, then transfer it to the slow cooker.",
+        "Add the onion, mushrooms, garlic, broth, Worcestershire, tomato paste, thyme, salt, and pepper.",
+        "Cover and cook on low for 7–8 hours or high for 4–5 hours, until the beef is tender.",
+        "Whisk the cornstarch with cold water and stir it into the cooker.",
+        "Cover and cook on high for 15–20 minutes, until the gravy thickens."
+      ],
+      "description": "Tender beef tips and mushrooms simmered in a deeply savory gravy for serving over noodles, rice, or potatoes.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "7–8 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000003"
+    },
+    {
+      "name": "Slow Cooker Beef and Broccoli",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Asian-Inspired",
+        "Beef",
+        "Broccoli"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "beef chuck roast or flank steak, thinly sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "low-sodium soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "toasted sesame oil",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "fresh ginger, grated",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "broccoli florets",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cornstarch",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cold water",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "sesame seeds",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the beef in the slow cooker.",
+        "Whisk the broth, soy sauce, brown sugar, sesame oil, garlic, and ginger and pour over the beef.",
+        "Cover and cook on low for 5–6 hours or high for 3–4 hours, until the beef is tender.",
+        "Whisk the cornstarch with cold water and stir it in. Add the broccoli, cover, and cook on high for 25–35 minutes, until crisp-tender and the sauce thickens.",
+        "Garnish with sesame seeds, if using, and serve over rice."
+      ],
+      "description": "Tender sliced beef and broccoli coated in a glossy garlic-soy sauce for serving over rice.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "5–6 hours",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000004"
+    },
+    {
+      "name": "Korean-Inspired BBQ Beef",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Korean-Inspired",
+        "Shredded Beef",
+        "Cross-Link"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "boneless beef chuck roast, cut into 3 or 4 pieces",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.3333333333,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "toasted sesame oil",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "rice vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "fresh ginger, grated",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Sweet-Savory Gochujang Sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "green onions, sliced",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the beef in the slow cooker.",
+        "Whisk the soy sauce, brown sugar, sesame oil, vinegar, garlic, ginger, gochujang sauce, and broth. Pour over the beef.",
+        "Cover and cook on low for 8–9 hours or high for 5–6 hours, until fork-tender.",
+        "Shred the beef, discard excess fat, and stir the meat into the sauce.",
+        "Serve over rice or noodles and garnish with green onions, if desired."
+      ],
+      "description": "Chuck roast slowly cooked in a sweet-savory soy, garlic, ginger, and gochujang sauce until easy to shred.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "8–9 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000005"
+    },
+    {
+      "name": "French Dip Sandwiches",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Sandwiches",
+        "Classic",
+        "Beef"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3.5,
+              "unit": "pounds",
+              "item": "boneless beef chuck roast",
+              "scalable": true,
+              "displayQuantity": "3–4"
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large onion, thinly sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "hoagie rolls",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "provolone cheese",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the onion and garlic in the slow cooker and set the roast on top.",
+        "Add the broth, Worcestershire, soy sauce, thyme, and black pepper.",
+        "Cover and cook on low for 8–10 hours or high for 5–6 hours, until the beef shreds easily.",
+        "Shred the beef and return it to the juices for 10 minutes.",
+        "Fill toasted rolls with beef and provolone. Strain the cooking liquid and serve it alongside for dipping."
+      ],
+      "description": "Slow-cooked beef piled onto toasted rolls with melted provolone and rich au jus for dipping.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "8–10 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "sandwiches"
+      },
+      "id": "kc-rndy5-00000006"
+    },
+    {
+      "name": "Slow Cooker Cheesesteak Sandwiches",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Sandwiches",
+        "Beef",
+        "Peppers"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "pounds",
+              "item": "beef sirloin or chuck, thinly sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "onions, thinly sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "bell peppers, thinly sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Savory Burger Seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "hoagie rolls",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "provolone cheese",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the beef, onions, peppers, and garlic in the slow cooker.",
+        "Add the broth, Worcestershire, and burger seasoning and toss gently.",
+        "Cover and cook on low for 5–6 hours or high for 3–4 hours, until the beef is tender.",
+        "Drain each portion lightly and pile it into a toasted roll.",
+        "Top with provolone and broil briefly, watching closely, until melted."
+      ],
+      "description": "Thin beef, onions, and peppers cooked until tender and finished on toasted rolls with melted provolone.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "5–6 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "sandwiches"
+      },
+      "id": "kc-rndy5-00000007"
+    },
+    {
+      "name": "Smoky Ranch Beef and Peppers",
+      "category": "Main Course – Beef",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Original Creation",
+        "Ranch",
+        "Peppers",
+        "Cross-Link"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "boneless beef chuck roast",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "Ranch Seasoning Mix",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "bell peppers, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "tomato paste",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the onion, peppers, and garlic in the slow cooker and set the roast on top.",
+        "Whisk the broth, tomato paste, Worcestershire, ranch seasoning, smoked paprika, and black pepper. Pour over the roast.",
+        "Cover and cook on low for 8–9 hours or high for 5–6 hours, until fork-tender.",
+        "Shred the beef and stir it through the vegetables and sauce.",
+        "Serve over potatoes, rice, noodles, or toasted rolls."
+      ],
+      "description": "An original shredded-beef dinner combining ranch herbs, smoked paprika, peppers, and a savory tomato-beef sauce.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "8–9 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000008"
+    },
+    {
+      "name": "Classic BBQ Pulled Pork",
+      "category": "Main Course – Pork",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Pulled Pork",
+        "Barbecue",
+        "Sandwiches",
+        "Cross-Link"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "pounds",
+              "item": "boneless pork shoulder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large onion, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "barbecue sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Sweet-and-Smoky Rib Rub",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "sandwich buns",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the onion in the slow cooker. Coat the pork with the rib rub and set it on top.",
+        "Whisk the barbecue sauce, broth, vinegar, and Worcestershire and pour around the pork.",
+        "Cover and cook on low for 8–10 hours or high for 5–6 hours, until the pork reaches at least 195°F and shreds easily.",
+        "Remove excess fat, shred the pork, and stir it into enough sauce to coat.",
+        "Serve on buns or with your preferred sides."
+      ],
+      "description": "Pork shoulder slowly cooked with onion and a tangy barbecue sauce until tender enough to pile onto sandwiches.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "8–10 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000009"
+    },
+    {
+      "name": "Pork Chops with Onion Gravy",
+      "category": "Main Course – Pork",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Pork Chops",
+        "Gravy",
+        "Comfort Food"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 6,
+              "unit": "",
+              "item": "thick-cut boneless pork chops",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large onion, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "ounces",
+              "item": "mushrooms, sliced",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Classic Poultry Seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cornstarch",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cold water",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Arrange the onion and mushrooms, if using, in the slow cooker and place the pork chops on top.",
+        "Add the broth, Worcestershire, poultry seasoning, and pepper.",
+        "Cover and cook on low for 5–6 hours or high for 3–4 hours, until tender and the pork reaches at least 145°F.",
+        "Transfer the chops to a plate. Whisk the cornstarch with cold water and stir it into the liquid.",
+        "Cook on high for 10–15 minutes, until thickened, then return the chops to the gravy."
+      ],
+      "description": "Tender pork chops slowly cooked with onions, mushrooms, and a savory homemade-style gravy.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "5–6 hours",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000010"
+    },
+    {
+      "name": "Apple-Butter Pork Loin",
+      "category": "Main Course – Pork",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Original Creation",
+        "Pork Loin",
+        "Apple"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "boneless pork loin roast",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "apple butter",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Season the pork loin with salt and pepper and place it in the slow cooker.",
+        "Whisk the apple butter, Dijon, vinegar, garlic, thyme, cinnamon, and broth. Pour over the pork.",
+        "Cover and cook on low for 4–6 hours, checking early, until the center reaches 145°F.",
+        "Transfer the pork to a cutting board and rest for 10 minutes.",
+        "Slice and spoon the apple-butter sauce over the top."
+      ],
+      "description": "An original sweet-savory pork loin glazed with apple butter, Dijon, garlic, and warm herbs.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "4–6 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000011"
+    },
+    {
+      "name": "Kielbasa, Sauerkraut, and Potatoes",
+      "category": "Main Course – Pork",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Kielbasa",
+        "Potatoes",
+        "Classic"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "kielbasa, cut into 2-inch pieces",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "baby potatoes, halved",
+              "scalable": true
+            },
+            {
+              "quantity": 32,
+              "unit": "ounces",
+              "item": "sauerkraut, drained",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "apple, peeled and sliced",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Spicy Brown Mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the potatoes and onion in the slow cooker. Add the sauerkraut and apple, if using.",
+        "Arrange the kielbasa over the top.",
+        "Whisk the broth, mustard, brown sugar, and pepper and pour into the cooker.",
+        "Cover and cook on low for 6–7 hours or high for 3–4 hours, until the potatoes are tender and the sausage reaches 160°F.",
+        "Stir gently before serving."
+      ],
+      "description": "Smoky kielbasa, tender potatoes, sauerkraut, and onion slowly cooked with mustard and apple.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "6–7 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000012"
+    },
+    {
+      "name": "Sausage, Potatoes, and Green Beans",
+      "category": "Main Course – Pork",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Sausage",
+        "Potatoes",
+        "Green Beans",
+        "One-Pot"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "smoked sausage, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "baby potatoes, halved",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "pounds",
+              "item": "fresh green beans, trimmed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Creole-Style All-Purpose Seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the potatoes and onion in the slow cooker and season with half of the Creole-style seasoning.",
+        "Add the sausage, green beans, broth, butter, remaining seasoning, and black pepper.",
+        "Cover and cook on low for 6–7 hours or high for 3–4 hours, until the potatoes and beans are tender and the sausage reaches 160°F.",
+        "Stir gently and taste before adding any additional salt."
+      ],
+      "description": "A simple one-pot meal of smoked sausage, tender potatoes, green beans, onion, and savory seasoning.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "6–7 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000013"
+    },
+    {
+      "name": "Chicken and Stuffing",
+      "category": "Main Course – Poultry",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Chicken",
+        "Stuffing",
+        "Comfort Food"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "boneless skinless chicken breasts or thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 12,
+              "unit": "ounces",
+              "item": "dry seasoned stuffing mix",
+              "scalable": true
+            },
+            {
+              "quantity": 10.5,
+              "unit": "ounces",
+              "item": "condensed cream of chicken soup",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "sour cream",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "Classic Poultry Seasoning",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Season the chicken with salt and pepper and arrange it in the slow cooker.",
+        "Whisk the soup, sour cream, ½ cup broth, and poultry seasoning and spread over the chicken.",
+        "Toss the stuffing mix with the remaining broth and spread it evenly over the sauce.",
+        "Cover and cook on low for 4–6 hours or high for 2½–3½ hours, until the chicken reaches 165°F.",
+        "Let stand uncovered for 10 minutes before serving."
+      ],
+      "description": "Tender chicken baked slowly beneath a creamy, savory stuffing layer for an easy comfort-food dinner.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "4–6 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000014"
+    },
+    {
+      "name": "Creamy White Chicken Chili",
+      "category": "Soups & Stews",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Chili",
+        "Chicken",
+        "Beans",
+        "Creamy"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "boneless skinless chicken breasts or thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cans",
+              "item": "great northern or cannellini beans, drained",
+              "scalable": true,
+              "displayQuantity": "15-ounce cans"
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "corn kernels",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cans",
+              "item": "diced green chiles",
+              "scalable": true,
+              "displayQuantity": "4-ounce cans"
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "ground cumin",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "ounces",
+              "item": "cream cheese, softened",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "shredded Monterey Jack cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "sour cream",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the chicken, beans, corn, green chiles, onion, broth, cumin, garlic powder, onion powder, and oregano in the slow cooker.",
+        "Cover and cook on low for 5–6 hours or high for 3–4 hours, until the chicken reaches 165°F.",
+        "Remove and shred the chicken, then return it to the cooker.",
+        "Stir in the cream cheese, Monterey Jack, and sour cream. Cover and cook on high for 15–20 minutes, stirring occasionally, until smooth.",
+        "Taste and adjust the seasoning before serving."
+      ],
+      "description": "Chicken, white beans, corn, and green chiles slowly cooked with cumin and finished with a creamy, cheesy base.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "5–6 hours",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000015"
+    },
+    {
+      "name": "Creamy Chicken Tacos",
+      "category": "Main Course – Poultry",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Tacos",
+        "Chicken",
+        "Easy"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "boneless skinless chicken breasts or thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "salsa",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "ounces",
+              "item": "cream cheese, cubed",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Everyday Taco Seasoning",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 12,
+              "unit": "",
+              "item": "flour or corn tortillas",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the chicken in the slow cooker and sprinkle with taco seasoning, if using.",
+        "Pour the salsa over the chicken.",
+        "Cover and cook on low for 4–6 hours or high for 2½–3½ hours, until the chicken reaches 165°F.",
+        "Shred the chicken, add the cream cheese, and stir until smooth. Cover for 10 minutes if needed to finish melting.",
+        "Serve in tortillas, over rice, or in bowls."
+      ],
+      "description": "Three-ingredient salsa chicken cooked until shreddable, then finished with cream cheese for tacos and rice bowls.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "4–6 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000016"
+    },
+    {
+      "name": "Honey Garlic Chicken",
+      "category": "Main Course – Poultry",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Chicken",
+        "Honey Garlic",
+        "Asian-Inspired"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "pounds",
+              "item": "boneless skinless chicken thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "honey",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "low-sodium soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "ketchup",
+              "scalable": true
+            },
+            {
+              "quantity": 5,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "fresh ginger, grated",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "rice vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "cornstarch",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "cold water",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Arrange the chicken in the slow cooker.",
+        "Whisk the honey, soy sauce, ketchup, garlic, ginger, and vinegar and pour over the chicken.",
+        "Cover and cook on low for 4–5 hours or high for 2½–3 hours, until the chicken reaches 165°F.",
+        "Transfer the chicken to a plate. Stir together the cornstarch and cold water and whisk it into the sauce.",
+        "Cook on high for 10–15 minutes, until thickened, then return the chicken and turn to coat."
+      ],
+      "description": "Tender chicken coated in a sweet-savory soy, honey, garlic, and ginger sauce.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "4–5 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000017"
+    },
+    {
+      "name": "Chicken and Drop Dumplings",
+      "category": "Soups & Stews",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Chicken",
+        "Dumplings",
+        "Comfort Food"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "pounds",
+              "item": "boneless skinless chicken thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "carrots, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "celery stalks, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Classic Poultry Seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cold butter, cut in",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "buttermilk",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the chicken, onion, carrots, celery, broth, poultry seasoning, and pepper in the slow cooker.",
+        "Cover and cook on low for 6–7 hours or high for 3½–4 hours, until the chicken reaches 165°F. Shred the chicken in the cooker.",
+        "Whisk the flour, baking powder, and salt. Cut in the butter, then stir in the buttermilk just until a soft dough forms.",
+        "Set the cooker to high. Drop heaping tablespoons of dough over the simmering stew, leaving space between them.",
+        "Cover and cook for 45–60 minutes without lifting the lid, until the dumplings are cooked through and no raw dough remains."
+      ],
+      "description": "A comforting chicken stew with vegetables, herbs, and tender buttermilk drop dumplings.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "7–8 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000018"
+    },
+    {
+      "name": "Classic Chicken Noodle Soup",
+      "category": "Soups & Stews",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Soup",
+        "Chicken",
+        "Classic"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "boneless skinless chicken thighs or breasts",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "carrots, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "celery stalks, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "bay leaf",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "ounces",
+              "item": "wide egg noodles",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the chicken, onion, carrots, celery, garlic, broth, thyme, parsley, bay leaf, salt, and pepper in the slow cooker.",
+        "Cover and cook on low for 6–7 hours or high for 3–4 hours, until the chicken reaches 165°F.",
+        "Remove the chicken, shred it, and return it to the cooker. Discard the bay leaf.",
+        "Set the cooker to high, stir in the noodles, and cook for 15–30 minutes, until tender.",
+        "Serve promptly so the noodles do not continue absorbing the broth."
+      ],
+      "description": "Chicken, carrots, celery, onion, herbs, and egg noodles in a clear, comforting broth.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "6–7 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000019"
+    },
+    {
+      "name": "Lemon-Herb Chicken and Potatoes",
+      "category": "Main Course – Poultry",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Chicken",
+        "Potatoes",
+        "Lemon",
+        "Cross-Link"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "pounds",
+              "item": "bone-in or boneless chicken thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "baby potatoes, halved",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "Classic Italian Seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "lemon, zested and juiced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the potatoes and onion in the slow cooker.",
+        "Season the chicken with salt, pepper, and Italian seasoning and arrange it over the potatoes.",
+        "Add the garlic, broth, lemon zest, and lemon juice.",
+        "Cover and cook on low for 5–6 hours or high for 3–4 hours, until the chicken reaches 165°F and the potatoes are tender.",
+        "For browned skin, transfer bone-in thighs to a baking sheet and broil briefly, watching closely."
+      ],
+      "description": "Chicken and baby potatoes slowly cooked with garlic, lemon, broth, and Italian herbs.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "5–6 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000020"
+    },
+    {
+      "name": "Garlic-Parmesan Chicken and Potatoes",
+      "category": "Main Course – Poultry",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Original Creation",
+        "Chicken",
+        "Potatoes",
+        "Creamy",
+        "Cross-Link"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "pounds",
+              "item": "boneless skinless chicken thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "baby potatoes, halved",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Garlic-Herb All-Purpose Seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "grated Parmesan cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "fresh spinach",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the potatoes in the slow cooker and arrange the chicken over them.",
+        "Add the broth, garlic-herb seasoning, garlic, and black pepper.",
+        "Cover and cook on low for 5–6 hours or high for 3–4 hours, until the chicken reaches 165°F and the potatoes are tender.",
+        "Stir in the cream and Parmesan. Add the spinach, if using.",
+        "Cover and cook on high for 15–20 minutes, until the sauce is smooth and the spinach wilts."
+      ],
+      "description": "An original creamy garlic-Parmesan chicken and potato dinner finished with spinach and a spoonable sauce.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "5–6 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000021"
+    },
+    {
+      "name": "Maple-Dijon Chicken with Sweet Potatoes",
+      "category": "Main Course – Poultry",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Original Creation",
+        "Chicken",
+        "Sweet Potatoes",
+        "Maple"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "pounds",
+              "item": "boneless skinless chicken thighs",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "sweet potatoes, peeled and cut into 1-inch pieces",
+              "scalable": true
+            },
+            {
+              "quantity": 0.3333333333,
+              "unit": "cups",
+              "item": "maple syrup",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the sweet potatoes in the slow cooker and arrange the chicken over them.",
+        "Whisk the maple syrup, Dijon, broth, vinegar, garlic, thyme, salt, and pepper.",
+        "Pour the sauce over the chicken and potatoes.",
+        "Cover and cook on low for 5–6 hours or high for 3–4 hours, until the chicken reaches 165°F and the sweet potatoes are tender.",
+        "Spoon the sauce over each serving."
+      ],
+      "description": "An original sweet-savory combination of chicken, sweet potatoes, maple syrup, Dijon, thyme, and garlic.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "5–6 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000022"
+    },
+    {
+      "name": "Slow Cooker Lazy Lasagna",
+      "category": "Main Course",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Pasta",
+        "Lasagna",
+        "Easy",
+        "Cross-Link"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "ground beef or Italian sausage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "spaghetti or marinara sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 25,
+              "unit": "ounces",
+              "item": "frozen cheese ravioli",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "shredded mozzarella cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "grated Parmesan cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Classic Italian Seasoning",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the meat and onion in a skillet until the meat reaches 160°F. Drain excess grease and stir in the Italian seasoning.",
+        "Spread 1 cup sauce in the slow cooker. Layer half the frozen ravioli, half the meat, 1 cup mozzarella, and more sauce.",
+        "Repeat the layers and finish with the remaining sauce and mozzarella. Sprinkle with Parmesan.",
+        "Cover and cook on low for 3½–4½ hours, until the ravioli are tender and the center reaches 165°F.",
+        "Turn off the cooker and rest for 15 minutes before serving."
+      ],
+      "description": "An easy layered lasagna made with cheese ravioli, meat sauce, mozzarella, and Parmesan.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "4 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000023"
+    },
+    {
+      "name": "Slow Cooker Baked Ziti",
+      "category": "Main Course",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Pasta",
+        "Casserole",
+        "Italian-Inspired"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "ground beef or Italian sausage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "spaghetti or marinara sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "water",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "dry ziti or penne",
+              "scalable": true
+            },
+            {
+              "quantity": 15,
+              "unit": "ounces",
+              "item": "ricotta cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "shredded mozzarella cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "grated Parmesan cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Classic Italian Seasoning",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the meat and onion until the meat reaches 160°F. Drain and stir in the Italian seasoning.",
+        "Combine the meat, sauce, water, and dry pasta in the slow cooker, making sure the pasta is mostly submerged.",
+        "Cover and cook on low for 2–3 hours, stirring after 1 hour, until the pasta is barely tender.",
+        "Dollop ricotta over the pasta and top with mozzarella and Parmesan.",
+        "Cover and cook for 20–30 minutes more, until the cheese melts and the center reaches 165°F."
+      ],
+      "description": "Ziti, seasoned meat sauce, ricotta, mozzarella, and Parmesan cooked together into a hearty pasta casserole.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "3 hours",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000024"
+    },
+    {
+      "name": "Creamy Tomato Beef Tortellini",
+      "category": "Main Course",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Original Creation",
+        "Pasta",
+        "Beef",
+        "Creamy"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1.5,
+              "unit": "pounds",
+              "item": "ground beef",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "tomato or marinara sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Classic Italian Seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 20,
+              "unit": "ounces",
+              "item": "refrigerated cheese tortellini",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "grated Parmesan cheese",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the beef and onion until the beef reaches 160°F. Drain well.",
+        "Add the beef, garlic, sauce, broth, and Italian seasoning to the slow cooker.",
+        "Cover and cook on low for 4–5 hours or high for 2–3 hours.",
+        "Stir in the tortellini and cook on high for 20–30 minutes, until tender.",
+        "Stir in the cream and Parmesan and cook for 10 minutes more, until smooth and hot."
+      ],
+      "description": "An original slow-cooker dinner of seasoned beef, cheese tortellini, tomato sauce, cream, and Parmesan.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "4–5 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000025"
+    },
+    {
+      "name": "Loaded Baked Potato Soup",
+      "category": "Soups & Stews",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Soup",
+        "Potatoes",
+        "Creamy"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "russet potatoes, peeled and diced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "whole milk or half-and-half",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "sour cream",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "bacon, cooked and crumbled",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "green onions, sliced",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the potatoes, onion, broth, garlic powder, salt, and pepper in the slow cooker.",
+        "Cover and cook on low for 6–7 hours or high for 3–4 hours, until the potatoes are very tender.",
+        "Mash some of the potatoes in the cooker, leaving the rest chunky.",
+        "Stir in the milk, cheddar, sour cream, and half the bacon. Cook on high for 15–20 minutes, until hot and creamy.",
+        "Serve topped with the remaining bacon and green onions."
+      ],
+      "description": "A thick, creamy potato soup finished with cheddar, sour cream, bacon, and green onions.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "6–7 hours",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000026"
+    },
+    {
+      "name": "Broccoli Cheddar Soup",
+      "category": "Soups & Stews",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Soup",
+        "Broccoli",
+        "Cheese",
+        "Vegetarian Option"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 6,
+              "unit": "cups",
+              "item": "broccoli florets, chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "shredded carrots",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "half-and-half",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "shredded sharp cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cornstarch",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "cold water",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the broccoli, carrots, onion, broth, garlic powder, salt, and pepper in the slow cooker.",
+        "Cover and cook on low for 4–5 hours or high for 2–3 hours, until the vegetables are tender.",
+        "Blend a portion of the soup with an immersion blender, leaving some texture.",
+        "Whisk the cornstarch with cold water and stir it in with the half-and-half. Cook on high for 15 minutes.",
+        "Reduce to warm and gradually stir in the cheddar until melted; do not boil after adding the cheese."
+      ],
+      "description": "Tender broccoli and carrots in a creamy cheddar soup with a smooth, comforting finish.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "4–5 hours",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000027"
+    },
+    {
+      "name": "Ham and White Bean Soup",
+      "category": "Soups & Stews",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Soup",
+        "Ham",
+        "Beans",
+        "Classic"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "cans",
+              "item": "great northern beans, drained and rinsed",
+              "scalable": true,
+              "displayQuantity": "15-ounce cans"
+            },
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "meaty ham bone or 4 cups diced cooked ham",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "carrots, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "celery stalks, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 6,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "bay leaf",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "salt, to taste",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Add the beans, ham, onion, carrots, celery, garlic, broth, thyme, bay leaf, and pepper to the slow cooker.",
+        "Cover and cook on low for 6–8 hours or high for 3–4 hours, until the vegetables are tender and the flavors have developed.",
+        "Remove the ham bone. Shred any meat and return it to the soup; discard the bone and bay leaf.",
+        "Taste before adding salt because the ham and broth may already be salty.",
+        "Mash a small portion of the beans into the broth if you prefer a thicker soup."
+      ],
+      "description": "A hearty soup of ham, white beans, vegetables, broth, and herbs slowly cooked until rich and tender.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "6–8 hours",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000028"
+    },
+    {
+      "name": "Vegetable Beef Soup",
+      "category": "Soups & Stews",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Soup",
+        "Beef",
+        "Vegetables",
+        "Classic"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "beef stew meat",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "neutral oil",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "carrots, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "celery stalks, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "pounds",
+              "item": "potatoes, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "green beans, cut",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "corn",
+              "scalable": true
+            },
+            {
+              "quantity": 28,
+              "unit": "ounces",
+              "item": "diced tomatoes",
+              "scalable": true
+            },
+            {
+              "quantity": 6,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "tomato paste",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "bay leaf",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the beef in oil in batches and transfer it to the slow cooker.",
+        "Add the onion, carrots, celery, potatoes, green beans, corn, tomatoes, broth, tomato paste, thyme, parsley, bay leaf, salt, and pepper.",
+        "Cover and cook on low for 7–9 hours or high for 4–5 hours, until the beef and potatoes are tender.",
+        "Discard the bay leaf, taste, and adjust the seasoning before serving."
+      ],
+      "description": "Tender beef, potatoes, mixed vegetables, tomatoes, and herbs simmered into a satisfying family soup.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "7–9 hours",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000029"
+    },
+    {
+      "name": "Gochujang-Honey Pulled Pork",
+      "category": "Main Course – Pork",
+      "tags": [
+        "Slow Cooker",
+        "Dinner",
+        "Original Creation",
+        "Korean-Inspired",
+        "Pulled Pork",
+        "Cross-Link"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "pounds",
+              "item": "boneless pork shoulder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "Sweet-Savory Gochujang Sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "honey",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "rice vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "fresh ginger, grated",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "green onions, sliced",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the pork in the slow cooker.",
+        "Whisk the gochujang sauce, honey, soy sauce, vinegar, garlic, ginger, and broth. Pour over the pork.",
+        "Cover and cook on low for 8–10 hours or high for 5–6 hours, until the pork reaches at least 195°F and shreds easily.",
+        "Remove excess fat, shred the pork, and stir it into the sauce.",
+        "Serve in rice bowls, tacos, lettuce wraps, or sandwiches and garnish with green onions, if desired."
+      ],
+      "description": "An original pulled pork with gochujang, honey, soy, garlic, ginger, and vinegar for bowls, tacos, or sandwiches.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "8–10 hours",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy5-00000030"
+    }
+  ]
+}

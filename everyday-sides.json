@@ -1,0 +1,2716 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "kc-rndy3",
+  "name": "Everyday Sides",
+  "version": "1.0.0",
+  "publisher": "Randy & Family",
+  "license": "Private family use",
+  "description": "A versatile collection of potatoes, salads, slaws, vegetables, casseroles, rice, noodles, holiday favorites, and classic breads for completing family meals.",
+  "recipes": [
+    {
+      "name": "Creamy Southern Potato Salad",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Potatoes",
+        "Salad",
+        "Cookout",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "Yukon Gold or russet potatoes, peeled and cut into 1-inch pieces",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "mayonnaise",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "yellow mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "sweet pickle relish",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "finely diced celery",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "finely diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "paprika",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the potatoes in a large pot, cover with cold salted water, and bring to a boil. Cook for 10–15 minutes, until fork-tender but not falling apart.",
+        "Meanwhile, hard-boil the eggs, cool them in ice water, peel, and chop.",
+        "Drain the potatoes well and toss them gently with the vinegar while still warm. Cool for 15 minutes.",
+        "Whisk the mayonnaise, mustard, relish, salt, and pepper. Fold in the potatoes, eggs, celery, and onion.",
+        "Cover and refrigerate for at least 2 hours. Sprinkle with paprika before serving, if desired."
+      ],
+      "description": "Tender potatoes, eggs, celery, and onion folded into a tangy mustard dressing for cookouts and family dinners.",
+      "notes": "",
+      "prepTime": "20 minutes plus chilling",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000001"
+    },
+    {
+      "name": "Classic Creamy Coleslaw",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Slaw",
+        "Salad",
+        "Cookout",
+        "No-Cook"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "cups",
+              "item": "finely shredded green cabbage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "shredded carrots",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "finely sliced onion",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "mayonnaise",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "milk",
+              "scalable": true,
+              "displayQuantity": "1–2"
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the cabbage, carrots, and onion, if using, in a large bowl.",
+        "Whisk the mayonnaise, vinegar, sugar, mustard, salt, pepper, and enough milk to make a pourable dressing.",
+        "Pour the dressing over the vegetables and toss thoroughly.",
+        "Cover and refrigerate for at least 1 hour. Toss again before serving."
+      ],
+      "description": "Crisp cabbage and carrots dressed in a balanced creamy sauce with gentle sweetness and tang.",
+      "notes": "",
+      "prepTime": "15 minutes plus chilling",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000002"
+    },
+    {
+      "name": "Sweet-and-Tangy Vinegar Slaw",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Slaw",
+        "Salad",
+        "Cookout",
+        "Dairy-Free"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "cups",
+              "item": "shredded cabbage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "shredded carrots",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "thinly sliced bell pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "thinly sliced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "neutral oil",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "celery seed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the cabbage, carrots, bell pepper, and onion in a large bowl.",
+        "Whisk the vinegar, oil, sugar, celery seed, salt, and pepper until the sugar dissolves.",
+        "Pour over the vegetables and toss well.",
+        "Cover and refrigerate for at least 2 hours, tossing occasionally. Drain excess dressing before serving if desired."
+      ],
+      "description": "A bright, mayo-free cabbage slaw with a lightly sweet vinegar dressing that holds well at picnics.",
+      "notes": "",
+      "prepTime": "15 minutes plus chilling",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000003"
+    },
+    {
+      "name": "Homestyle Macaroni Salad",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Pasta",
+        "Salad",
+        "Cookout",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "elbow macaroni",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "large eggs, hard-boiled and chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "mayonnaise",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "yellow mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "diced celery",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "diced bell pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Cook the macaroni in salted water until just tender. Drain, rinse under cool water, and drain thoroughly.",
+        "Whisk the mayonnaise, vinegar, mustard, sugar, salt, and pepper.",
+        "Combine the macaroni, eggs, celery, bell pepper, and onion. Fold in the dressing.",
+        "Cover and chill for at least 2 hours. Stir before serving and add a spoonful of mayonnaise if the salad has absorbed too much dressing."
+      ],
+      "description": "Tender macaroni with eggs, celery, peppers, and a creamy sweet-tangy dressing.",
+      "notes": "",
+      "prepTime": "20 minutes plus chilling",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000004"
+    },
+    {
+      "name": "Italian Pasta Salad",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Pasta",
+        "Salad",
+        "Make-Ahead",
+        "Italian-Inspired"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "rotini pasta",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "halved cherry tomatoes",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "cucumber, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "bell pepper, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "sliced black olives",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "ounces",
+              "item": "small mozzarella pearls",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "olive oil",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "red wine vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Cook the pasta in salted water until al dente. Drain and rinse briefly under cool water.",
+        "Whisk the olive oil, vinegar, Dijon, oregano, garlic powder, salt, and pepper.",
+        "Combine the pasta, tomatoes, cucumber, bell pepper, olives, and mozzarella.",
+        "Toss with the dressing, cover, and refrigerate for at least 1 hour. Toss again before serving."
+      ],
+      "description": "Rotini tossed with tomatoes, cucumber, peppers, olives, mozzarella, and a lively herb vinaigrette.",
+      "notes": "",
+      "prepTime": "20 minutes plus chilling",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000005"
+    },
+    {
+      "name": "Classic Deviled Eggs",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Eggs",
+        "Holiday",
+        "Make-Ahead",
+        "Gluten-Free"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 12,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "mayonnaise",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "yellow or Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "pickle juice or white vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "paprika",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the eggs in a saucepan, cover with cool water, and bring to a boil. Cover, remove from the heat, and let stand for 11–12 minutes.",
+        "Transfer the eggs to ice water, cool completely, and peel.",
+        "Halve the eggs lengthwise and place the yolks in a bowl. Mash with the mayonnaise, mustard, pickle juice, salt, and pepper until smooth.",
+        "Spoon or pipe the filling into the whites. Dust with paprika, if desired, and chill until serving."
+      ],
+      "description": "Creamy, mustardy egg filling piped into tender whites and finished with paprika.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 24,
+        "unit": "halves"
+      },
+      "id": "kc-rndy3-00000006"
+    },
+    {
+      "name": "Loaded Twice-Baked Potatoes",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Potatoes",
+        "Cheesy",
+        "Holiday"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "large russet potatoes",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "olive oil",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "sour cream",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "shredded cheddar cheese, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 6,
+              "unit": "slices",
+              "item": "bacon, cooked and crumbled",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "chopped chives",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 400°F. Rub the potatoes with olive oil, pierce them, and bake for 50–60 minutes, until tender.",
+        "Cool just enough to handle. Cut each potato in half lengthwise and scoop the flesh into a bowl, leaving sturdy shells.",
+        "Mash the potato with butter, sour cream, milk, 1 cup cheese, most of the bacon, chives, salt, and pepper.",
+        "Spoon the filling into the shells and top with the remaining cheese and bacon.",
+        "Bake for 15–20 minutes, until hot and lightly browned."
+      ],
+      "description": "Crisp potato shells filled with buttery mashed potato, cheddar, sour cream, bacon, and chives.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "75 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "potato halves"
+      },
+      "id": "kc-rndy3-00000007"
+    },
+    {
+      "name": "Creamy Scalloped Potatoes",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Potatoes",
+        "Casserole",
+        "Holiday"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "Yukon Gold potatoes, thinly sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1.25,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "ground nutmeg",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 375°F and grease a 9×13-inch baking dish.",
+        "Melt the butter in a saucepan. Add the garlic and flour and cook for 1 minute. Gradually whisk in the milk and cream.",
+        "Simmer for 3–5 minutes, until slightly thickened. Season with salt, pepper, and nutmeg, if using.",
+        "Layer the potatoes in the dish and pour the sauce evenly over them. Cover tightly with foil.",
+        "Bake for 50 minutes. Uncover and bake for 25–35 minutes more, until tender and browned. Rest for 15 minutes before serving."
+      ],
+      "description": "Thin potato slices baked until tender in a silky garlic cream sauce with browned edges.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "85 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000008"
+    },
+    {
+      "name": "Cheesy Potatoes au Gratin",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Potatoes",
+        "Cheesy",
+        "Casserole"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "Yukon Gold potatoes, thinly sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded sharp cheddar cheese, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "grated Parmesan cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 375°F and grease a 9×13-inch baking dish.",
+        "Melt the butter in a saucepan and whisk in the flour. Cook for 2 minutes, then gradually whisk in the milk.",
+        "Cook until slightly thickened. Remove from the heat and stir in 1½ cups cheddar, Parmesan, salt, pepper, and garlic powder.",
+        "Layer the potatoes in the dish and pour the cheese sauce evenly over them. Cover with foil.",
+        "Bake for 55 minutes. Uncover, top with the remaining cheddar, and bake for 25–30 minutes more, until tender and golden. Rest for 15 minutes."
+      ],
+      "description": "Tender sliced potatoes layered with a rich cheddar-Parmesan sauce and baked beneath a golden cheese crust.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "85 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000009"
+    },
+    {
+      "name": "Loaded Mashed Potato Casserole",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Potatoes",
+        "Casserole",
+        "Cheesy",
+        "Holiday"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "pounds",
+              "item": "russet or Yukon Gold potatoes, peeled and cubed",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "sour cream",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded cheddar cheese, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "bacon, cooked and crumbled",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "chopped chives",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place the potatoes in salted water and boil for 15–20 minutes, until very tender. Drain well.",
+        "Mash with the butter, sour cream, milk, 1 cup cheese, half the bacon, salt, and pepper.",
+        "Spread in a greased 9×13-inch baking dish. Top with the remaining cheese and bacon.",
+        "Bake at 375°F for 25–30 minutes, until hot and lightly browned.",
+        "Garnish with chives before serving."
+      ],
+      "description": "Creamy mashed potatoes baked with cheddar, sour cream, bacon, and a golden cheesy top.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "50 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000010"
+    },
+    {
+      "name": "Maple-Cinnamon Sweet Potatoes",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Sweet Potatoes",
+        "Roasted",
+        "Gluten-Free",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "pounds",
+              "item": "sweet potatoes, peeled and cut into 1-inch cubes",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter, melted",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "maple syrup",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "ground nutmeg",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 425°F and line a large baking sheet.",
+        "Toss the sweet potatoes with melted butter, maple syrup, cinnamon, salt, and nutmeg, if using.",
+        "Spread in a single layer.",
+        "Roast for 30–40 minutes, turning halfway through, until browned at the edges and tender."
+      ],
+      "description": "Roasted sweet potato cubes glazed with butter, maple syrup, cinnamon, and a pinch of salt.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "35 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000011"
+    },
+    {
+      "name": "Classic Sweet Potato Casserole",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Sweet Potatoes",
+        "Casserole",
+        "Holiday"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "pounds",
+              "item": "sweet potatoes, peeled and cubed",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "butter, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "brown sugar, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "chopped pecans",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Boil the sweet potatoes in salted water for 15–20 minutes, until very tender. Drain well.",
+        "Preheat the oven to 350°F and grease a 9×13-inch baking dish.",
+        "Mash the potatoes with ¼ cup butter, ¼ cup brown sugar, milk, eggs, vanilla, cinnamon, and salt. Spread in the dish.",
+        "Combine the pecans, flour, remaining brown sugar, and remaining melted butter. Sprinkle over the potatoes.",
+        "Bake for 30–35 minutes, until hot and browned on top."
+      ],
+      "description": "Smooth cinnamon-spiced sweet potatoes baked beneath a buttery brown-sugar pecan topping.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "55 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000012"
+    },
+    {
+      "name": "Homemade Green Bean Casserole",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Green Beans",
+        "Casserole",
+        "Holiday"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "fresh green beans, trimmed and cut",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "ounces",
+              "item": "mushrooms, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "crispy fried onions",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 375°F. Blanch the green beans in boiling salted water for 4 minutes, then cool in ice water and drain.",
+        "Melt the butter in a skillet. Cook the mushrooms for 6–8 minutes, then add the garlic for 30 seconds.",
+        "Stir in the flour and cook for 1 minute. Gradually add the broth and milk. Simmer until thickened; season with salt and pepper.",
+        "Fold in the green beans and half of the fried onions. Transfer to a 9×13-inch baking dish.",
+        "Bake for 20 minutes. Top with the remaining onions and bake for 8–10 minutes more."
+      ],
+      "description": "Green beans and mushrooms in a creamy homemade sauce, topped with crisp fried onions.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "40 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000013"
+    },
+    {
+      "name": "Old-Fashioned Corn Pudding",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Corn",
+        "Casserole",
+        "Holiday",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "corn kernels, fresh or thawed",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "butter, melted",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 350°F and butter a 2½-quart baking dish.",
+        "Whisk the eggs, milk, cream, sugar, flour, melted butter, salt, and pepper until smooth.",
+        "Stir in the corn and pour into the baking dish.",
+        "Bake for 45–55 minutes, until lightly golden and just set in the center.",
+        "Rest for 10 minutes before serving."
+      ],
+      "description": "A soft, custardy corn casserole with buttery edges and gentle natural sweetness.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "50 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000014"
+    },
+    {
+      "name": "Creamed Corn",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Corn",
+        "Skillet",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 5,
+              "unit": "cups",
+              "item": "corn kernels",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "granulated sugar",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "water",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Melt the butter in a large skillet over medium heat. Add the corn and cook for 3 minutes.",
+        "Stir in the cream, milk, sugar, salt, and pepper. Simmer gently for 8–10 minutes.",
+        "Whisk the flour with the water until smooth. Stir it into the corn and simmer for 2–3 minutes, until lightly thickened.",
+        "Taste and adjust the seasoning before serving."
+      ],
+      "description": "Sweet corn simmered in a rich, lightly thickened cream sauce with butter and black pepper.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000015"
+    },
+    {
+      "name": "Skillet Bacon Corn",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Corn",
+        "Bacon",
+        "Skillet",
+        "Quick"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 6,
+              "unit": "slices",
+              "item": "bacon, chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 5,
+              "unit": "cups",
+              "item": "corn kernels",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Cook the bacon in a large skillet until crisp. Transfer to a paper towel-lined plate, leaving 2 tablespoons drippings.",
+        "Cook the onion in the drippings for 3–4 minutes, until softened.",
+        "Add the corn, butter, paprika, salt, and pepper. Cook for 6–8 minutes, stirring occasionally, until hot and lightly browned.",
+        "Stir in the bacon and serve."
+      ],
+      "description": "Sweet corn sautéed with crisp bacon, onion, and butter for a fast, savory side.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000016"
+    },
+    {
+      "name": "Slow-Baked Homestyle Beans",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Beans",
+        "Baked",
+        "Cookout",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "cans",
+              "item": "navy or great northern beans, drained",
+              "scalable": true,
+              "displayQuantity": "15-ounce cans"
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "bacon, chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "medium onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "ketchup",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "molasses",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "yellow mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 325°F.",
+        "Cook the bacon in a Dutch oven or oven-safe pot until partly crisp. Add the onion and cook for 5 minutes.",
+        "Stir in the beans, ketchup, brown sugar, molasses, mustard, vinegar, Worcestershire, paprika, and pepper.",
+        "Bake uncovered for 1½–2 hours, stirring once or twice, until thick and bubbling.",
+        "Rest for 10 minutes before serving."
+      ],
+      "description": "Tender beans baked in a sweet, tangy, smoky sauce with bacon and onion.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "110 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000017"
+    },
+    {
+      "name": "Brown Sugar Glazed Carrots",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Carrots",
+        "Skillet",
+        "Holiday",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "carrots, peeled and sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "ground cinnamon",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "water",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the carrots and water in a large skillet. Cover and cook over medium heat for 6–8 minutes, until nearly tender.",
+        "Uncover and drain any excess water.",
+        "Add the butter, brown sugar, salt, and cinnamon, if using.",
+        "Cook for 4–6 minutes, stirring frequently, until the carrots are tender and glazed."
+      ],
+      "description": "Tender carrots coated in a glossy butter and brown-sugar glaze with a touch of cinnamon.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000018"
+    },
+    {
+      "name": "Broccoli Rice Casserole",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Rice",
+        "Broccoli",
+        "Casserole",
+        "Cheesy"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "cooked rice",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "broccoli florets, lightly steamed",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded cheddar cheese, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "crushed buttery crackers",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter, melted",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 375°F and grease a 9×13-inch baking dish.",
+        "Melt 3 tablespoons butter in a saucepan and cook the onion for 4 minutes. Stir in the flour and cook for 1 minute.",
+        "Gradually whisk in the milk. Simmer until thickened, then stir in 1½ cups cheese, salt, garlic powder, and pepper.",
+        "Fold together the rice, broccoli, and cheese sauce. Spread in the dish and top with the remaining cheese.",
+        "Combine the crackers with melted butter and sprinkle over the casserole. Bake for 25–30 minutes, until bubbling and golden."
+      ],
+      "description": "Tender broccoli and rice baked in a creamy cheddar sauce beneath a buttery cracker topping.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "30 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000019"
+    },
+    {
+      "name": "Cheesy Cauliflower Bake",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Cauliflower",
+        "Casserole",
+        "Cheesy",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "cauliflower florets",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "shredded cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "grated Parmesan cheese, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "breadcrumbs",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter, melted",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 400°F. Steam or boil the cauliflower for 5–6 minutes, until barely tender, then drain well.",
+        "Melt 3 tablespoons butter in a saucepan. Whisk in the flour for 1 minute, then gradually add the milk.",
+        "Simmer until thickened. Stir in the cheddar, half the Parmesan, salt, garlic powder, and pepper.",
+        "Combine the cauliflower and cheese sauce in a greased baking dish.",
+        "Mix the breadcrumbs, remaining Parmesan, and melted butter. Sprinkle over the top and bake for 20–25 minutes, until golden."
+      ],
+      "description": "Tender cauliflower baked in a smooth cheddar sauce with a crisp Parmesan breadcrumb topping.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "30 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000020"
+    },
+    {
+      "name": "Savory Herb Bread Dressing",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Bread",
+        "Holiday",
+        "Casserole"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 12,
+              "unit": "cups",
+              "item": "day-old bread cubes",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "diced celery",
+              "scalable": true
+            },
+            {
+              "quantity": 2.5,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true,
+              "displayQuantity": "2–3"
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs, beaten",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "rubbed sage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 350°F and grease a 9×13-inch baking dish.",
+        "Melt the butter in a large skillet. Cook the onion and celery for 8–10 minutes, until softened.",
+        "Place the bread cubes in a large bowl. Add the vegetables, sage, thyme, parsley, salt, and pepper.",
+        "Stir in the eggs and enough broth to moisten the bread without making it soggy.",
+        "Spread in the dish, cover, and bake for 25 minutes. Uncover and bake for 20–25 minutes more, until golden and at least 165°F in the center."
+      ],
+      "description": "Classic oven-baked dressing with buttery bread cubes, celery, onion, sage, and thyme.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "50 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000021"
+    },
+    {
+      "name": "Cranberry-Pecan Herb Dressing",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Bread",
+        "Holiday",
+        "Cranberry"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 12,
+              "unit": "cups",
+              "item": "day-old bread cubes",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "diced celery",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "dried cranberries",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "chopped pecans, toasted",
+              "scalable": true
+            },
+            {
+              "quantity": 2.5,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true,
+              "displayQuantity": "2–3"
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs, beaten",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "rubbed sage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 350°F and grease a 9×13-inch baking dish.",
+        "Melt the butter in a skillet. Cook the onion and celery for 8–10 minutes.",
+        "Combine the bread, vegetables, cranberries, pecans, sage, thyme, salt, and pepper.",
+        "Stir in the eggs and enough broth to evenly moisten the bread.",
+        "Cover and bake for 25 minutes. Uncover and bake for 20–25 minutes more, until golden and at least 165°F in the center."
+      ],
+      "description": "Savory herb dressing brightened with dried cranberries and toasted pecans for holiday meals.",
+      "notes": "",
+      "prepTime": "25 minutes",
+      "cookTime": "50 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000022"
+    },
+    {
+      "name": "Buttered Egg Noodles",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Noodles",
+        "Quick",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 12,
+              "unit": "ounces",
+              "item": "wide egg noodles",
+              "scalable": true
+            },
+            {
+              "quantity": 5,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "grated Parmesan cheese",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "chopped parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Cook the noodles in salted water according to the package directions. Reserve ¼ cup cooking water, then drain.",
+        "Melt the butter in the pot over medium heat. Cook for 2–3 minutes, until lightly browned and nutty-smelling.",
+        "Return the noodles to the pot and toss with the butter, Parmesan, parsley, salt, and pepper.",
+        "Add a splash of reserved cooking water if needed and serve immediately."
+      ],
+      "description": "Tender egg noodles tossed with browned butter, parsley, and a touch of Parmesan.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "12 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000023"
+    },
+    {
+      "name": "Classic Rice Pilaf",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Rice",
+        "Stovetop",
+        "Foundation"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "long-grain white rice",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "finely diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 3.5,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "chopped parsley",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Rinse the rice under cool water and drain well.",
+        "Melt the butter in a saucepan over medium heat. Cook the onion for 4 minutes, then add the garlic for 30 seconds.",
+        "Add the rice and stir for 2–3 minutes, until lightly toasted.",
+        "Add the broth, salt, and pepper. Bring to a boil, cover, reduce the heat to low, and cook for 16–18 minutes.",
+        "Remove from the heat and rest, covered, for 10 minutes. Fluff with a fork and add parsley, if using."
+      ],
+      "description": "Fluffy long-grain rice toasted with onion and butter, then simmered in savory broth.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "30 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000024"
+    },
+    {
+      "name": "Mushroom Wild Rice",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Rice",
+        "Mushrooms",
+        "Holiday",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "wild-rice blend",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 12,
+              "unit": "ounces",
+              "item": "mushrooms, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "small onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Cook the wild-rice blend in the broth according to package timing, until tender. Drain any excess liquid.",
+        "Meanwhile, melt the butter in a large skillet over medium-high heat. Cook the mushrooms without crowding until browned, 7–9 minutes.",
+        "Add the onion and cook for 4 minutes. Add the garlic and thyme and cook for 30 seconds.",
+        "Fold in the cooked rice and season with salt and pepper. Cook for 2 minutes, until hot."
+      ],
+      "description": "Nutty wild-rice blend cooked with browned mushrooms, onion, garlic, and herbs.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "45 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000025"
+    },
+    {
+      "name": "Garlic-Parmesan Orzo",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Pasta",
+        "Quick",
+        "Cheesy"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "dry orzo pasta",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "grated Parmesan cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "chopped parsley",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Melt the butter in a large saucepan over medium heat. Cook the garlic for 30 seconds.",
+        "Add the orzo and stir for 2 minutes to lightly toast it.",
+        "Add the broth and bring to a simmer. Cook for 8–10 minutes, stirring often, until the orzo is tender and most liquid is absorbed.",
+        "Stir in the milk, Parmesan, salt, and pepper. Cook for 1–2 minutes, until creamy.",
+        "Garnish with parsley, if using, and serve promptly."
+      ],
+      "description": "Small pasta cooked until creamy with broth, garlic, butter, and Parmesan.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000026"
+    },
+    {
+      "name": "Southern Fried Cabbage with Bacon",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Cabbage",
+        "Bacon",
+        "Skillet"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "bacon, chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large onion, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large head green cabbage, cored and chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "crushed red pepper flakes",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "salt, to taste",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Cook the bacon in a large skillet or Dutch oven until crisp. Transfer it to a plate, leaving 2–3 tablespoons drippings.",
+        "Cook the onion in the drippings for 5 minutes. Add the garlic for 30 seconds.",
+        "Add the cabbage, broth, paprika, black pepper, and red pepper, if using. Toss well.",
+        "Cover and cook for 10 minutes. Uncover and cook for 8–12 minutes more, stirring occasionally, until tender and lightly browned.",
+        "Stir in the bacon and taste before adding salt."
+      ],
+      "description": "Tender cabbage sautéed with bacon and onion until savory, lightly sweet, and browned at the edges.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "30 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy3-00000027"
+    },
+    {
+      "name": "Crispy Cornmeal Hush Puppies",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Cornmeal",
+        "Fried",
+        "Cookout"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "yellow cornmeal",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "finely diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large egg",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "buttermilk",
+              "scalable": true,
+              "displayQuantity": "¾–1"
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "neutral oil, for frying",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Heat 2–3 inches of oil in a heavy pot to 350°F.",
+        "Whisk the cornmeal, flour, sugar, baking powder, and salt. Stir in the onion.",
+        "Whisk the egg with ¾ cup buttermilk. Stir into the dry ingredients, adding more buttermilk only until a thick scoopable batter forms.",
+        "Drop rounded tablespoons of batter into the oil without crowding. Fry for 2–3 minutes, turning, until deep golden.",
+        "Drain on a wire rack or paper towels and serve hot."
+      ],
+      "description": "Golden cornmeal fritters with tender centers, mild onion flavor, and crisp ridged edges.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 24,
+        "unit": "hush puppies"
+      },
+      "id": "kc-rndy3-00000028"
+    },
+    {
+      "name": "Skillet Buttermilk Cornbread",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Cornbread",
+        "Bread",
+        "Cast Iron"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "yellow cornmeal",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "granulated sugar",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "buttermilk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "butter, melted",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter, for the skillet",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place a 10-inch cast-iron skillet in the oven and preheat to 425°F.",
+        "Whisk the cornmeal, flour, baking powder, salt, and sugar, if using.",
+        "Whisk the buttermilk, eggs, and melted butter. Stir into the dry ingredients just until combined.",
+        "Carefully remove the hot skillet and add the remaining butter. Swirl to coat, then pour in the batter.",
+        "Bake for 18–24 minutes, until golden and a toothpick comes out clean. Cool for 10 minutes before slicing."
+      ],
+      "description": "A savory, tender cornbread with a crisp buttered crust from a preheated cast-iron skillet.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "22 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "wedges"
+      },
+      "id": "kc-rndy3-00000029"
+    },
+    {
+      "name": "Soft Garlic Dinner Rolls",
+      "category": "Side Dishes",
+      "tags": [
+        "Side Dish",
+        "Bread",
+        "Yeast",
+        "Holiday"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "whole milk, warm",
+              "scalable": true
+            },
+            {
+              "quantity": 2.25,
+              "unit": "teaspoons",
+              "item": "active dry yeast",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large egg",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "butter, melted",
+              "scalable": true
+            },
+            {
+              "quantity": 3.25,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true,
+              "displayQuantity": "3–3¼"
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter, melted, for brushing",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "clove",
+              "item": "garlic, finely minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried parsley",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the warm milk, yeast, and sugar. Rest for 5–10 minutes, until foamy.",
+        "Mix in the egg, ¼ cup melted butter, 3 cups flour, and salt. Knead for 6–8 minutes, adding only enough remaining flour to make a soft dough.",
+        "Place in a greased bowl, cover, and let rise until doubled, 60–90 minutes.",
+        "Divide into 12 balls and arrange in a greased 9×13-inch dish. Cover and rise for 30–45 minutes.",
+        "Bake at 375°F for 18–22 minutes, until golden.",
+        "Combine the brushing butter, garlic, and parsley. Brush over the hot rolls."
+      ],
+      "description": "Pillowy pull-apart rolls brushed with garlic-herb butter for serving beside family dinners.",
+      "notes": "",
+      "prepTime": "25 minutes plus rising",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "rolls"
+      },
+      "id": "kc-rndy3-00000030"
+    }
+  ]
+}

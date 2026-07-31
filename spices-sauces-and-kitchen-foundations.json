@@ -1,0 +1,2442 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "kc-rndy4",
+  "name": "Spices, Sauces & Kitchen Foundations",
+  "version": "1.0.0",
+  "publisher": "Randy & Family",
+  "license": "Private family use",
+  "description": "A practical collection of homemade seasoning blends, mustards, condiments, gravies, dipping sauces, and versatile cooking foundations designed to connect recipes across the kitchen.",
+  "recipes": [
+    {
+      "name": "Creole-Style All-Purpose Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Creole",
+        "All-Purpose",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "ground white pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "cayenne pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine all ingredients in a small bowl.",
+        "Whisk thoroughly, breaking up any clumps.",
+        "Transfer to an airtight spice jar and label with the date.",
+        "Use about 1–2 teaspoons per pound of meat or to taste on vegetables, potatoes, eggs, rice, and soups."
+      ],
+      "description": "A bold, savory blend of paprika, garlic, herbs, and pepper for meats, vegetables, rice, and Southern-style dishes.",
+      "notes": "This is a homemade Creole-style blend, not an exact duplicate of any commercial seasoning. Reduce the salt for more control at the stove.",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000001"
+    },
+    {
+      "name": "Classic Italian Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Italian",
+        "Salt-Free",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "dried basil",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "dried parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried rosemary, lightly crushed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried marjoram",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "crushed red pepper flakes",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine all ingredients and crush lightly between your fingers to even out the texture.",
+        "Store in an airtight spice jar away from heat and light.",
+        "Use 1–2 teaspoons in sauces, marinades, soups, roasted vegetables, or per pound of meat."
+      ],
+      "description": "A balanced salt-free blend of oregano, basil, thyme, rosemary, parsley, and marjoram.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000002"
+    },
+    {
+      "name": "Ranch Seasoning Mix",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Ranch",
+        "Dry Blend",
+        "Dressing Base"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "dry buttermilk powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "dried parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried dill weed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried chives",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients until evenly combined.",
+        "Store in an airtight jar in a cool, dry place according to the storage guidance on the buttermilk powder.",
+        "Use about 3 tablespoons in place of one standard packet of ranch seasoning.",
+        "For dressing, whisk 3 tablespoons seasoning with 1 cup mayonnaise and 1 cup buttermilk, then chill before serving."
+      ],
+      "description": "A tangy herb seasoning for ranch dressing, dips, potatoes, chicken, crackers, and slow-cooker meals.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000003"
+    },
+    {
+      "name": "Greek-Style Citrus Herb Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Greek-Inspired",
+        "Citrus",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried basil",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried rosemary, finely crushed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "granulated garlic",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried minced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried orange peel, finely chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "tomato powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "nutritional yeast",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "sea salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "crushed red pepper flakes",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine all ingredients in a bowl and crush lightly with the back of a spoon or a mortar and pestle.",
+        "Transfer to an airtight jar and shake before each use.",
+        "Use 1–2 teaspoons per pound of chicken, beef, pork, fish, potatoes, or vegetables.",
+        "For a quick marinade, combine 1 tablespoon seasoning with 3 tablespoons olive oil and 1 tablespoon lemon juice."
+      ],
+      "description": "A savory Greek-inspired blend of herbs, garlic, orange peel, tomato, and gentle red-pepper warmth.",
+      "notes": "Inspired by the ingredient profile shown on the commercial label; this is an original homemade approximation, not an exact duplicate. Oil is added only when using the blend so it remains shelf-stable.",
+      "prepTime": "10 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000004"
+    },
+    {
+      "name": "Everyday Taco Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Mexican-Inspired",
+        "Dry Blend",
+        "Meat Seasoning"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "chili powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "ground cumin",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "cayenne pepper",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients together and store in an airtight jar.",
+        "Use 2½–3 tablespoons per pound of ground meat.",
+        "After browning the meat, add the seasoning with ⅔ cup water and simmer until the sauce coats the meat."
+      ],
+      "description": "A dependable blend of chili, cumin, paprika, garlic, and oregano for tacos, rice bowls, and casseroles.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000005"
+    },
+    {
+      "name": "Fajita Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Mexican-Inspired",
+        "Dry Blend",
+        "Marinade Base"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "chili powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "ground cumin",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "cayenne pepper",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine all ingredients and store in an airtight spice jar.",
+        "Use about 2 tablespoons per pound of meat or vegetables.",
+        "For a marinade, combine 2 tablespoons seasoning with 2 tablespoons oil and 2 tablespoons lime juice."
+      ],
+      "description": "A smoky, citrus-friendly seasoning for sliced chicken, steak, shrimp, peppers, and onions.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.5,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000006"
+    },
+    {
+      "name": "Hearty Chili Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Chili",
+        "Dry Blend",
+        "All-Purpose"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "chili powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "ground cumin",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "cayenne pepper",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients together and store in an airtight jar.",
+        "Use 3–4 tablespoons for a family-size pot made with about 2 pounds of meat and 28–30 ounces of tomatoes.",
+        "Add more near the end of cooking only after tasting."
+      ],
+      "description": "A robust seasoning blend for beef, turkey, bean, or vegetable chili with adjustable heat.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000007"
+    },
+    {
+      "name": "Classic Poultry Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Poultry",
+        "Salt-Free",
+        "Holiday",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "rubbed sage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried marjoram",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried rosemary, finely crushed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "ground nutmeg",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine all ingredients and crush to a fine, even texture.",
+        "Store in an airtight jar away from heat and light.",
+        "Use 1–2 teaspoons per pound of poultry or 1–2 teaspoons in gravy and bread dressing."
+      ],
+      "description": "A fragrant salt-free blend of sage, thyme, marjoram, rosemary, and black pepper for poultry, gravy, and dressing.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.375,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000008"
+    },
+    {
+      "name": "Steakhouse Garlic-Pepper Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Beef",
+        "Steak",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "coarsely ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "granulated garlic",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried rosemary, crushed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine all ingredients and store in an airtight jar.",
+        "Pat meat dry, lightly oil it, and season with about 1–1½ teaspoons per pound.",
+        "Allow seasoned steaks to stand for 20–30 minutes before cooking when practical."
+      ],
+      "description": "A coarse, savory blend of salt, cracked pepper, garlic, onion, and herbs for steaks and roasted beef.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.5,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000009"
+    },
+    {
+      "name": "Savory Burger Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Beef",
+        "Burger",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dry mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "smoked paprika",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients together and store in an airtight jar.",
+        "Use about 1 teaspoon per pound of ground meat, or season the outside of formed patties just before cooking.",
+        "Avoid overmixing seasoning into ground meat so burgers remain tender."
+      ],
+      "description": "A balanced garlic, onion, paprika, and pepper blend for burgers, meatloaf, and hamburger steak.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.5,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000010"
+    },
+    {
+      "name": "Homemade Lemon-Pepper Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Citrus",
+        "Dry Blend",
+        "Chicken",
+        "Seafood"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "dried lemon zest, finely ground",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "coarsely ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "onion powder",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Make sure the lemon zest is completely dry before mixing.",
+        "Combine all ingredients and store in an airtight jar.",
+        "Use on chicken, fish, vegetables, potatoes, pasta, or rice."
+      ],
+      "description": "A bright salt-controlled blend of dried lemon zest, cracked pepper, garlic, and onion.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.375,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000011"
+    },
+    {
+      "name": "Garlic-Herb All-Purpose Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Salt-Free",
+        "Garlic",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "granulated garlic",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "dried parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried basil",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried rosemary, crushed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine all ingredients and store in an airtight jar.",
+        "Use 1–2 teaspoons per pound of meat or to taste on vegetables, potatoes, eggs, and bread.",
+        "Add salt separately so each dish can be seasoned accurately."
+      ],
+      "description": "A salt-free everyday blend of garlic, onion, parsley, basil, thyme, and black pepper.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.5,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000012"
+    },
+    {
+      "name": "Blackening Seasoning",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Cajun-Inspired",
+        "Spicy",
+        "Dry Blend"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "white pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "cayenne pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "kosher salt",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients together and store in an airtight jar.",
+        "Lightly coat food with oil or melted butter, then apply about 1 tablespoon seasoning per pound.",
+        "Cook in a hot, well-ventilated skillet or on the grill until properly done."
+      ],
+      "description": "A smoky, peppery blend for developing a deeply seasoned crust on fish, chicken, shrimp, pork, or vegetables.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000013"
+    },
+    {
+      "name": "Sweet-and-Smoky Rib Rub",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Barbecue",
+        "Pork",
+        "Dry Rub"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "brown sugar, packed",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "dry mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "chili powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "cayenne pepper",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Break up the brown sugar, then combine it thoroughly with the remaining ingredients.",
+        "Store in an airtight jar in a cool, dry place.",
+        "Apply about 2 tablespoons per pound of meat, pressing it onto all surfaces.",
+        "For best flavor, refrigerate the seasoned meat for at least 1 hour before cooking."
+      ],
+      "description": "A brown-sugar dry rub with paprika, garlic, mustard, and gentle heat for pork ribs and other barbecue meats.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 1.25,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000014"
+    },
+    {
+      "name": "Pumpkin Pie Spice",
+      "category": "Seasonings & Spice Blends",
+      "tags": [
+        "Kitchen Foundation",
+        "Baking",
+        "Warm Spice",
+        "Salt-Free"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "ground ginger",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "ground nutmeg",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "teaspoons",
+              "item": "ground allspice",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "ground cloves",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients until evenly combined.",
+        "Store in an airtight spice jar away from heat and light.",
+        "Use according to the recipe, or begin with 1 teaspoon per 2 cups of batter, oatmeal, or drink base."
+      ],
+      "description": "A warm baking blend of cinnamon, ginger, nutmeg, allspice, and cloves for pies, oatmeal, breads, and drinks.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.25,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000015"
+    },
+    {
+      "name": "Homemade Ketchup",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Tomato",
+        "Base Sauce",
+        "Cooked"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 12,
+              "unit": "ounces",
+              "item": "tomato paste",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "water",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "ground allspice",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "ground cloves",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients together in a saucepan until smooth.",
+        "Bring to a gentle simmer over medium-low heat.",
+        "Cook for 20–25 minutes, stirring frequently, until thick and glossy.",
+        "Cool completely, transfer to a clean jar, and refrigerate for up to 3 weeks."
+      ],
+      "description": "A smooth tomato ketchup with balanced sweetness, vinegar tang, and warm pantry spices.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "25 minutes",
+      "yield": {
+        "amount": 2,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000016"
+    },
+    {
+      "name": "Quick Homemade Mayonnaise",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Mayonnaise",
+        "Emulsion",
+        "No-Cook"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "large pasteurized egg",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "lemon juice or white vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "neutral oil",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Add the egg, mustard, lemon juice, salt, and oil to a narrow jar just wider than the immersion blender head.",
+        "Place the blender flat on the bottom and blend without moving for 10–15 seconds, until mayonnaise forms at the base.",
+        "Slowly raise and tilt the blender to incorporate the remaining oil.",
+        "Refrigerate immediately in a clean covered jar and use within 4 days."
+      ],
+      "description": "Thick, creamy mayonnaise made quickly with an immersion blender and a neutral-flavored oil.",
+      "notes": "Use a pasteurized egg because the mayonnaise is not cooked. Keep refrigerated and discard if left at room temperature for more than 2 hours.",
+      "prepTime": "5 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 1.25,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000017"
+    },
+    {
+      "name": "Classic Yellow Mustard",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Mustard",
+        "Base Sauce",
+        "Cooked"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "yellow mustard powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "water",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "white vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "ground turmeric",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "paprika",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients in a small saucepan until smooth.",
+        "Bring to a very gentle simmer over low heat.",
+        "Cook for 8–10 minutes, stirring often, until thickened.",
+        "Cool, transfer to a clean jar, and refrigerate for at least 24 hours before using so the flavor mellows. Keep refrigerated for up to 1 month."
+      ],
+      "description": "A smooth, bright, tangy mustard for sandwiches, hot dogs, dressings, and sauces.",
+      "notes": "",
+      "prepTime": "5 minutes plus resting",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 1,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000018"
+    },
+    {
+      "name": "Spicy Brown Mustard",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Mustard",
+        "Coarse",
+        "No-Cook"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "brown mustard seeds",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "yellow mustard seeds",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "water",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "prepared horseradish",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "ground allspice",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the mustard seeds, vinegar, and water in a jar. Cover and soak at room temperature for 24–48 hours.",
+        "Transfer to a blender with the brown sugar, salt, horseradish, and allspice, if using.",
+        "Blend to the desired texture, adding a little water if needed.",
+        "Transfer to a clean jar and refrigerate for 2–3 days before using. Keep refrigerated for up to 1 month."
+      ],
+      "description": "A coarse, assertive mustard with brown mustard seed, vinegar, and a touch of horseradish warmth.",
+      "notes": "",
+      "prepTime": "10 minutes plus soaking",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 1.25,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000019"
+    },
+    {
+      "name": "Creamy Honey Mustard Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Mustard",
+        "Dipping Sauce",
+        "No-Cook"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "mayonnaise",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "honey",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "apple cider vinegar or lemon juice",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients until completely smooth.",
+        "Taste and adjust the balance with additional honey or mustard if desired.",
+        "Cover and refrigerate for at least 30 minutes before serving.",
+        "Store refrigerated for up to 1 week."
+      ],
+      "description": "A creamy sweet-tangy sauce for chicken, sandwiches, salads, salmon, and roasted vegetables.",
+      "notes": "",
+      "prepTime": "5 minutes plus chilling",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 1,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000020"
+    },
+    {
+      "name": "Creamy Chicken-Finger Dipping Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Dipping Sauce",
+        "Chicken",
+        "No-Cook"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "mayonnaise",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "ketchup",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "hot sauce",
+              "scalable": true,
+              "displayQuantity": "1–2",
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients until smooth and evenly colored.",
+        "Cover and refrigerate for at least 2 hours; overnight gives the best flavor.",
+        "Stir before serving and keep refrigerated for up to 1 week."
+      ],
+      "description": "A peppery, tangy mayonnaise-and-ketchup dipping sauce for chicken, fries, burgers, and sandwiches.",
+      "notes": "This noncommercial family dipping sauce is designed for the same general use as popular restaurant chicken sauces.",
+      "prepTime": "5 minutes plus chilling",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.875,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000021"
+    },
+    {
+      "name": "Creamy Burger Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Burger",
+        "Dipping Sauce",
+        "No-Cook"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "mayonnaise",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "ketchup",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "sweet pickle relish",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "yellow mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "pickle juice",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk all ingredients together until smooth.",
+        "Cover and chill for at least 30 minutes.",
+        "Use on burgers, sandwiches, wraps, or as a fry dip. Refrigerate for up to 1 week."
+      ],
+      "description": "A tangy, lightly sweet burger sauce with pickle relish, mustard, and a hint of smoked paprika.",
+      "notes": "",
+      "prepTime": "5 minutes plus chilling",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 1,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000022"
+    },
+    {
+      "name": "Red Enchilada Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Mexican-Inspired",
+        "Cooked Sauce",
+        "Freezer-Friendly"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "neutral oil",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "chili powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "ground cumin",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "dried oregano",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "chicken or vegetable broth",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "ounces",
+              "item": "tomato sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "apple cider vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Heat the oil in a saucepan over medium heat. Whisk in the flour and cook for 1 minute.",
+        "Add the chili powder, cumin, garlic powder, onion powder, and oregano. Cook for 30 seconds.",
+        "Gradually whisk in the broth, then stir in the tomato sauce.",
+        "Simmer for 10–15 minutes, stirring occasionally, until smooth and lightly thickened.",
+        "Stir in the vinegar and salt. Refrigerate for up to 1 week or freeze for up to 3 months."
+      ],
+      "description": "A smooth, savory red chile sauce for enchiladas, casseroles, rice, tacos, and braised meats.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 3,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000023"
+    },
+    {
+      "name": "Thin Restaurant-Style Peanut Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Peanut",
+        "Asian-Inspired",
+        "Dipping Sauce"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "creamy peanut butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "rice vinegar or lime juice",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "toasted sesame oil",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "honey or brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "clove",
+              "item": "garlic, finely grated",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "fresh ginger, finely grated",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "crushed red pepper or chili sauce",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "hot water or broth",
+              "scalable": true,
+              "displayQuantity": "½–¾"
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk the peanut butter, soy sauce, vinegar, sesame oil, honey, garlic, ginger, and chili, if using.",
+        "Gradually whisk in hot water or broth until the sauce reaches a thin, pourable consistency.",
+        "Taste and adjust with additional vinegar, soy sauce, or honey.",
+        "Serve warm or at room temperature. Refrigerate for up to 1 week and thin again after chilling."
+      ],
+      "description": "A smooth, savory peanut sauce designed to drizzle, dip, or stir into hot-pot bowls, noodles, and vegetables.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 1.5,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000024"
+    },
+    {
+      "name": "Sweet-Savory Gochujang Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Korean-Inspired",
+        "Spicy",
+        "Dipping Sauce",
+        "Glaze"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "gochujang paste",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "tablespoons",
+              "item": "soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "rice vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "honey",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "fresh ginger, grated",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "toasted sesame oil",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "water",
+              "scalable": true,
+              "displayQuantity": "1–2"
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "sesame seeds",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk the gochujang, soy sauce, rice vinegar, honey, brown sugar, garlic, ginger, sesame oil, and 1 tablespoon water.",
+        "Add more water as needed for the intended use.",
+        "Stir in sesame seeds, if using.",
+        "Use as a dipping sauce, drizzle, glaze, or stir-fry sauce. Refrigerate for up to 2 weeks."
+      ],
+      "description": "A balanced Korean-inspired sauce combining fermented chile paste with soy, vinegar, honey, garlic, ginger, and sesame.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000025"
+    },
+    {
+      "name": "Everyday Teriyaki Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Japanese-Inspired",
+        "Cooked Sauce",
+        "Glaze"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "soy sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "water",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "honey",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "rice vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "fresh ginger, grated",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "cornstarch",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "cold water, for the slurry",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the soy sauce, ½ cup water, brown sugar, honey, vinegar, garlic, and ginger in a saucepan.",
+        "Bring to a gentle simmer and cook for 3 minutes.",
+        "Whisk the cornstarch with 2 tablespoons cold water. Stir the slurry into the sauce.",
+        "Simmer for 1–2 minutes, until glossy and thickened.",
+        "Cool and refrigerate for up to 2 weeks."
+      ],
+      "description": "A glossy sweet-savory soy and ginger sauce for chicken, beef, salmon, vegetables, and rice bowls.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 1.25,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000026"
+    },
+    {
+      "name": "Creamy Parmesan Alfredo Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Italian-Inspired",
+        "Cream Sauce",
+        "Cheese"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "finely grated Parmesan cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "ground nutmeg",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Melt the butter in a large skillet over medium-low heat. Add the garlic and cook for 30 seconds.",
+        "Pour in the cream and bring to a gentle simmer. Cook for 3–4 minutes; do not boil hard.",
+        "Reduce the heat to low and gradually whisk in the Parmesan until melted and smooth.",
+        "Season with salt, pepper, and nutmeg, if using. Serve immediately or thin with pasta water as needed."
+      ],
+      "description": "A standalone garlic-Parmesan cream sauce for pasta, chicken, vegetables, casseroles, and pizza.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 3,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000027"
+    },
+    {
+      "name": "Homemade Brown Gravy",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Gravy",
+        "Beef",
+        "Cooked Sauce"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "butter or beef drippings",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "beef broth",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Worcestershire sauce",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "salt, to taste",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Melt the butter or drippings in a saucepan over medium heat.",
+        "Whisk in the flour and cook for 3–5 minutes, until medium brown and nutty-smelling.",
+        "Gradually whisk in the broth, then add Worcestershire, onion powder, garlic powder, and pepper.",
+        "Simmer for 5–8 minutes, whisking often, until smooth and thickened.",
+        "Taste before adding salt. Serve hot."
+      ],
+      "description": "A smooth, deeply savory beef gravy for mashed potatoes, hamburger steak, meatloaf, and roasted meats.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 3,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000028"
+    },
+    {
+      "name": "Homemade Chicken Gravy",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Gravy",
+        "Chicken",
+        "Cooked Sauce"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "butter or chicken drippings",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "chicken broth",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "poultry seasoning",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "salt, to taste",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Melt the butter or drippings in a saucepan over medium heat.",
+        "Whisk in the flour and cook for 2–3 minutes without allowing it to become dark.",
+        "Gradually whisk in the broth. Add the poultry seasoning, onion powder, garlic powder, and pepper.",
+        "Simmer for 5–8 minutes, whisking often, until smooth and thickened.",
+        "Taste before adding salt and serve hot."
+      ],
+      "description": "A silky chicken gravy with butter, broth, herbs, and gentle poultry seasoning.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 3,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000029"
+    },
+    {
+      "name": "Garlic-Herb Butter Sauce",
+      "category": "Sauces & Condiments",
+      "tags": [
+        "Kitchen Foundation",
+        "Butter Sauce",
+        "Garlic",
+        "Quick"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "cloves",
+              "item": "garlic, minced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "chopped fresh parsley",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "fresh lemon juice",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "crushed red pepper flakes",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Melt the butter in a small saucepan over medium-low heat.",
+        "Add the garlic and cook for 1–2 minutes, until fragrant but not browned.",
+        "Remove from the heat and stir in the parsley, lemon juice, salt, pepper, and red pepper, if using.",
+        "Use immediately as a finishing sauce, dipping sauce, or cooking base."
+      ],
+      "description": "A quick melted-butter sauce with garlic, parsley, and lemon for bread, pasta, seafood, meat, and vegetables.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "5 minutes",
+      "yield": {
+        "amount": 0.75,
+        "unit": "cups"
+      },
+      "id": "kc-rndy4-00000030"
+    }
+  ]
+}

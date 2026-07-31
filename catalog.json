@@ -23,6 +23,33 @@
       "url": "./breakfast-and-brunch.json"
     },
     {
+      "moduleId": "kc-rndy3",
+      "name": "Everyday Sides",
+      "publisher": "Randy & Family",
+      "version": "1.0.0",
+      "recipeCount": 30,
+      "description": "A versatile collection of potatoes, salads, slaws, vegetables, casseroles, rice, noodles, holiday favorites, and classic breads for completing family meals.",
+      "url": "./everyday-sides.json"
+    },
+    {
+      "moduleId": "kc-rndy4",
+      "name": "Spices, Sauces & Kitchen Foundations",
+      "publisher": "Randy & Family",
+      "version": "1.0.0",
+      "recipeCount": 30,
+      "description": "A practical collection of homemade seasoning blends, mustards, condiments, gravies, dipping sauces, and versatile cooking foundations designed to connect recipes across the kitchen.",
+      "url": "./spices-sauces-and-kitchen-foundations.json"
+    },
+    {
+      "moduleId": "kc-rndy5",
+      "name": "Slow Cooker Favorites",
+      "publisher": "Randy & Family",
+      "version": "1.0.0",
+      "recipeCount": 30,
+      "description": "A dependable collection of classic slow-cooker comfort food, family dinners, soups, sandwiches, pasta, and original flavor-forward creations.",
+      "url": "./slow-cooker-favorites.json"
+    },
+    {
       "moduleId": "starter-kitchen",
       "name": "Starter Kitchen",
       "publisher": "Kitchen Companion",
