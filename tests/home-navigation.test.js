@@ -14,6 +14,9 @@ assert.match(app, /function goHome\(\)/);
 assert.match(app, /currentView = 'all'/);
 assert.match(app, /button\.dataset\.view === 'all'/);
 assert.match(app, /showList\(\)/);
+assert.match(app, /recipeListScrollPosition = window[.]scrollY/);
+assert.match(app, /showList\(\{ restoreScroll:true \}\)/);
+assert.match(app, /requestAnimationFrame\(\(\) => window[.]scrollTo\(\{ top:recipeListScrollPosition/);
 assert.match(styles, /[.]brand-home/);
 
-console.log('Home navigation regression passed: the header brand returns every view to unfiltered All Recipes.');
+console.log('Home navigation regression passed: Home resets the list while recipe Back restores its prior scroll position.');
