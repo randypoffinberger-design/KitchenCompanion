@@ -9,9 +9,18 @@
             "recipeCount": 113,
             "description": "A warmly curated collection of family favorites, from comforting Italian classics and hearty main dishes to homemade breads, sauces, sweets, and drinks.",
             "url": "./recipes-to-fill-the-stomach-and-heart-editorial.json",
-            "replacesModuleIds": [
-                "recipes-to-fill-the-stomach-and-heart"
-            ]
+      "replacesModuleIds": [
+        "recipes-to-fill-the-stomach-and-heart"
+      ]
+    },
+    {
+      "moduleId": "kc-rndy2",
+      "name": "Breakfast & Brunch",
+      "publisher": "Randy & Family",
+      "version": "1.0.0",
+      "recipeCount": 30,
+      "description": "A complete breakfast collection of griddle favorites, egg dishes, hearty gravies, casseroles, handheld meals, breads, and make-ahead mornings.",
+      "url": "./breakfast-and-brunch.json"
     },
     {
       "moduleId": "starter-kitchen",

@@ -1,0 +1,2609 @@
+{
+  "schemaVersion": 1,
+  "moduleId": "kc-rndy2",
+  "name": "Breakfast & Brunch",
+  "version": "1.0.0",
+  "publisher": "Randy & Family",
+  "license": "Private family use",
+  "description": "A complete breakfast collection of griddle favorites, egg dishes, hearty gravies, casseroles, handheld meals, breads, and make-ahead mornings.",
+  "recipes": [
+    {
+      "name": "Fluffy Buttermilk Pancakes",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Griddle",
+        "Family Favorite"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "baking soda",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "buttermilk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "unsalted butter, melted and cooled",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "butter or neutral oil, for the griddle",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk together the flour, sugar, baking powder, baking soda, and salt.",
+        "In a second bowl, whisk the buttermilk, eggs, melted butter, and vanilla, if using.",
+        "Pour the wet mixture into the dry ingredients and fold just until combined. A few small lumps are fine. Rest the batter for 5–10 minutes.",
+        "Heat a lightly greased griddle or skillet over medium heat, about 350°F.",
+        "Pour about ¼ cup batter per pancake. Cook until bubbles rise and the edges look set, 2–3 minutes. Flip and cook for 1–2 minutes, until golden.",
+        "Serve warm with butter, syrup, fruit, or your preferred toppings."
+      ],
+      "description": "Tall, tender pancakes with lightly crisp edges and the gentle tang of buttermilk.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 16,
+        "unit": "pancakes"
+      },
+      "id": "kc-rndy2-00000001"
+    },
+    {
+      "name": "Crisp Belgian-Style Waffles",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Waffles",
+        "Griddle"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs, separated",
+              "scalable": true
+            },
+            {
+              "quantity": 1.75,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter, melted and cooled",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "nonstick cooking spray",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the waffle iron according to the manufacturer’s instructions.",
+        "Whisk the flour, sugar, baking powder, and salt in a large bowl.",
+        "In another bowl, whisk the egg yolks, milk, melted butter, and vanilla. Stir into the dry ingredients just until combined.",
+        "Beat the egg whites to soft peaks, then gently fold them into the batter.",
+        "Lightly coat the waffle iron with cooking spray. Add the amount of batter recommended for your iron and cook until deeply golden and crisp.",
+        "Place finished waffles directly on a wire rack so they remain crisp. Serve warm."
+      ],
+      "description": "Golden waffles with crisp ridges, fluffy centers, and enough structure to hold butter, syrup, or fruit.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "waffles"
+      },
+      "id": "kc-rndy2-00000002"
+    },
+    {
+      "name": "Classic Cinnamon French Toast",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Griddle",
+        "Quick"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "thick-cut brioche, challah, or sandwich bread",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter, for the griddle",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk the eggs, milk, sugar, vanilla, cinnamon, and salt in a shallow dish.",
+        "Heat a large skillet or griddle over medium heat and melt a little of the butter.",
+        "Dip each slice of bread into the custard, allowing it to absorb the mixture without becoming soggy.",
+        "Cook for 2–3 minutes per side, until golden brown and the center is set. Add more butter between batches as needed.",
+        "Serve immediately with powdered sugar, maple syrup, or fresh fruit."
+      ],
+      "description": "Thick slices of bread soaked in a vanilla-cinnamon custard and griddled until golden outside and tender within.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000003"
+    },
+    {
+      "name": "Cinnamon-Apple French Toast Casserole",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Casserole",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "loaf",
+              "item": "brioche or French bread, cut into 1-inch cubes",
+              "scalable": false
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large apples, peeled and diced",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "ground nutmeg",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "brown sugar, for the topping",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "cold butter, cubed",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Grease a 9×13-inch baking dish. Add the bread cubes and scatter the apples evenly over them.",
+        "Whisk the eggs, milk, cream, brown sugar, vanilla, cinnamon, nutmeg, and salt. Pour evenly over the bread.",
+        "Cover and refrigerate for at least 2 hours or overnight.",
+        "Preheat the oven to 350°F. Combine the flour and topping brown sugar, then cut in the cold butter until crumbly. Sprinkle over the casserole.",
+        "Bake uncovered for 45–55 minutes, until golden, puffed, and set in the center. The egg mixture should reach 160°F.",
+        "Rest for 10 minutes before serving."
+      ],
+      "description": "A make-ahead baked French toast layered with cinnamon apples and finished with a crisp brown-sugar topping.",
+      "notes": "",
+      "prepTime": "20 minutes plus chilling",
+      "cookTime": "50 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000004"
+    },
+    {
+      "name": "Flaky Buttermilk Biscuits",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Bread",
+        "Foundation"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2.5,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "baking soda",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "very cold unsalted butter, cubed",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "cold buttermilk",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "melted butter, for brushing",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 450°F. Line a baking sheet with parchment paper.",
+        "Whisk the flour, baking powder, baking soda, and salt. Cut in the cold butter until the largest pieces are pea-sized.",
+        "Add the buttermilk and stir just until a shaggy dough forms.",
+        "Turn the dough onto a lightly floured surface. Pat into a rectangle, fold it in thirds, rotate, and repeat twice more. Pat to about ¾ inch thick.",
+        "Cut straight down with a 2½-inch cutter without twisting. Place the biscuits close together on the baking sheet.",
+        "Bake for 12–15 minutes, until tall and golden. Brush with melted butter, if desired."
+      ],
+      "description": "Tall, buttery biscuits with crisp golden tops and soft, flaky layers—ideal for breakfast sandwiches or gravy.",
+      "notes": "Keep the butter and buttermilk cold, and handle the dough as little as possible for the flakiest biscuits.",
+      "prepTime": "15 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "biscuits"
+      },
+      "id": "kc-rndy2-00000005"
+    },
+    {
+      "name": "Country Sausage Gravy",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Gravy",
+        "Foundation",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "bulk breakfast sausage",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "freshly ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the sausage in a large skillet over medium heat, breaking it into small crumbles. Cook until it reaches 160°F.",
+        "Sprinkle the flour over the sausage and drippings. Cook, stirring constantly, for 2 minutes.",
+        "Gradually pour in the milk while stirring and scraping the bottom of the skillet.",
+        "Bring to a gentle simmer and cook for 5–8 minutes, stirring often, until thick enough to coat a spoon.",
+        "Season with salt, black pepper, and garlic powder, if using. Serve hot over Flaky Buttermilk Biscuits."
+      ],
+      "description": "A peppery, creamy country gravy filled with browned breakfast sausage and made for splitting over hot biscuits.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000006"
+    },
+    {
+      "name": "Homestyle Bacon Gravy",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Gravy",
+        "Foundation",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "bacon, chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "freshly ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "butter, only if needed",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Cook the bacon in a large skillet over medium heat until crisp. Transfer it to a paper towel-lined plate, leaving about ¼ cup drippings in the skillet.",
+        "If there are fewer than ¼ cup drippings, add enough butter to make up the difference.",
+        "Whisk the flour into the drippings and cook for 2 minutes.",
+        "Gradually whisk in the milk. Simmer for 5–8 minutes, stirring frequently, until smooth and thickened.",
+        "Stir most of the bacon back into the gravy. Season with salt and black pepper, then garnish with the reserved bacon."
+      ],
+      "description": "Creamy milk gravy enriched with crisp bacon and plenty of black pepper for serving over biscuits, toast, or potatoes.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000007"
+    },
+    {
+      "name": "Creamed Chipped Beef Gravy",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Gravy",
+        "Foundation",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "ounces",
+              "item": "dried chipped beef",
+              "scalable": true
+            },
+            {
+              "quantity": 4,
+              "unit": "tablespoons",
+              "item": "unsalted butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "freshly ground black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "ground nutmeg",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "salt, only if needed",
+              "scalable": false
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "toast, for serving",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Taste a small piece of the dried beef. If it is very salty, rinse it briefly under cool water and pat dry. Slice into thin strips.",
+        "Melt the butter in a large skillet over medium heat. Add the beef and cook for 1–2 minutes.",
+        "Sprinkle in the flour and cook, stirring, for 2 minutes.",
+        "Gradually whisk in the milk. Simmer for 5–7 minutes, stirring frequently, until smooth and thickened.",
+        "Season with black pepper and nutmeg, if using. Taste before adding any salt.",
+        "Serve hot over toast or Flaky Buttermilk Biscuits."
+      ],
+      "description": "Thin strips of dried beef folded into smooth, peppered cream gravy for spooning over toast, biscuits, or potatoes.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000008"
+    },
+    {
+      "name": "Soft and Creamy Scrambled Eggs",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Eggs",
+        "Quick"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "whole milk or heavy cream",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "unsalted butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "shredded cheddar cheese",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk the eggs, milk, salt, and pepper until completely blended.",
+        "Melt the butter in a nonstick skillet over medium-low heat.",
+        "Add the eggs and let them sit for several seconds. Gently push the cooked egg from the edges toward the center with a silicone spatula.",
+        "Continue folding slowly until the eggs form soft curds and are just set. Fold in the cheese, if using.",
+        "Remove from the heat while the eggs still look slightly glossy; they will finish cooking from residual heat."
+      ],
+      "description": "Slow-cooked scrambled eggs with tender curds and a rich, creamy finish.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000009"
+    },
+    {
+      "name": "Ham, Pepper, and Cheese Omelet",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Eggs",
+        "Quick",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "diced cooked ham",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "diced bell pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "shredded cheddar cheese",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Whisk the eggs, milk, salt, and pepper.",
+        "Melt half of the butter in an 8- or 10-inch nonstick skillet over medium heat. Cook the ham, pepper, and onion for 3–4 minutes, until the vegetables soften. Transfer to a plate.",
+        "Add the remaining butter and pour in the eggs. As the edges set, gently pull them toward the center and tilt the pan so uncooked egg flows underneath.",
+        "When the eggs are nearly set, add the ham mixture and cheese to one half.",
+        "Fold the omelet over the filling and cook for 1 minute, until the cheese melts. Slide onto a plate and serve immediately."
+      ],
+      "description": "A classic diner-style omelet filled with savory ham, sautéed peppers and onions, and melted cheddar.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 1,
+        "unit": "omelet"
+      },
+      "id": "kc-rndy2-00000010"
+    },
+    {
+      "name": "Garden Vegetable Frittata",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Eggs",
+        "Brunch",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 10,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "shredded mozzarella or cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "olive oil",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "diced bell pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "sliced mushrooms",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "fresh spinach",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 375°F.",
+        "Whisk the eggs, milk, cheese, salt, and pepper.",
+        "Heat the olive oil in a 10-inch oven-safe skillet over medium heat. Cook the bell pepper, mushrooms, and onion for 5 minutes. Add the spinach and cook until wilted.",
+        "Pour the egg mixture over the vegetables. Cook without stirring for 2–3 minutes, until the edges begin to set.",
+        "Transfer the skillet to the oven and bake for 12–16 minutes, until the center is set and reaches 160°F.",
+        "Rest for 5 minutes, then cut into wedges."
+      ],
+      "description": "A colorful baked egg dish filled with peppers, mushrooms, spinach, and cheese for breakfast or a light brunch.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000011"
+    },
+    {
+      "name": "Eggs Benedict with Easy Hollandaise",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Eggs",
+        "Brunch"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "",
+              "item": "English muffins, split",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "Canadian bacon",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "white vinegar",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "large egg yolks",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "fresh lemon juice",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter, melted and hot",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.125,
+              "unit": "teaspoons",
+              "item": "cayenne pepper",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Toast the English muffins and warm the Canadian bacon in a skillet. Keep warm.",
+        "For the hollandaise, blend the egg yolks, lemon juice, salt, and cayenne for 15 seconds. With the blender running, slowly stream in the hot melted butter until thick and smooth. Keep warm, but do not overheat.",
+        "Bring a wide saucepan of water to a gentle simmer and add the vinegar. Crack each egg into a small cup.",
+        "Slide the eggs into the water and poach for 3–4 minutes, until the whites are set and the yolks remain soft. Lift out with a slotted spoon.",
+        "Top each muffin half with Canadian bacon and a poached egg. Spoon hollandaise over the top and serve immediately."
+      ],
+      "description": "Toasted English muffins topped with Canadian bacon, poached eggs, and a smooth lemon-butter hollandaise.",
+      "notes": "Because the hollandaise contains lightly cooked egg yolks, use pasteurized eggs when serving anyone at increased risk from foodborne illness.",
+      "prepTime": "20 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000012"
+    },
+    {
+      "name": "Sausage, Egg, and Cheese Breakfast Casserole",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Casserole",
+        "Make-Ahead",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "bulk breakfast sausage",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "cups",
+              "item": "cubed day-old bread",
+              "scalable": true
+            },
+            {
+              "quantity": 10,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dry mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Grease a 9×13-inch baking dish.",
+        "Brown the sausage in a skillet, breaking it into crumbles, until it reaches 160°F. Drain excess grease.",
+        "Spread the bread in the baking dish. Top with sausage and cheese.",
+        "Whisk the eggs, milk, dry mustard, salt, pepper, and onion powder. Pour evenly over the casserole.",
+        "Cover and refrigerate for at least 2 hours or overnight.",
+        "Preheat the oven to 350°F. Bake uncovered for 45–55 minutes, until puffed, set in the center, and at least 160°F. Rest for 10 minutes before serving."
+      ],
+      "description": "A hearty make-ahead casserole layered with sausage, eggs, cheese, and cubes of bread.",
+      "notes": "",
+      "prepTime": "20 minutes plus chilling",
+      "cookTime": "50 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000013"
+    },
+    {
+      "name": "Bacon, Egg, and Hash Brown Casserole",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Casserole",
+        "Potatoes",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "bacon, chopped",
+              "scalable": true
+            },
+            {
+              "quantity": 30,
+              "unit": "ounces",
+              "item": "frozen shredded hash browns, thawed",
+              "scalable": true
+            },
+            {
+              "quantity": 10,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "diced onion",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 375°F and grease a 9×13-inch baking dish.",
+        "Cook the bacon until crisp. Drain on paper towels.",
+        "Spread the hash browns in the dish and top with onion, bacon, and 1½ cups cheese.",
+        "Whisk the eggs, milk, salt, pepper, and garlic powder. Pour evenly over the casserole and top with the remaining cheese.",
+        "Bake for 45–55 minutes, until browned, set in the center, and at least 160°F.",
+        "Rest for 10 minutes before cutting."
+      ],
+      "description": "Crisp bacon, tender hash browns, eggs, and melted cheese baked into an easy crowd-sized breakfast.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "50 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000014"
+    },
+    {
+      "name": "Freezer Breakfast Burritos",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Freezer-Friendly",
+        "Handheld",
+        "Meal Prep"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 12,
+              "unit": "",
+              "item": "large flour tortillas",
+              "scalable": true
+            },
+            {
+              "quantity": 12,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "bulk breakfast sausage",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "diced cooked breakfast potatoes",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "milk",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the sausage until it reaches 160°F. Drain and set aside.",
+        "Whisk the eggs, milk, salt, and pepper. Melt the butter in a skillet and cook the eggs until softly set.",
+        "Let all hot components cool before assembling to prevent soggy tortillas.",
+        "Divide the eggs, sausage, potatoes, and cheese among the tortillas. Fold in the sides and roll tightly.",
+        "Wrap each burrito in parchment or foil and freeze in a sealed freezer bag for up to 2 months.",
+        "To reheat from frozen, remove foil, wrap in a damp paper towel, and microwave in 60-second intervals until the center reaches 165°F. Crisp in a skillet if desired."
+      ],
+      "description": "Make-ahead tortillas packed with scrambled eggs, sausage, potatoes, and cheese for quick breakfasts from the freezer.",
+      "notes": "",
+      "prepTime": "30 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "burritos"
+      },
+      "id": "kc-rndy2-00000015"
+    },
+    {
+      "name": "Sausage, Egg, and Cheese Biscuit Sandwiches",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Handheld",
+        "Meal Prep",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "Flaky Buttermilk Biscuits, split",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "bulk breakfast sausage",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "cheddar cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Divide the sausage into 8 thin patties slightly wider than the biscuits.",
+        "Cook the patties in a skillet over medium heat for 3–4 minutes per side, until browned and at least 160°F.",
+        "Whisk the eggs with salt and pepper. Melt the butter in a clean skillet and cook the eggs in a thin layer. Fold and cut into 8 portions.",
+        "Layer each biscuit with a sausage patty, egg, and cheese.",
+        "Serve immediately, or wrap individually and refrigerate for up to 3 days. Reheat until the center reaches 165°F."
+      ],
+      "description": "Warm biscuit sandwiches filled with savory sausage patties, folded eggs, and melted cheddar.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "sandwiches"
+      },
+      "id": "kc-rndy2-00000016"
+    },
+    {
+      "name": "Sheet-Pan Breakfast Hash",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Sheet Pan",
+        "Potatoes",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "Yukon Gold potatoes, cut into ½-inch cubes",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "pounds",
+              "item": "smoked sausage or breakfast sausage, sliced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "bell pepper, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "small onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "olive oil",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "smoked paprika",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 6,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 425°F and lightly grease a large rimmed baking sheet.",
+        "Toss the potatoes, sausage, pepper, onion, olive oil, paprika, garlic powder, salt, and pepper on the pan.",
+        "Roast for 25–30 minutes, stirring halfway through, until the potatoes are browned and tender.",
+        "Make 6 wells in the mixture and crack an egg into each.",
+        "Return to the oven for 6–10 minutes, until the whites are set to your liking and the sausage reaches 160°F."
+      ],
+      "description": "Crisp roasted potatoes, peppers, onions, and sausage finished with eggs in one family-sized pan.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "40 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000017"
+    },
+    {
+      "name": "Crispy Skillet Hash Browns",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Potatoes",
+        "Skillet",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "russet potatoes",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "neutral oil",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Peel and coarsely shred the potatoes. Rinse under cold water until the water runs mostly clear.",
+        "Squeeze the potatoes very dry in a clean kitchen towel. Toss with salt, pepper, and onion powder.",
+        "Heat the oil and half of the butter in a large skillet over medium-high heat.",
+        "Spread the potatoes in an even layer and press lightly. Cook without disturbing for 5–7 minutes, until deeply golden underneath.",
+        "Flip in sections, add the remaining butter around the edges, and cook for another 5–7 minutes, until crisp and tender."
+      ],
+      "description": "Shredded potatoes cooked into a deeply golden, crisp-edged layer with a tender center.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000018"
+    },
+    {
+      "name": "Corned Beef Hash with Eggs",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Skillet",
+        "Potatoes",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "cooked potatoes, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "cooked corned beef, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "",
+              "item": "small onion, diced",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "neutral oil",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 6,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "salt, to taste",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Heat the butter and oil in a large skillet over medium-high heat.",
+        "Add the potatoes and onion. Cook for 8–10 minutes, stirring occasionally, until browned.",
+        "Add the corned beef, garlic powder, and black pepper. Press the mixture into the skillet and cook for 5 minutes, until crisp underneath.",
+        "Make 6 wells and crack an egg into each. Cover, reduce the heat to medium-low, and cook for 5–8 minutes, until the egg whites are set.",
+        "Taste before adding salt because corned beef is already salty."
+      ],
+      "description": "Crisp corned beef and potatoes cooked with onion and topped with eggs for a hearty skillet breakfast.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "25 minutes",
+      "yield": {
+        "amount": 6,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000019"
+    },
+    {
+      "name": "Homemade Breakfast Sausage Patties",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Sausage",
+        "Foundation",
+        "Meal Prep"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "pounds",
+              "item": "ground pork",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "kosher salt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "rubbed sage",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "dried thyme",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "onion powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "crushed red pepper flakes",
+              "scalable": true,
+              "optional": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "maple syrup or brown sugar",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the pork, salt, sage, thyme, black pepper, garlic powder, onion powder, red pepper, and maple syrup, if using.",
+        "Mix gently until the seasonings are evenly distributed. Do not overwork the meat.",
+        "Form into 12 thin patties. Refrigerate for 20 minutes if time allows.",
+        "Cook in a skillet over medium heat for 4–5 minutes per side, until browned and the centers reach 160°F.",
+        "Serve immediately or cool and refrigerate for up to 3 days."
+      ],
+      "description": "Juicy pork sausage patties seasoned with sage, thyme, black pepper, and a subtle touch of sweetness.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "15 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "patties"
+      },
+      "id": "kc-rndy2-00000020"
+    },
+    {
+      "name": "Apple-Cinnamon Baked Oatmeal",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Oatmeal",
+        "Make-Ahead",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "cups",
+              "item": "old-fashioned rolled oats",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "maple syrup or brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "melted butter",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "apples, peeled and diced",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "chopped pecans or walnuts",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 350°F and grease an 8- or 9-inch square baking dish.",
+        "Combine the oats, cinnamon, baking powder, and salt.",
+        "Whisk the milk, eggs, maple syrup, melted butter, and vanilla. Stir into the oats.",
+        "Fold in the apples and nuts, if using. Spread in the baking dish.",
+        "Bake for 35–40 minutes, until set and lightly golden. Cool for 10 minutes before serving."
+      ],
+      "description": "Warm baked oatmeal filled with tender apples and cinnamon, easily portioned for several mornings.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "40 minutes",
+      "yield": {
+        "amount": 8,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000021"
+    },
+    {
+      "name": "Creamy Brown Sugar Oatmeal",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Oatmeal",
+        "Quick",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "old-fashioned rolled oats",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "milk",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "water",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Bring the milk, water, salt, and cinnamon to a gentle simmer in a medium saucepan.",
+        "Stir in the oats and reduce the heat to medium-low.",
+        "Cook for 5–7 minutes, stirring often, until creamy and tender.",
+        "Remove from the heat and stir in the brown sugar, butter, and vanilla.",
+        "Serve with fruit, nuts, additional milk, or maple syrup as desired."
+      ],
+      "description": "A simple stovetop oatmeal with a creamy texture, warm cinnamon, and just enough brown-sugar sweetness.",
+      "notes": "",
+      "prepTime": "5 minutes",
+      "cookTime": "10 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000022"
+    },
+    {
+      "name": "Bakery-Style Blueberry Muffins",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Muffins",
+        "Baking",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter, melted and cooled",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "whole milk",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "sour cream or plain yogurt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "fresh or frozen blueberries",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "coarse sugar, for topping",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 400°F and line a 12-cup muffin pan.",
+        "Whisk the flour, sugar, baking powder, and salt.",
+        "In another bowl, whisk the melted butter, eggs, milk, sour cream, and vanilla.",
+        "Fold the wet ingredients into the dry ingredients just until combined, then gently fold in the blueberries.",
+        "Divide among the muffin cups and sprinkle with coarse sugar, if using.",
+        "Bake for 18–22 minutes, until golden and a toothpick inserted away from a berry comes out clean."
+      ],
+      "description": "Tender vanilla muffins packed with blueberries and crowned with sparkling sugar.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "muffins"
+      },
+      "id": "kc-rndy2-00000023"
+    },
+    {
+      "name": "Classic Banana Nut Bread",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Quick Bread",
+        "Baking",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "very ripe bananas, mashed",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter, melted",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "baking soda",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "chopped walnuts or pecans",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 350°F. Grease a 9×5-inch loaf pan and line it with parchment paper.",
+        "Whisk the mashed bananas, melted butter, brown sugar, eggs, and vanilla.",
+        "In a separate bowl, whisk the flour, baking soda, salt, and cinnamon.",
+        "Fold the dry ingredients into the banana mixture just until combined. Fold in the nuts, if using.",
+        "Bake for 50–60 minutes, until a toothpick inserted in the center comes out clean or with a few moist crumbs.",
+        "Cool in the pan for 10 minutes, then transfer to a wire rack."
+      ],
+      "description": "Moist banana bread with warm vanilla and optional toasted walnuts, ideal for breakfast or snacking.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "55 minutes",
+      "yield": {
+        "amount": 10,
+        "unit": "slices"
+      },
+      "id": "kc-rndy2-00000024"
+    },
+    {
+      "name": "Cinnamon-Streusel Coffee Cake",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Coffee Cake",
+        "Baking",
+        "Brunch"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "baking powder",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "baking soda",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter, softened",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "sour cream",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "all-purpose flour, for the streusel",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "teaspoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 0.375,
+              "unit": "cups",
+              "item": "unsalted butter, melted",
+              "scalable": true,
+              "displayQuantity": "6 tablespoons"
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 350°F and grease a 9×9-inch baking pan.",
+        "For the streusel, combine the brown sugar, ¾ cup flour, cinnamon, and melted butter until crumbly.",
+        "Whisk the 2 cups flour, baking powder, baking soda, and salt.",
+        "Beat the softened butter and granulated sugar until light. Beat in the eggs, then the sour cream and vanilla.",
+        "Fold in the dry ingredients. Spread half the batter in the pan, sprinkle with half the streusel, then add the remaining batter and streusel.",
+        "Bake for 40–48 minutes, until a toothpick inserted in the center comes out clean. Cool before slicing."
+      ],
+      "description": "A tender sour-cream coffee cake layered and topped with buttery brown-sugar cinnamon streusel.",
+      "notes": "",
+      "prepTime": "20 minutes",
+      "cookTime": "45 minutes",
+      "yield": {
+        "amount": 9,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000025"
+    },
+    {
+      "name": "Soft Homemade Cinnamon Rolls",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Yeast Bread",
+        "Baking",
+        "Brunch"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "whole milk, warm",
+              "scalable": true
+            },
+            {
+              "quantity": 2.25,
+              "unit": "teaspoons",
+              "item": "active dry yeast",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.375,
+              "unit": "cups",
+              "item": "unsalted butter, melted",
+              "scalable": true,
+              "displayQuantity": "6 tablespoons"
+            },
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true,
+              "displayQuantity": "3¾–4"
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "cups",
+              "item": "unsalted butter, softened, for the filling",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "cups",
+              "item": "brown sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "ground cinnamon",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "powdered sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "milk",
+              "scalable": true,
+              "displayQuantity": "2–3"
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Combine the warm milk, yeast, and a pinch of the sugar. Rest for 5–10 minutes, until foamy.",
+        "Mix in the remaining sugar, eggs, melted butter, 3¾ cups flour, and salt. Knead for 6–8 minutes, adding only enough additional flour to make a soft, slightly tacky dough.",
+        "Place in a greased bowl, cover, and let rise until doubled, 60–90 minutes.",
+        "Roll into a 12×18-inch rectangle. Spread with softened butter and sprinkle evenly with brown sugar and cinnamon.",
+        "Roll up from a long side and cut into 12 rolls. Arrange in a greased 9×13-inch dish, cover, and rise for 30–45 minutes.",
+        "Bake at 350°F for 24–30 minutes, until lightly golden and cooked through.",
+        "Whisk the powdered sugar, milk, and vanilla. Spread over the warm rolls."
+      ],
+      "description": "Soft yeast rolls spiraled with cinnamon-brown sugar filling and finished with a smooth vanilla glaze.",
+      "notes": "",
+      "prepTime": "30 minutes plus rising",
+      "cookTime": "28 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "rolls"
+      },
+      "id": "kc-rndy2-00000026"
+    },
+    {
+      "name": "Berry Yogurt and Granola Parfaits",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "No-Cook",
+        "Quick",
+        "Lighter"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 4,
+              "unit": "cups",
+              "item": "plain or vanilla Greek yogurt",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "mixed fresh berries",
+              "scalable": true
+            },
+            {
+              "quantity": 1.5,
+              "unit": "cups",
+              "item": "granola",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "cups",
+              "item": "honey or maple syrup",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "vanilla extract",
+              "scalable": true,
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Stir the vanilla into the yogurt, if using.",
+        "Divide half of the yogurt among 4 glasses or containers.",
+        "Layer with half of the berries and granola. Repeat the layers.",
+        "Drizzle with honey or maple syrup and serve immediately."
+      ],
+      "description": "Creamy yogurt layered with berries, crunchy granola, and a light drizzle of honey.",
+      "notes": "For meal prep, keep the granola separate and add it just before serving so it stays crisp.",
+      "prepTime": "10 minutes",
+      "cookTime": "0 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "parfaits"
+      },
+      "id": "kc-rndy2-00000027"
+    },
+    {
+      "name": "Cheesy Breakfast Quesadillas",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Handheld",
+        "Quick",
+        "Savory"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "large flour tortillas",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "pounds",
+              "item": "bulk breakfast sausage",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "cups",
+              "item": "shredded cheddar or Monterey Jack cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 2,
+              "unit": "tablespoons",
+              "item": "butter",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Brown the sausage in a skillet until it reaches 160°F. Drain and set aside.",
+        "Whisk the eggs with salt and pepper. Melt half of the butter in the skillet and softly scramble the eggs.",
+        "Divide the eggs, sausage, and cheese among 4 tortillas. Top with the remaining tortillas.",
+        "Melt a little of the remaining butter in a skillet over medium heat. Cook each quesadilla for 2–3 minutes per side, until crisp and the cheese melts.",
+        "Cut into wedges and serve warm."
+      ],
+      "description": "Crisp tortillas filled with scrambled eggs, breakfast sausage, and melted cheese for an easy handheld breakfast.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "quesadillas"
+      },
+      "id": "kc-rndy2-00000028"
+    },
+    {
+      "name": "Ham, Egg, and Cheese Breakfast Sliders",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Handheld",
+        "Brunch",
+        "Make-Ahead"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 12,
+              "unit": "",
+              "item": "soft slider rolls, kept attached",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "",
+              "item": "large eggs",
+              "scalable": true
+            },
+            {
+              "quantity": 12,
+              "unit": "slices",
+              "item": "deli ham",
+              "scalable": true
+            },
+            {
+              "quantity": 8,
+              "unit": "slices",
+              "item": "cheddar or Swiss cheese",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "butter, divided",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "black pepper",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "Dijon mustard",
+              "scalable": true
+            },
+            {
+              "quantity": 0.5,
+              "unit": "teaspoons",
+              "item": "garlic powder",
+              "scalable": true
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Preheat the oven to 350°F and grease a 9×13-inch baking dish.",
+        "Whisk the eggs with salt and pepper. Melt 1 tablespoon butter in a skillet and softly scramble the eggs.",
+        "Slice the attached rolls horizontally. Place the bottom half in the dish and layer with ham, eggs, and cheese. Replace the roll tops.",
+        "Melt the remaining butter and stir in the Dijon and garlic powder. Brush over the rolls.",
+        "Cover loosely with foil and bake for 15 minutes. Uncover and bake for 8–10 minutes more, until golden and the center reaches 165°F.",
+        "Cut into individual sliders and serve warm."
+      ],
+      "description": "Soft pull-apart rolls layered with ham, eggs, and cheese, then baked beneath a savory butter glaze.",
+      "notes": "",
+      "prepTime": "15 minutes",
+      "cookTime": "25 minutes",
+      "yield": {
+        "amount": 12,
+        "unit": "sliders"
+      },
+      "id": "kc-rndy2-00000029"
+    },
+    {
+      "name": "Golden Dutch Baby Pancake",
+      "category": "Breakfast",
+      "tags": [
+        "Breakfast",
+        "Oven",
+        "Brunch",
+        "Vegetarian"
+      ],
+      "ingredientGroups": [
+        {
+          "name": "Ingredients",
+          "ingredients": [
+            {
+              "quantity": 3,
+              "unit": "",
+              "item": "large eggs, room temperature",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "whole milk, room temperature",
+              "scalable": true
+            },
+            {
+              "quantity": 0.75,
+              "unit": "cups",
+              "item": "all-purpose flour",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "tablespoon",
+              "item": "granulated sugar",
+              "scalable": true
+            },
+            {
+              "quantity": 1,
+              "unit": "teaspoon",
+              "item": "vanilla extract",
+              "scalable": true
+            },
+            {
+              "quantity": 0.25,
+              "unit": "teaspoons",
+              "item": "salt",
+              "scalable": true
+            },
+            {
+              "quantity": 3,
+              "unit": "tablespoons",
+              "item": "unsalted butter",
+              "scalable": true
+            },
+            {
+              "quantity": null,
+              "unit": "",
+              "item": "powdered sugar, lemon, berries, or syrup, for serving",
+              "scalable": false
+            }
+          ]
+        }
+      ],
+      "instructions": [
+        "Place a 10-inch cast-iron or oven-safe skillet in the oven and preheat to 425°F.",
+        "Blend the eggs, milk, flour, sugar, vanilla, and salt until completely smooth. Rest for 5 minutes.",
+        "Carefully remove the hot skillet, add the butter, and swirl to coat.",
+        "Pour in the batter and immediately return the skillet to the oven.",
+        "Bake for 18–22 minutes without opening the oven, until deeply puffed and golden.",
+        "Serve immediately with powdered sugar, lemon, fruit, or syrup."
+      ],
+      "description": "A dramatic oven pancake with crisp, puffed edges and a tender, custardy center.",
+      "notes": "",
+      "prepTime": "10 minutes",
+      "cookTime": "20 minutes",
+      "yield": {
+        "amount": 4,
+        "unit": "servings"
+      },
+      "id": "kc-rndy2-00000030"
+    }
+  ]
+}
