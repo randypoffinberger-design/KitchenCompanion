@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.17.4.1';
+  const ENGINE_VERSION = '0.17.4.2';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -101,6 +101,7 @@
   let selectedRecipeKey = null;
   let recipeNavigationStack = [];
   let recipeReturnView = 'list';
+  let recipeListScrollPosition = 0;
   let activeScale = 1;
   let timerTicker = null;
   let bellAudio = null;
@@ -973,7 +974,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.17.4.1').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.17.4.2').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1661,7 +1662,14 @@
         const span = document.createElement('span'); span.textContent = text; meta.append(span);
       });
       fragment.querySelector('.recipe-source').textContent = recipe.moduleName;
-      const openCard = () => { recipeNavigationStack = []; recipeReturnView = 'list'; selectedRecipeKey = recipe.key; activeScale = 1; showDetail(); };
+      const openCard = () => {
+        recipeNavigationStack = [];
+        recipeReturnView = 'list';
+        recipeListScrollPosition = window.scrollY || document.documentElement.scrollTop || 0;
+        selectedRecipeKey = recipe.key;
+        activeScale = 1;
+        showDetail();
+      };
       card.addEventListener('click', openCard);
       card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCard(); } });
       els.recipeGrid.append(fragment);
@@ -1670,12 +1678,19 @@
 
   function recipeSearchText(recipe) { return engine.searchText(recipe); }
 
-  function showList() {
+  function showList({ restoreScroll = false } = {}) {
     recipeNavigationStack = [];
     recipeReturnView = 'list';
     selectedRecipeKey = null;
     els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
-    renderRecipeList(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderRecipeList();
+    updateWakeLock();
+    if (restoreScroll) {
+      window.requestAnimationFrame(() => window.scrollTo({ top:recipeListScrollPosition, behavior:'auto' }));
+    } else {
+      recipeListScrollPosition = 0;
+      window.scrollTo({ top:0, behavior:'smooth' });
+    }
   }
 
   function showDetail() {
@@ -1690,7 +1705,7 @@
         recipeReturnView = 'list';
         return showMealPlanner();
       }
-      return showList();
+      return showList({ restoreScroll:true });
     }
     selectedRecipeKey = previous;
     activeScale = 1;
@@ -2471,7 +2486,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.17.4.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.17.4.2');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

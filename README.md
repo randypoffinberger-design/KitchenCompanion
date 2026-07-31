@@ -1,7 +1,9 @@
-# Kitchen Companion v0.17.4.1
+# Kitchen Companion v0.17.4.2
 
-## Weekly meal planner (v0.17.4.1)
+## Weekly meal planner (v0.17.4.2)
 
+- Restores the exact recipe-list scroll position after opening a recipe and
+  returning with Back.
 - Stacks mobile meal-slot information above its controls so recipe names retain
   the full card width.
 - Places edit, scale, lock, reroll, and clear controls in a stable second row.

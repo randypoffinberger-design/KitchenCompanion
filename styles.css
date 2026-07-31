@@ -600,7 +600,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   dialog input,dialog select,dialog textarea{font-size:16px}
 }
 
-/* v0.17.4.1 weekly meal planner */
+/* v0.17.4.2 weekly meal planner */
 .meal-planner-pane{width:min(1180px,100%);margin:0 auto;padding:clamp(1rem,3vw,2rem)}
 .meal-planner-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .meal-planner-header h1{margin:0}.meal-planner-header p{margin:.35rem 0 0;color:var(--muted)}

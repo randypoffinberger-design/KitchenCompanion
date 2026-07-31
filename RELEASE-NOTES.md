@@ -1,7 +1,9 @@
-# Kitchen Companion v0.17.4.1
+# Kitchen Companion v0.17.4.2
 
-## v0.17.4.1
+## v0.17.4.2
 
+- Keeps the user's place in long recipe lists when opening a recipe and
+  returning with the in-app Back button.
 - Fixes squeezed and truncated meal names on phones by moving slot controls to
   a dedicated row below the recipe information.
 - Makes planned recipe names open their complete recipe page.
