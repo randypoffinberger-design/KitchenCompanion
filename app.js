@@ -3654,7 +3654,20 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function showRegularItems(){
     populateStoreSelects(); els.regularItemsList.innerHTML='';
     if(!state.regularItems.length){els.regularItemsList.innerHTML='<p>No regular items yet. Add a manual item and choose “Save as regular item.”</p>';}
-    state.regularItems.forEach(item=>{
+    const sortedItems=[...state.regularItems].sort((a,b)=>{
+      const aGroup=SHOPPING_GROUPS.includes(a.group)?a.group:classifyShoppingGroup(a.name);
+      const bGroup=SHOPPING_GROUPS.includes(b.group)?b.group:classifyShoppingGroup(b.name);
+      return (SHOPPING_GROUP_ORDER.get(aGroup)??999)-(SHOPPING_GROUP_ORDER.get(bGroup)??999)
+        || String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'});
+    });
+    let visibleGroup='';
+    sortedItems.forEach(item=>{
+      const group=SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(item.name);
+      if(group!==visibleGroup){
+        visibleGroup=group;
+        const heading=document.createElement('h3');heading.className='regular-item-group-heading';heading.textContent=group;
+        els.regularItemsList.append(heading);
+      }
       const row=document.createElement('div');row.className='regular-item-row';
       row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(displayStoreName(item.store))}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
       row.querySelector('.add-regular').addEventListener('click',e=>{const added=addShoppingEntry({name:item.name,quantity:item.quantity,store:item.store,group:item.group,aisle:item.aisle,source:'Regular item',learnStore:true});saveState();renderShoppingList(added.id);renderCounts();e.currentTarget.textContent='Added ✓';setTimeout(()=>e.currentTarget.textContent='Add',1000);});

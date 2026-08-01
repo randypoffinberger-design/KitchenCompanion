@@ -8,6 +8,7 @@
 - Keeps selected items on the current shopping list after saving them as
   regular staples.
 - Keeps a close button visible at the top of Regular Items while scrolling.
+- Groups Regular Items by shopping category and alphabetizes each group.
 - Adds bulk manual shopping-list entry with up to 250 items per batch.
 - Accepts pasted lines, comma-separated items, bullets, checkboxes, and numbered
   lists.

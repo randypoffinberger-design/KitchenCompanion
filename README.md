@@ -7,6 +7,8 @@
   from the active shopping trip.
 - Preserves each selected item's quantity, store, group, and aisle.
 - Keeps an always-visible close button above long Regular Items lists.
+- Sorts Regular Items by shopping category and alphabetically within each
+  category.
 - Adds a Several items action for pasting or typing an entire shopping list.
 - Accepts one item per line as well as comma- or semicolon-separated lists.
 - Removes common bullets, checkboxes, and numbered-list markers automatically.
