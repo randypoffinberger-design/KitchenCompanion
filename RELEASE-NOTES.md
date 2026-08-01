@@ -1,7 +1,13 @@
-# Kitchen Companion v0.17.4.2
+# Kitchen Companion v0.17.5
 
-## v0.17.4.2
+## v0.17.5
 
+- Adds bulk manual shopping-list entry with up to 250 items per batch.
+- Accepts pasted lines, comma-separated items, bullets, checkboxes, and numbered
+  lists.
+- Extracts common quantities and consolidates duplicate item names.
+- Allows a default store to be applied to the batch while preserving learned
+  store behavior when No store is selected.
 - Keeps the user's place in long recipe lists when opening a recipe and
   returning with the in-app Back button.
 - Fixes squeezed and truncated meal names on phones by moving slot controls to

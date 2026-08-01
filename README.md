@@ -1,6 +1,17 @@
-# Kitchen Companion v0.17.4.2
+# Kitchen Companion v0.17.5
 
-## Weekly meal planner (v0.17.4.2)
+## Bulk shopping entry (v0.17.5)
+
+- Adds a Several items action for pasting or typing an entire shopping list.
+- Accepts one item per line as well as comma- or semicolon-separated lists.
+- Removes common bullets, checkboxes, and numbered-list markers automatically.
+- Recognizes quantities such as gallons, dozens, boxes, bags, cartons, cases,
+  bunches, heads, loaves, rolls, and trays.
+- Consolidates matching items through the existing shopping-list system.
+- Supports one default store for the batch or existing remembered stores when
+  No store is selected.
+
+## Weekly meal planner (v0.17.5)
 
 - Restores the exact recipe-list scroll position after opening a recipe and
   returning with Back.

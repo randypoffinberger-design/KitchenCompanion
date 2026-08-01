@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.17.4.2">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.17.4.2">
+  <link rel="manifest" href="app.webmanifest?v=0.17.5">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.17.5">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.17.4.2">
+  <link rel="stylesheet" href="styles.css?v=0.17.5">
 </head>
 <body>
   <div class="app-shell">
@@ -104,7 +104,7 @@
       </section>
 
       <section id="shoppingPane" class="shopping-pane" hidden>
-        <div class="list-header"><div><h1>Shopping list</h1><p>Clean ingredient names, grouped recipe quantities, regular staples, and store organization.</p></div><button id="addShoppingItemBtn" class="button">＋ Item</button></div>
+        <div class="list-header"><div><h1>Shopping list</h1><p>Clean ingredient names, grouped recipe quantities, regular staples, and store organization.</p></div><div class="shopping-add-actions"><button id="addShoppingItemBtn" class="button">＋ Item</button><button id="addManyShoppingItemsBtn" class="button secondary">＋ Several items</button></div></div>
         <div class="shopping-toolbar">
           <select id="shoppingStoreFilter"><option value="all">All stores</option></select>
           <button id="regularItemsBtn" class="button secondary">Regular items</button>
@@ -237,7 +237,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.17.4.2</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.17.5</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -599,6 +599,18 @@
     </form>
   </dialog>
 
+  <dialog id="bulkShoppingDialog">
+    <form id="bulkShoppingForm" class="dialog-card bulk-shopping-card">
+      <h2>Add several shopping items</h2>
+      <p>Enter one item per line, or separate items with commas. Quantities such as <b>2 dozen eggs</b> and <b>1 gallon milk</b> are recognized automatically.</p>
+      <label class="shopping-message-field">Shopping items<textarea id="bulkShoppingText" rows="12" required placeholder="2 dozen eggs&#10;1 gallon milk&#10;bread&#10;bananas"></textarea></label>
+      <label>Default store<select id="bulkShoppingStore"></select></label>
+      <p class="setting-help">Choose No store to let remembered store preferences apply to individual items.</p>
+      <p id="bulkShoppingStatus" class="import-status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" id="cancelBulkShopping" class="button secondary">Cancel</button><button type="submit" class="button">Add all items</button></div>
+    </form>
+  </dialog>
+
   <dialog id="regularItemsDialog">
     <form method="dialog" class="dialog-card">
       <h2>Regular items</h2><p>Quick-add, edit, or remove things you buy often.</p><div id="regularItemsList"></div>
@@ -648,11 +660,11 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.17.4.2"></script>
-  <script src="profile-storage.js?v=0.17.4.2"></script>
-  <script src="url-recipe-import.js?v=0.17.4.2"></script>
-  <script src="meal-planner.js?v=0.17.4.2"></script>
-  <script src="app.js?v=0.17.4.2"></script>
-  <script src="ocr-service.js?v=0.17.4.2"></script>
+  <script src="kitchen-engine.js?v=0.17.5"></script>
+  <script src="profile-storage.js?v=0.17.5"></script>
+  <script src="url-recipe-import.js?v=0.17.5"></script>
+  <script src="meal-planner.js?v=0.17.5"></script>
+  <script src="app.js?v=0.17.5"></script>
+  <script src="ocr-service.js?v=0.17.5"></script>
 </body>
 </html>

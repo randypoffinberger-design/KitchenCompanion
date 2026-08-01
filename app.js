@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.17.4.2';
+  const ENGINE_VERSION = '0.17.5';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -382,8 +382,11 @@
     document.querySelector('#shoppingUndoBtn')?.addEventListener('click', undoShoppingBulkAction);
     window.addEventListener('keydown', event => { if(event.key==='Escape' && shoppingSelectionMode) cancelShoppingSelection(); });
     els.addShoppingItemBtn.addEventListener('click', () => openShoppingItemDialog());
+    document.querySelector('#addManyShoppingItemsBtn')?.addEventListener('click', openBulkShoppingDialog);
     document.querySelector('#cancelShoppingItem').addEventListener('click', () => els.shoppingItemDialog.close());
     els.shoppingItemForm.addEventListener('submit', addManualShoppingItem);
+    document.querySelector('#cancelBulkShopping')?.addEventListener('click', () => document.querySelector('#bulkShoppingDialog')?.close());
+    document.querySelector('#bulkShoppingForm')?.addEventListener('submit', addBulkShoppingItems);
     els.regularItemsBtn.addEventListener('click', showRegularItems);
     els.shareShoppingBtn.addEventListener('click', openShareShoppingDialog);
     els.shareShoppingFileBtn?.addEventListener('click', shareShoppingListFile);
@@ -789,7 +792,7 @@
     const value = String(name || '').replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
     const singleAmount = String.raw`(?:\d+\s+\d+\/\d+|\d+[¼½¾⅓⅔⅛⅜⅝⅞]|\d+\/\d+|\d+(?:\.\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])`;
     const amount = String.raw`(?:${singleAmount})(?:\s*(?:-|to)\s*(?:${singleAmount}))?`;
-    const unit = String.raw`(?:cups?|c|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|pounds?|lbs?|grams?|g|kilograms?|kg|milliliters?|ml|liters?|litres?|l|packets?|packages?|envelopes?|cans?|jars?|bottles?|cloves?|sticks?)`;
+    const unit = String.raw`(?:cups?|c|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|pounds?|lbs?|grams?|g|kilograms?|kg|milliliters?|ml|liters?|litres?|l|dozen|boxes?|bags?|cartons?|cases?|bunches?|heads?|loaves?|rolls?|trays?|packs?|packets?|packages?|envelopes?|cans?|jars?|bottles?|cloves?|sticks?)`;
     const parenthetical = new RegExp(`^\\(\\s*(${amount}\\s*${unit})\\s*\\)\\s*`, 'i');
     const leading = new RegExp(`^(${amount}\\s*${unit})\\b\\s*`, 'i');
     const match = value.match(parenthetical) || value.match(leading);
@@ -974,7 +977,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.17.4.2').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.17.5').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2486,7 +2489,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.17.4.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.17.5');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3386,7 +3389,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const stores=[...new Set(['Unassigned',...(state.stores||[]),...state.shoppingList.map(x=>normalizeStore(x.store))])];
     state.stores=stores;
     const fill=(select,all=false)=>{ const current=select.value; select.innerHTML=all?'<option value="all">All stores</option>':''; stores.forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=displayStoreName(st);select.append(o)}); if([...select.options].some(o=>o.value===current))select.value=current; };
-    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const moveStore=document.querySelector('#shoppingMoveStore'); if(moveStore) { fill(moveStore); const addOption=document.createElement('option'); addOption.value='__new_store__'; addOption.textContent='＋ New store…'; moveStore.append(addOption); }
+    fill(els.shoppingStoreFilter,true); fill(els.shoppingItemStore); fill(els.ingredientStoreSelect); const bulkStore=document.querySelector('#bulkShoppingStore'); if(bulkStore)fill(bulkStore); const moveStore=document.querySelector('#shoppingMoveStore'); if(moveStore) { fill(moveStore); const addOption=document.createElement('option'); addOption.value='__new_store__'; addOption.textContent='＋ New store…'; moveStore.append(addOption); }
   }
 
   function addShoppingEntry({name, quantity='', store='Unassigned', source='Manual', recipeKey='', group='', aisle='', learnStore=false}) {
@@ -3561,6 +3564,59 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       els.shoppingItemDialog.close(); renderShoppingList(item.id); renderCounts();
     } catch (error) {
       alert(`Shopping item was not saved: ${error.message}`);
+    }
+  }
+
+  function parseBulkShoppingLines(text) {
+    return String(text || '')
+      .split(/\r?\n|[,;]+/)
+      .map(line => line.replace(/^\s*(?:(?:[-*•▪◦]+)|(?:\d+[.)])|(?:☐|☑)|(?:\[\s*[xX]?\s*\]))\s*/, '').trim())
+      .filter(Boolean)
+      .slice(0, 250);
+  }
+
+  function extractBulkShoppingQuantity(line) {
+    const embedded = extractEmbeddedShoppingQuantity(line);
+    if (embedded.quantity) return embedded;
+    const count = embedded.name.match(/^(\d+(?:\.\d+)?)\s+(.{3,})$/);
+    return count ? { name:count[2].trim(), quantity:count[1] } : embedded;
+  }
+
+  function openBulkShoppingDialog() {
+    populateStoreSelects();
+    const form = document.querySelector('#bulkShoppingForm');
+    const status = document.querySelector('#bulkShoppingStatus');
+    form?.reset();
+    if (status) status.textContent = '';
+    document.querySelector('#bulkShoppingDialog')?.showModal();
+    setTimeout(() => document.querySelector('#bulkShoppingText')?.focus(), 50);
+  }
+
+  function addBulkShoppingItems(event) {
+    event.preventDefault();
+    const text = document.querySelector('#bulkShoppingText')?.value || '';
+    const lines = parseBulkShoppingLines(text);
+    const status = document.querySelector('#bulkShoppingStatus');
+    if (!lines.length) { if (status) status.textContent = 'Enter at least one shopping item.'; return; }
+    const store = normalizeStore(document.querySelector('#bulkShoppingStore')?.value);
+    const itemIds = new Set();
+    let entriesAdded = 0;
+    try {
+      lines.forEach(line => {
+        const embedded = extractBulkShoppingQuantity(line);
+        const item = addShoppingEntry({ name:embedded.name, quantity:embedded.quantity, store, source:'Manual bulk entry', learnStore:true });
+        if (!item) return;
+        itemIds.add(item.id);
+        entriesAdded += 1;
+      });
+      if (!entriesAdded) throw new Error('No usable shopping items were found.');
+      saveState();
+      renderShoppingList();
+      renderCounts();
+      if (status) status.textContent = `${entriesAdded} entr${entriesAdded===1?'y':'ies'} added across ${itemIds.size} shopping item${itemIds.size===1?'':'s'}.`;
+      setTimeout(() => document.querySelector('#bulkShoppingDialog')?.close(), 900);
+    } catch (error) {
+      if (status) status.textContent = `Items were not added: ${error.message}`;
     }
   }
 
