@@ -1,6 +1,6 @@
-# Kitchen Companion v0.17.5.1
+# Kitchen Companion v0.17.5.2
 
-## v0.17.5.1
+## v0.17.5.2
 
 - Adds a bulk Save as regular action to shopping-list selection mode.
 - Updates existing regular items by normalized name instead of creating
