@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.17.5';
+  const ENGINE_VERSION = '0.17.5.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -374,6 +374,7 @@
     document.querySelector('#shoppingSelectionCancel')?.addEventListener('click', cancelShoppingSelection);
     document.querySelector('#shoppingSelectAll')?.addEventListener('click', selectAllVisibleShopping);
     document.querySelector('#shoppingBulkMove')?.addEventListener('click', openBulkShoppingMoveDialog);
+    document.querySelector('#shoppingBulkRegular')?.addEventListener('click', saveSelectedShoppingAsRegular);
     document.querySelector('#shoppingBulkDelete')?.addEventListener('click', deleteSelectedShoppingItems);
     document.querySelector('#shoppingMoveCancel')?.addEventListener('click', () => document.querySelector('#shoppingMoveDialog')?.close());
     document.querySelector('#shoppingMoveConfirm')?.addEventListener('click', confirmShoppingMove);
@@ -388,6 +389,7 @@
     document.querySelector('#cancelBulkShopping')?.addEventListener('click', () => document.querySelector('#bulkShoppingDialog')?.close());
     document.querySelector('#bulkShoppingForm')?.addEventListener('submit', addBulkShoppingItems);
     els.regularItemsBtn.addEventListener('click', showRegularItems);
+    document.querySelector('#closeRegularItems')?.addEventListener('click', () => els.regularItemsDialog.close());
     els.shareShoppingBtn.addEventListener('click', openShareShoppingDialog);
     els.shareShoppingFileBtn?.addEventListener('click', shareShoppingListFile);
     els.copyShoppingMessageBtn?.addEventListener('click', copyShoppingListForMessage);
@@ -977,7 +979,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.17.5').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.17.5.1').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2489,7 +2491,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.17.5');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.17.5.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2830,6 +2832,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const actions = document.querySelector('#shoppingBulkActions');
     const count = document.querySelector('#shoppingSelectedCount');
     const move = document.querySelector('#shoppingBulkMove');
+    const regular = document.querySelector('#shoppingBulkRegular');
     const del = document.querySelector('#shoppingBulkDelete');
     if (!normal || !actions) return;
     normal.hidden = shoppingSelectionMode;
@@ -2837,6 +2840,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const n = shoppingSelectedIds.size;
     count.textContent = `${n} selected`;
     move.disabled = n === 0;
+    regular.disabled = n === 0;
     del.disabled = n === 0;
     const allButton = document.querySelector('#shoppingSelectAll');
     const visible = visibleShoppingItems();
@@ -2988,6 +2992,33 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     cancelShoppingSelection();
     renderCounts();
     showShoppingUndo(`${selected.length} item${selected.length===1?'':'s'} removed.`, snapshot);
+  }
+
+  function showShoppingActionStatus(message) {
+    const status = document.querySelector('#shoppingActionStatus');
+    if (!status) return;
+    status.textContent = message;
+    clearTimeout(showShoppingActionStatus.timer);
+    showShoppingActionStatus.timer = setTimeout(() => { status.textContent = ''; }, 4500);
+  }
+
+  function saveSelectedShoppingAsRegular() {
+    const selectedItems = state.shoppingList.filter(item => shoppingSelectedIds.has(item.id));
+    if (!selectedItems.length) return;
+    selectedItems.forEach(item => {
+      const quantities = [...new Set((item.entries || []).map(entry => String(entry.quantity || '').trim()).filter(Boolean))];
+      upsertRegularItem({
+        name:item.name,
+        quantity:quantities.join(' + '),
+        store:item.store,
+        group:item.group,
+        aisle:item.aisle
+      });
+    });
+    saveState();
+    const savedCount = selectedItems.length;
+    cancelShoppingSelection();
+    showShoppingActionStatus(`${savedCount} item${savedCount===1?'':'s'} saved or updated in Regular items. They remain on this shopping list.`);
   }
 
   function bindMealPlannerEvents() {

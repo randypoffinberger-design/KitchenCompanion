@@ -1,7 +1,13 @@
-# Kitchen Companion v0.17.5
+# Kitchen Companion v0.17.5.1
 
-## v0.17.5
+## v0.17.5.1
 
+- Adds a bulk Save as regular action to shopping-list selection mode.
+- Updates existing regular items by normalized name instead of creating
+  duplicates.
+- Keeps selected items on the current shopping list after saving them as
+  regular staples.
+- Keeps a close button visible at the top of Regular Items while scrolling.
 - Adds bulk manual shopping-list entry with up to 250 items per batch.
 - Accepts pasted lines, comma-separated items, bullets, checkboxes, and numbered
   lists.

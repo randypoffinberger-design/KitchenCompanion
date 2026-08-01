@@ -1,7 +1,12 @@
-# Kitchen Companion v0.17.5
+# Kitchen Companion v0.17.5.1
 
-## Bulk shopping entry (v0.17.5)
+## Bulk shopping entry (v0.17.5.1)
 
+- Adds Save as regular to the existing shopping-list selection toolbar.
+- Copies or updates every selected item in Regular Items without removing it
+  from the active shopping trip.
+- Preserves each selected item's quantity, store, group, and aisle.
+- Keeps an always-visible close button above long Regular Items lists.
 - Adds a Several items action for pasting or typing an entire shopping list.
 - Accepts one item per line as well as comma- or semicolon-separated lists.
 - Removes common bullets, checkboxes, and numbered-list markers automatically.
@@ -11,7 +16,7 @@
 - Supports one default store for the batch or existing remembered stores when
   No store is selected.
 
-## Weekly meal planner (v0.17.5)
+## Weekly meal planner (v0.17.5.1)
 
 - Restores the exact recipe-list scroll position after opening a recipe and
   returning with Back.

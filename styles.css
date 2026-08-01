@@ -163,6 +163,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .shopping-message-field textarea { box-sizing:border-box; width:100%; min-height:180px; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); resize:vertical; font:inherit; font-weight:400; }
 .shopping-add-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.5rem}
 .bulk-shopping-card{width:min(94vw,620px)}
+.shopping-action-status{min-height:1.25rem;margin:.25rem 0 .5rem;color:var(--muted);font-size:.82rem;font-weight:700}
 
 @media (max-width: 860px) {
   .app-shell { display: block; }
@@ -546,8 +547,7 @@ body.menu-open { overflow: hidden; touch-action: none; }
   #shoppingSelectionCancel{grid-column:span 2}
   #shoppingSelectedCount{grid-column:span 2}
   #shoppingSelectAll{grid-column:span 2}
-  #shoppingBulkMove{grid-column:span 3;background:var(--surface-2)}
-  #shoppingBulkDelete{grid-column:span 3;background:var(--surface-2)}
+  #shoppingBulkMove,#shoppingBulkRegular,#shoppingBulkDelete{grid-column:span 2;background:var(--surface-2)}
   .shopping-bulk-bar{padding:.3rem .4rem}
   .shopping-bar-button{width:100%;padding:.3rem .25rem;font-size:.82rem}
 }
@@ -597,13 +597,28 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   touch-action:pan-y;
   -webkit-overflow-scrolling:touch;
 }
+.regular-items-sticky-header{
+  position:sticky;
+  top:-24px;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  margin:-24px -24px 1rem;
+  padding:18px 24px 12px;
+  border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--panel) 96%,transparent);
+  backdrop-filter:blur(12px);
+}
+.regular-items-sticky-header h2{margin:0}
 @media(max-width:600px){
   dialog:not(.guided-cooking-dialog){width:calc(100vw - 1rem)}
   dialog:not(.guided-cooking-dialog)>.dialog-card{width:100%}
   dialog input,dialog select,dialog textarea{font-size:16px}
 }
 
-/* v0.17.5 weekly meal planner */
+/* v0.17.5.1 weekly meal planner */
 .meal-planner-pane{width:min(1180px,100%);margin:0 auto;padding:clamp(1rem,3vw,2rem)}
 .meal-planner-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .meal-planner-header h1{margin:0}.meal-planner-header p{margin:.35rem 0 0;color:var(--muted)}
