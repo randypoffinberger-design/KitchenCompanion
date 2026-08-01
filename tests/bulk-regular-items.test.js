@@ -20,5 +20,10 @@ assert.match(html, /class="regular-items-sticky-header"/);
 assert.match(html, /id="closeRegularItems"[^>]+aria-label="Close regular items"/);
 assert.match(app, /closeRegularItems'\)\?\.addEventListener\('click', \(\) => els[.]regularItemsDialog[.]close\(\)\)/);
 assert.match(styles, /[.]regular-items-sticky-header\{[\s\S]*?position:sticky/);
+assert.match(app, /const sortedItems=\[[.][.][.]state[.]regularItems\][.]sort/);
+assert.match(app, /SHOPPING_GROUP_ORDER[.]get\(aGroup\)/);
+assert.match(app, /localeCompare\(String\(b[.]name/);
+assert.match(app, /heading[.]className='regular-item-group-heading'/);
+assert.match(styles, /[.]regular-item-group-heading\{/);
 
-console.log('Bulk regular-items regression passed: selected shopping items become reusable staples and the regular-items close control remains visible.');
+console.log('Bulk regular-items regression passed: staples are grouped by category, alphabetized, reusable, and always closable.');
