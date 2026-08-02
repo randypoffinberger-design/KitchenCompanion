@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.17.5.2';
+  const ENGINE_VERSION = '0.18.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -95,7 +95,7 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
   let currentView = 'all';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -122,10 +122,10 @@
     searchInput: document.querySelector('#searchInput'), recipeGrid: document.querySelector('#recipeGrid'), emptyState: document.querySelector('#emptyState'),
     categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'), categoryFilter: document.querySelector('#categoryFilter'), ratingFilter: document.querySelector('#ratingFilter'), ratingSort: document.querySelector('#ratingSort'), clearSearchBtn: document.querySelector('#clearSearchBtn'), favoritesFilterBtn: document.querySelector('#favoritesFilterBtn'), clearFiltersBtn: document.querySelector('#clearFiltersBtn'),
     viewTitle: document.querySelector('#viewTitle'), viewSubtitle: document.querySelector('#viewSubtitle'),
-    listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'),
+    listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'), pantryPane: document.querySelector('#pantryPane'),
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
     moduleFile: document.querySelector('#moduleFile'), importBtn: document.querySelector('#importBtn'), moduleImportBtn: document.querySelector('#moduleImportBtn'),
-    moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'),
+    moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'), pantryCount: document.querySelector('#pantryCount'),
     settingsBtn: document.querySelector('#menuSettings'), settingsDialog: document.querySelector('#settingsDialog'), darkModeToggle: document.querySelector('#darkModeToggle'), metricToggle: document.querySelector('#metricToggle'), guidedVoiceSelect: document.querySelector('#guidedVoiceSelect'), guidedSpeechRate: document.querySelector('#guidedSpeechRate'), guidedSpeechRateValue: document.querySelector('#guidedSpeechRateValue'), guidedSpeechPitch: document.querySelector('#guidedSpeechPitch'), guidedSpeechPitchValue: document.querySelector('#guidedSpeechPitchValue'), previewGuidedVoiceBtn: document.querySelector('#previewGuidedVoiceBtn'), guidedVoiceStatus: document.querySelector('#guidedVoiceStatus'),
     reportProblemBtn: document.querySelector('#reportProblemBtn'), sendFeedbackBtn: document.querySelector('#sendFeedbackBtn'), feedbackDialog: document.querySelector('#feedbackDialog'), feedbackForm: document.querySelector('#feedbackForm'), feedbackDialogTitle: document.querySelector('#feedbackDialogTitle'), feedbackIntro: document.querySelector('#feedbackIntro'), feedbackReportId: document.querySelector('#feedbackReportId'), feedbackType: document.querySelector('#feedbackType'), feedbackSeverityField: document.querySelector('#feedbackSeverityField'), feedbackSeverity: document.querySelector('#feedbackSeverity'), feedbackSummary: document.querySelector('#feedbackSummary'), feedbackBugFields: document.querySelector('#feedbackBugFields'), feedbackActivity: document.querySelector('#feedbackActivity'), feedbackActual: document.querySelector('#feedbackActual'), feedbackExpected: document.querySelector('#feedbackExpected'), feedbackDetailsField: document.querySelector('#feedbackDetailsField'), feedbackDetails: document.querySelector('#feedbackDetails'), feedbackEmail: document.querySelector('#feedbackEmail'), feedbackScreenshot: document.querySelector('#feedbackScreenshot'), feedbackScreenshotStatus: document.querySelector('#feedbackScreenshotStatus'), feedbackIncludeDiagnostics: document.querySelector('#feedbackIncludeDiagnostics'), prepareFeedbackBtn: document.querySelector('#prepareFeedbackBtn'), feedbackPreviewField: document.querySelector('#feedbackPreviewField'), feedbackReportPreview: document.querySelector('#feedbackReportPreview'), feedbackStatus: document.querySelector('#feedbackStatus'), copyFeedbackBtn: document.querySelector('#copyFeedbackBtn'), downloadFeedbackBtn: document.querySelector('#downloadFeedbackBtn'), shareFeedbackBtn: document.querySelector('#shareFeedbackBtn'), closeFeedbackBtn: document.querySelector('#closeFeedbackBtn'),
     createRecipeBtn: document.querySelector('#menuCreateRecipe'), recipeEditorDialog: document.querySelector('#recipeEditorDialog'), recipeEditorForm: document.querySelector('#recipeEditorForm'), closeRecipeEditor: document.querySelector('#closeRecipeEditor'), cancelRecipeEditor: document.querySelector('#cancelRecipeEditor'), accentColorInput: document.querySelector('#accentColorInput'), themeColorMeta: document.querySelector('#themeColorMeta'),
@@ -189,7 +189,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
-    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], mealPlans:{}, mealPlannerPreferences:{template:{},recipes:{}}, mealPlanHistory:[], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true, alarmTone: 'bell' } };
+    return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], pantryItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], mealPlans:{}, mealPlannerPreferences:{template:{},recipes:{}}, mealPlanHistory:[], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true, alarmTone: 'bell' } };
   }
 
   function pruneUnusedMealPlans() {
@@ -390,6 +390,23 @@
     document.querySelector('#bulkShoppingForm')?.addEventListener('submit', addBulkShoppingItems);
     els.regularItemsBtn.addEventListener('click', showRegularItems);
     document.querySelector('#closeRegularItems')?.addEventListener('click', () => els.regularItemsDialog.close());
+    document.querySelector('#movePurchasedToPantryBtn')?.addEventListener('click', movePurchasedToPantry);
+    document.querySelector('#addPantryItemBtn')?.addEventListener('click', () => openPantryItemDialog());
+    document.querySelector('#addManyPantryItemsBtn')?.addEventListener('click', openBulkPantryDialog);
+    document.querySelector('#bulkPantryForm')?.addEventListener('submit', addBulkPantryItems);
+    document.querySelector('#cancelBulkPantry')?.addEventListener('click', () => document.querySelector('#bulkPantryDialog')?.close());
+    document.querySelector('#pantrySearch')?.addEventListener('input', renderPantry);
+    document.querySelector('#pantryLowOnly')?.addEventListener('click', togglePantryLowOnly);
+    document.querySelector('#pantrySelectBtn')?.addEventListener('click', beginPantrySelection);
+    document.querySelector('#pantrySelectionCancel')?.addEventListener('click', cancelPantrySelection);
+    document.querySelector('#pantrySelectAll')?.addEventListener('click', selectAllPantry);
+    document.querySelector('#pantryBulkDelete')?.addEventListener('click', deleteSelectedPantryItems);
+    document.querySelector('#pantryItemForm')?.addEventListener('submit', savePantryItem);
+    document.querySelector('#closePantryItem')?.addEventListener('click', () => document.querySelector('#pantryItemDialog')?.close());
+    document.querySelector('#cancelPantryItem')?.addEventListener('click', () => document.querySelector('#pantryItemDialog')?.close());
+    document.querySelector('#closeUsePantry')?.addEventListener('click', () => document.querySelector('#usePantryDialog')?.close());
+    document.querySelector('#cancelUsePantry')?.addEventListener('click', () => document.querySelector('#usePantryDialog')?.close());
+    document.querySelector('#confirmUsePantry')?.addEventListener('click', confirmUsePantryIngredients);
     els.shareShoppingBtn.addEventListener('click', openShareShoppingDialog);
     els.shareShoppingFileBtn?.addEventListener('click', shareShoppingListFile);
     els.copyShoppingMessageBtn?.addEventListener('click', copyShoppingListForMessage);
@@ -456,7 +473,7 @@
       document.querySelectorAll('.category-button').forEach(x => x.classList.remove('active'));
       toggleSidebar(false);
       syncFavoriteFilterButton();
-      if (currentView === 'modules') showModules(); else if (currentView === 'shopping') showShopping(); else if (currentView === 'meal-planner') showMealPlanner(); else showList();
+      if (currentView === 'modules') showModules(); else if (currentView === 'shopping') showShopping(); else if (currentView === 'pantry') showPantry(); else if (currentView === 'meal-planner') showMealPlanner(); else showList();
     }));
   }
 
@@ -958,6 +975,7 @@
     state.regularItems = (state.regularItems || []).map(item => ({
       id:item.id || shoppingId(), name:displayShoppingName(item.name), normalizedName:shoppingNameKey(item.normalizedName || item.name), quantity:String(item.quantity || '').trim(), store:normalizeStore(item.store), group:SHOPPING_GROUPS.includes(item.group) ? item.group : classifyShoppingGroup(item.name), aisle:String(item.aisle || preferredAisleFor(item.name, item.store)).trim().slice(0, 40)
     }));
+    state.pantryItems = (state.pantryItems || []).map(normalizePantryItem);
     return changed;
   }
 
@@ -979,7 +997,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.17.5.2').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.18.0').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1538,6 +1556,7 @@
     els.allCount.textContent = recipes.length;
     els.favoriteCount.textContent = [...new Set(state.favorites)].filter(key => visibleKeys.has(key)).length;
     els.shoppingCount.textContent = state.shoppingList.filter(x=>!x.checked).length;
+    if (els.pantryCount) els.pantryCount.textContent = state.pantryItems.length;
   }
 
   function renderModuleFilter() {
@@ -1687,7 +1706,7 @@
     recipeNavigationStack = [];
     recipeReturnView = 'list';
     selectedRecipeKey = null;
-    els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
+    els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
     renderRecipeList();
     updateWakeLock();
     if (restoreScroll) {
@@ -1699,7 +1718,7 @@
   }
 
   function showDetail() {
-    els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
+    els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
     renderRecipeDetail(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1728,7 +1747,7 @@
 
   function showModules() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = true;
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
     renderModules(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1973,7 +1992,7 @@
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
-        <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button></div>${renderIngredientGroups(recipe, crossLinks)}</section>
+        <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button><button id="usePantryIngredientsBtn" class="button secondary">Use pantry ingredients</button></div>${renderIngredientGroups(recipe, crossLinks)}</section>
         <section class="recipe-section"><h2>Instructions</h2><ol class="instruction-list">${(recipe.instructions || []).map((step,index) => `<li>${renderInstructionWithTimers(step, recipe, index)}</li>`).join('')}</ol></section>
       </div>
       ${renderCrossLinkSection(recipe, crossLinks, incomingLinks)}
@@ -1986,6 +2005,7 @@
     document.querySelector('#editRecipeBtn').addEventListener('click', () => openRecipeEditor(recipe));
     document.querySelector('#shareRecipeBtn').addEventListener('click', () => openShareRecipe(recipe));
     document.querySelector('#addIngredientsBtn').addEventListener('click', () => openIngredientShopping(recipe));
+    document.querySelector('#usePantryIngredientsBtn').addEventListener('click', () => openUsePantryDialog(recipe));
     document.querySelector('#viewOriginalBtn')?.addEventListener('click', () => { selectedRecipeKey = recipe.copiedFrom; renderRecipeDetail(); });
     document.querySelector('#deleteRecipeBtn')?.addEventListener('click', () => deletePersonalRecipe(recipe));
     document.querySelector('#hideRecipeBtn')?.addEventListener('click', () => hideModuleRecipe(recipe));
@@ -2491,7 +2511,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.17.5.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.18.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2816,6 +2836,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   let shoppingUndoSnapshot = null;
   let shoppingUndoTimer = null;
   let shoppingMoveTargetIds = [];
+  let pantrySelectionMode = false;
+  const pantrySelectedIds = new Set();
 
   function visibleShoppingItems() {
     const filter = els.shoppingStoreFilter.value || 'all';
@@ -3064,7 +3086,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function showMealPlanner() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.mealPlannerPane.hidden = false;
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = false;
     renderMealPlanner();
     updateWakeLock();
     window.scrollTo({ top:0, behavior:'smooth' });
@@ -3408,9 +3430,128 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if (recipesAdded) setTimeout(() => els.mealShoppingDialog.close(), 1200);
   }
 
+  function pantryId() { return globalThis.crypto?.randomUUID?.() || `pantry-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+
+  function normalizePantryUnit(unit) {
+    const value=String(unit||'').trim().toLowerCase().replace(/[.]/g,'');
+    const aliases={item:'items',each:'items',ea:'items',can:'cans',jar:'jars',bag:'bags',box:'boxes',bottle:'bottles',carton:'cartons',dozen:'dozen',lb:'lb',lbs:'lb',pound:'lb',pounds:'lb',oz:'oz',ounce:'oz',ounces:'oz',cup:'cups',cups:'cups',tbsp:'tablespoons',tablespoon:'tablespoons',tablespoons:'tablespoons',tsp:'teaspoons',teaspoon:'teaspoons',teaspoons:'teaspoons',g:'g',gram:'g',grams:'g',kg:'kg',ml:'mL',l:'L'};
+    return aliases[value] || String(unit||'').trim();
+  }
+
+  function pantryNumber(value) {
+    const text=String(value??'').trim();
+    if(!text)return 0;
+    const glyphs={'¼':.25,'½':.5,'¾':.75,'⅓':1/3,'⅔':2/3,'⅛':.125,'⅜':.375,'⅝':.625,'⅞':.875};
+    if(glyphs[text]!==undefined)return glyphs[text];
+    const mixed=text.match(/^(\d+)\s+(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);
+    const fraction=text.match(/^(\d+)\/(\d+)$/);if(fraction)return Number(fraction[1])/Number(fraction[2]);
+    const glyphMixed=text.match(/^(\d+)([¼½¾⅓⅔⅛⅜⅝⅞])$/);if(glyphMixed)return Number(glyphMixed[1])+glyphs[glyphMixed[2]];
+    const number=Number(text);return Number.isFinite(number)?number:0;
+  }
+
+  function parsePantryAmount(text) {
+    const value=String(text||'').trim();
+    const match=value.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.]\d+)?|\d*[¼½¾⅓⅔⅛⅜⅝⅞])(?:\s+([^,]+))?$/);
+    if(!match)return {quantity:1,unit:'items'};
+    return {quantity:pantryNumber(match[1])||1,unit:normalizePantryUnit(match[2]||'items')};
+  }
+
+  function normalizePantryItem(item={}) {
+    const name=displayShoppingName(item.name);
+    return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:Math.max(0,Number(item.quantity)||0),unit:normalizePantryUnit(item.unit||'items'),group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),updatedAt:item.updatedAt||new Date().toISOString()};
+  }
+
+  function upsertPantryItem(source) {
+    const incoming=normalizePantryItem(source);
+    let item=state.pantryItems.find(entry=>shoppingNameKey(entry.normalizedName||entry.name)===incoming.normalizedName && normalizePantryUnit(entry.unit)===incoming.unit);
+    if(item){item.quantity=Math.max(0,(Number(item.quantity)||0)+incoming.quantity);item.group=incoming.group;item.updatedAt=new Date().toISOString();}
+    else {item=incoming;state.pantryItems.push(item);}
+    checkPantryRestock(item);
+    return item;
+  }
+
+  function checkPantryRestock(item) {
+    if(!item.autoRestock || Number(item.quantity)>Number(item.threshold))return;
+    const exists=state.shoppingList.some(entry=>!entry.checked && shoppingNameKey(entry.name)===shoppingNameKey(item.name));
+    if(!exists)addShoppingEntry({name:item.name,quantity:item.restockQuantity||`Restock ${item.unit}`,group:item.group,source:'Pantry restock'});
+  }
+
+  function movePurchasedToPantry() {
+    const purchased=state.shoppingList.filter(item=>item.checked);
+    if(!purchased.length)return showShoppingActionStatus('Check purchased items first, then move them to Pantry.');
+    purchased.forEach(item=>{
+      const entries=item.entries?.length?item.entries:[{quantity:'1 item'}];
+      entries.forEach(entry=>{const amount=parsePantryAmount(entry.quantity);upsertPantryItem({name:item.name,quantity:amount.quantity,unit:amount.unit,group:item.group});});
+    });
+    state.shoppingList=state.shoppingList.filter(item=>!item.checked);
+    saveState();renderShoppingList();renderCounts();showShoppingActionStatus(`${purchased.length} purchased item${purchased.length===1?'':'s'} moved to Pantry.`);
+  }
+
+  function showPantry() {
+    selectedRecipeKey=null;
+    els.listPane.hidden=true;els.detailPane.hidden=true;els.modulesPane.hidden=true;els.shoppingPane.hidden=true;els.pantryPane.hidden=false;els.mealPlannerPane.hidden=true;
+    pantrySelectionMode=false;pantrySelectedIds.clear();updatePantryBulkBar();renderPantry();updateWakeLock();window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function pantryVisibleItems() {
+    const query=String(document.querySelector('#pantrySearch')?.value||'').trim().toLowerCase();
+    const lowOnly=document.querySelector('#pantryLowOnly')?.getAttribute('aria-pressed')==='true';
+    return state.pantryItems.filter(item=>(!query || item.name.toLowerCase().includes(query)) && (!lowOnly || Number(item.quantity)<=Number(item.threshold))).sort((a,b)=>(SHOPPING_GROUP_ORDER.get(a.group)??999)-(SHOPPING_GROUP_ORDER.get(b.group)??999)||a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+  }
+
+  function updatePantryBulkBar() {
+    const select=document.querySelector('#pantrySelectBtn');const actions=document.querySelector('#pantryBulkActions');if(!select||!actions)return;
+    select.hidden=pantrySelectionMode;actions.hidden=!pantrySelectionMode;
+    const count=pantrySelectedIds.size;document.querySelector('#pantrySelectedCount').textContent=`${count} selected`;document.querySelector('#pantryBulkDelete').disabled=!count;
+    const visible=pantryVisibleItems();const all=visible.length&&visible.every(item=>pantrySelectedIds.has(item.id));document.querySelector('#pantrySelectAll').textContent=all?'None':'All';
+  }
+
+  function renderPantry() {
+    state.pantryItems=state.pantryItems.map(normalizePantryItem);
+    const root=document.querySelector('#pantryGroups');const items=pantryVisibleItems();root.innerHTML='';updatePantryBulkBar();
+    if(!items.length){root.innerHTML='<div class="empty-state"><h2>No pantry items found</h2><p>Add items manually or move checked purchases from the shopping list.</p></div>';return;}
+    let group='';items.forEach(item=>{
+      if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';heading.textContent=group;root.append(heading);}
+      const low=Number(item.quantity)<=Number(item.threshold);const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
+      row.innerHTML=`${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<div class="pantry-item-info"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="button secondary pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="button secondary pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="text-button pantry-edit">Edit</button><button type="button" class="text-button danger-text pantry-remove">Remove</button></div>`;
+      row.querySelector('.pantry-select-check')?.addEventListener('change',event=>{event.target.checked?pantrySelectedIds.add(item.id):pantrySelectedIds.delete(item.id);renderPantry();});
+      row.querySelector('.pantry-minus')?.addEventListener('click',()=>adjustPantryItem(item,-1));row.querySelector('.pantry-plus')?.addEventListener('click',()=>adjustPantryItem(item,1));
+      row.querySelector('.pantry-edit')?.addEventListener('click',()=>openPantryItemDialog(item));row.querySelector('.pantry-remove')?.addEventListener('click',()=>{if(confirm(`Remove ${item.name} from Pantry?`)){state.pantryItems=state.pantryItems.filter(entry=>entry.id!==item.id);saveState();renderPantry();renderCounts();}});
+      root.append(row);
+    });
+  }
+
+  function adjustPantryItem(item,change) {item.quantity=Math.max(0,Number(item.quantity)+change);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();renderPantry();renderCounts();}
+
+  function openPantryItemDialog(item=null) {
+    const form=document.querySelector('#pantryItemForm');form.reset();document.querySelector('#pantryItemDialogTitle').textContent=item?'Edit pantry item':'Add pantry item';document.querySelector('#pantryItemId').value=item?.id||'';document.querySelector('#pantryItemName').value=item?.name||'';document.querySelector('#pantryItemQuantity').value=item?.quantity??1;document.querySelector('#pantryItemUnit').value=item?.unit||'items';
+    const group=document.querySelector('#pantryItemGroup');group.innerHTML=SHOPPING_GROUPS.map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');group.value=item?.group||'Pantry';document.querySelector('#pantryAutoRestock').checked=!!item?.autoRestock;document.querySelector('#pantryItemThreshold').value=item?.threshold??0;document.querySelector('#pantryRestockQuantity').value=item?.restockQuantity||'';document.querySelector('#pantryItemDialog').showModal();
+  }
+
+  function savePantryItem(event) {
+    event.preventDefault();const id=document.querySelector('#pantryItemId').value;const existing=state.pantryItems.find(item=>item.id===id);const item=normalizePantryItem({id:id||pantryId(),name:document.querySelector('#pantryItemName').value,quantity:document.querySelector('#pantryItemQuantity').value,unit:document.querySelector('#pantryItemUnit').value,group:document.querySelector('#pantryItemGroup').value,autoRestock:document.querySelector('#pantryAutoRestock').checked,threshold:document.querySelector('#pantryItemThreshold').value,restockQuantity:document.querySelector('#pantryRestockQuantity').value});
+    if(existing)Object.assign(existing,item);else state.pantryItems.push(item);checkPantryRestock(existing||item);saveState();document.querySelector('#pantryItemDialog').close();renderPantry();renderCounts();
+  }
+
+  function openBulkPantryDialog() {document.querySelector('#bulkPantryForm').reset();document.querySelector('#bulkPantryStatus').textContent='';document.querySelector('#bulkPantryDialog').showModal();}
+  function addBulkPantryItems(event) {event.preventDefault();const lines=parseBulkShoppingLines(document.querySelector('#bulkPantryText').value);lines.forEach(line=>{const parsed=extractBulkShoppingQuantity(line);const amount=parsePantryAmount(parsed.quantity);upsertPantryItem({name:parsed.name,quantity:amount.quantity,unit:amount.unit,group:classifyShoppingGroup(parsed.name)});});saveState();renderPantry();renderCounts();document.querySelector('#bulkPantryStatus').textContent=`${lines.length} entr${lines.length===1?'y':'ies'} added to Pantry.`;setTimeout(()=>document.querySelector('#bulkPantryDialog').close(),800);}
+  function togglePantryLowOnly() {const button=document.querySelector('#pantryLowOnly');const active=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active);renderPantry();}
+  function beginPantrySelection(){pantrySelectionMode=true;pantrySelectedIds.clear();renderPantry();}
+  function cancelPantrySelection(){pantrySelectionMode=false;pantrySelectedIds.clear();renderPantry();}
+  function selectAllPantry(){const visible=pantryVisibleItems();const all=visible.length&&visible.every(item=>pantrySelectedIds.has(item.id));visible.forEach(item=>all?pantrySelectedIds.delete(item.id):pantrySelectedIds.add(item.id));renderPantry();}
+  function deleteSelectedPantryItems(){if(!pantrySelectedIds.size||!confirm(`Remove ${pantrySelectedIds.size} selected pantry items?`))return;state.pantryItems=state.pantryItems.filter(item=>!pantrySelectedIds.has(item.id));saveState();cancelPantrySelection();renderCounts();}
+
+  function openUsePantryDialog(recipe) {
+    const choices=document.querySelector('#usePantryChoices');choices.innerHTML='';
+    (recipe.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).forEach(ingredient=>{const name=cleanShoppingName(extractEmbeddedShoppingQuantity(ingredient.item).name);const item=state.pantryItems.find(entry=>shoppingNameKey(entry.name)===shoppingNameKey(name));if(!item)return;const recipeUnit=normalizePantryUnit(ingredient.unit);const compatible=!recipeUnit||!item.unit||recipeUnit===normalizePantryUnit(item.unit);const amount=typeof ingredient.quantity==='number'?(ingredient.scalable===false?ingredient.quantity:ingredient.quantity*activeScale):1;const row=document.createElement('label');row.className='pantry-use-row';row.innerHTML=`<input type="checkbox" data-pantry-use="${escapeHtml(item.id)}" ${compatible?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><small>Have ${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}${compatible?'':` · Recipe uses ${escapeHtml(recipeUnit||'another unit')}`}</small></span><input class="pantry-use-amount" type="number" min="0" step="any" value="${compatible?amount:0}" aria-label="Amount of ${escapeHtml(item.name)} used"><b>${escapeHtml(item.unit)}</b>`;choices.append(row);});
+    document.querySelector('#usePantryStatus').textContent=choices.children.length?'':'No recipe ingredients matched items in Pantry.';document.querySelector('#confirmUsePantry').disabled=!choices.children.length;document.querySelector('#usePantryDialog').showModal();
+  }
+
+  function confirmUsePantryIngredients(){let used=0;document.querySelectorAll('[data-pantry-use]:checked').forEach(check=>{const item=state.pantryItems.find(entry=>entry.id===check.dataset.pantryUse);const amount=Math.max(0,Number(check.closest('.pantry-use-row').querySelector('.pantry-use-amount').value)||0);if(!item||!amount)return;item.quantity=Math.max(0,Number(item.quantity)-amount);item.updatedAt=new Date().toISOString();checkPantryRestock(item);used++;});saveState();renderCounts();document.querySelector('#usePantryStatus').textContent=`Updated ${used} pantry item${used===1?'':'s'}.`;setTimeout(()=>document.querySelector('#usePantryDialog').close(),700);}
+
   function showShopping() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false; els.mealPlannerPane.hidden = true;
+    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
     shoppingSelectionMode=false; shoppingSelectedIds.clear(); populateStoreSelects(); updateShoppingBulkBar(); renderShoppingList(); updateWakeLock(); window.scrollTo({top:0,behavior:'smooth'});
   }
 
@@ -4206,7 +4347,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         recipeIds.add(recipe.id);
       });
     });
-    for (const key of ['favorites','shoppingList','regularItems','stores','manualCrossLinks','mealPlanHistory']) {
+    for (const key of ['favorites','shoppingList','regularItems','pantryItems','stores','manualCrossLinks','mealPlanHistory']) {
       if (incoming[key] !== undefined && !Array.isArray(incoming[key])) throw new Error(`Backup field ${key} is damaged.`);
     }
     for (const key of ['recipeNotes','settings','moduleSources','backupMeta','ratings','mealPlans','mealPlannerPreferences']) {
@@ -4231,7 +4372,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function mergeBackupState(current, incoming) {
     const result=JSON.parse(JSON.stringify(current)); const incomingPersonal=incoming.modules.find(m=>m.moduleId==='my-recipes'); const personal=result.modules.find(m=>m.moduleId==='my-recipes') || ensurePersonalModule();
     if(incomingPersonal){ const byId=new Map(personal.recipes.map(r=>[r.id,r])); incomingPersonal.recipes.forEach(r=>byId.set(r.id,r)); personal.recipes=[...byId.values()]; }
-    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; result.mealPlans={...(incoming.mealPlans||{}),...(result.mealPlans||{})}; result.mealPlannerPreferences={template:{...(incoming.mealPlannerPreferences?.template||{}),...(result.mealPlannerPreferences?.template||{})},recipes:{...(incoming.mealPlannerPreferences?.recipes||{}),...(result.mealPlannerPreferences?.recipes||{})}}; result.mealPlanHistory=[...(incoming.mealPlanHistory||[]),...(result.mealPlanHistory||[])].slice(-400); const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
+    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.pantryItems=[...(result.pantryItems||[]),...(incoming.pantryItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; result.mealPlans={...(incoming.mealPlans||{}),...(result.mealPlans||{})}; result.mealPlannerPreferences={template:{...(incoming.mealPlannerPreferences?.template||{}),...(result.mealPlannerPreferences?.template||{})},recipes:{...(incoming.mealPlannerPreferences?.recipes||{}),...(result.mealPlannerPreferences?.recipes||{})}}; result.mealPlanHistory=[...(incoming.mealPlanHistory||[]),...(result.mealPlanHistory||[])].slice(-400); const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
   }
 
   function restoreSelectedBackup(event) {

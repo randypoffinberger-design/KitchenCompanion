@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.17.5.2';
+  const APP_VERSION = '0.18.0';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -32,7 +32,7 @@
         profileId,
         personalRecipes: [],
         favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [],
-        shoppingList: [], regularItems: [], stores: ['Unassigned', 'Costco', 'Walmart'],
+        shoppingList: [], regularItems: [], pantryItems: [], stores: ['Unassigned', 'Costco', 'Walmart'],
         settings: { darkMode:false, metricHelpers:false, accentColor:'#7b3f00', wakeLockMode:'recipes-and-timers', alarmVolume:0.85, alarmSoundEnabled:true, alarmTone:'bell' },
         ratings: {}, learnedStorePreferences: {}, learnedShoppingGroups: {}, learnedAisles: {}, manualCrossLinks: [],
         mealPlans: {}, mealPlannerPreferences: { template:{}, recipes:{} }, mealPlanHistory: [],
@@ -386,6 +386,7 @@
       normalized.mealPlannerPreferences.template = normalized.mealPlannerPreferences.template && typeof normalized.mealPlannerPreferences.template === 'object' ? normalized.mealPlannerPreferences.template : {};
       normalized.mealPlannerPreferences.recipes = normalized.mealPlannerPreferences.recipes && typeof normalized.mealPlannerPreferences.recipes === 'object' ? normalized.mealPlannerPreferences.recipes : {};
       normalized.mealPlanHistory = Array.isArray(normalized.mealPlanHistory) ? normalized.mealPlanHistory.slice(-400) : [];
+      normalized.pantryItems = Array.isArray(normalized.pantryItems) ? normalized.pantryItems : [];
       return normalized;
     }
 
@@ -413,7 +414,7 @@
         this.shared.timers = clone((legacy.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || profileId })));
         this.shared.backupMeta = clone(legacy.backupMeta || {});
         this.activeProfile.personalRecipes = clone(legacy.modules.find(module => module.moduleId === 'my-recipes')?.recipes || []);
-        for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
+        for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','pantryItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
           if (legacy[key] !== undefined) this.activeProfile[key] = clone(legacy[key]);
         }
       }
@@ -459,6 +460,7 @@
         timers: clone(this.shared.timers || []),
         shoppingList: clone(this.activeProfile.shoppingList || []),
         regularItems: clone(this.activeProfile.regularItems || []),
+        pantryItems: clone(this.activeProfile.pantryItems || []),
         stores: clone(this.activeProfile.stores || ['Unassigned','Costco','Walmart']),
         moduleSources: clone(this.shared.moduleSources || {}),
         settings: clone(this.activeProfile.settings || {}),
@@ -480,7 +482,7 @@
       this.shared.timers = clone((state.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || this.device.activeProfileId })));
       this.shared.backupMeta = clone(state.backupMeta || {});
       this.activeProfile.personalRecipes = clone((state.modules || []).find(module => module.moduleId === 'my-recipes')?.recipes || []);
-      for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
+      for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','pantryItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
         this.activeProfile[key] = clone(state[key] ?? this.activeProfile[key]);
       }
       this.persistAll();

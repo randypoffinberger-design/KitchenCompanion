@@ -250,7 +250,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .settings-nav{margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem}
 .version-card{display:grid;gap:.35rem;padding:1rem;border:1px solid var(--border);border-radius:1rem;background:var(--surface-2);margin-bottom:1rem}
 .module-header-actions,.shopping-toolbar,.section-title-row{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap}
-.shopping-pane{padding:clamp(1rem,3vw,2rem);max-width:1100px;margin:0 auto;width:100%}
+.shopping-pane,.pantry-pane{padding:clamp(1rem,3vw,2rem);max-width:1100px;margin:0 auto;width:100%}
 .shopping-toolbar{margin:1rem 0 1.5rem}.shopping-toolbar select{min-width:180px}
 .shopping-store-card{background:var(--surface);border:1px solid var(--border);border-radius:1.25rem;padding:1rem;margin-bottom:1rem}
 .shopping-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.85rem 0;border-bottom:1px dashed var(--border)}
@@ -258,11 +258,13 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .regular-item-row{display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.75rem 0;border-bottom:1px solid var(--border)}.regular-item-row span{display:grid}.regular-item-row small{color:var(--muted)}
 .regular-item-group-heading{margin:1.25rem 0 0;padding:.6rem 0 .35rem;border-bottom:2px solid var(--accent);color:var(--accent);font-size:1rem}
 .regular-item-group-heading:first-child{margin-top:.5rem}
+.pantry-toolbar{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap;margin:1rem 0}.pantry-toolbar input{flex:1 1 16rem}.pantry-group-heading{margin:1.4rem 0 .5rem;padding-bottom:.45rem;border-bottom:2px solid var(--accent);color:var(--accent);font-size:1.05rem}.pantry-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;align-items:center;padding:.85rem 1rem;margin-bottom:.55rem;border:1px solid var(--border);border-radius:14px;background:var(--panel)}.pantry-row.bulk-selected{border-color:var(--accent);background:var(--accent-soft)}.pantry-row.pantry-low{border-left:5px solid var(--accent)}.pantry-item-info{display:grid;gap:.2rem;min-width:0}.pantry-item-info span{font-size:1.05rem}.pantry-item-info small{color:var(--muted)}.pantry-row-actions{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;justify-content:flex-end}.pantry-row-actions .button{min-width:2.7rem;padding:.55rem}.pantry-restock-settings{margin-top:1rem;border:1px solid var(--border);border-radius:12px}.pantry-use-card{width:min(94vw,680px)}#usePantryChoices{display:grid;gap:.55rem;max-height:55dvh;overflow:auto;margin:1rem 0}.pantry-use-row{display:grid;grid-template-columns:auto minmax(0,1fr) 6rem auto;gap:.65rem;align-items:center;padding:.7rem;border:1px solid var(--border);border-radius:12px}.pantry-use-row span{display:grid}.pantry-use-row small{color:var(--muted)}
 .ingredient-choice{display:flex;gap:.7rem;padding:.65rem 0;border-bottom:1px dashed var(--border)}
 .catalog-section{margin-bottom:2rem}.catalog-section>h2{margin-bottom:1rem}
 #ingredientShoppingChoices{max-height:50vh;overflow:auto;margin:1rem 0}
 @media(max-width:720px){.topbar .brand span{display:none}.top-actions{margin-left:auto}.shopping-toolbar>*{flex:1 1 45%}.section-title-row{align-items:flex-start}.section-title-row .button{width:100%}.module-header-actions{width:100%}.module-header-actions .button{flex:1}.shopping-row{align-items:flex-start}}
 @media(max-width:520px){.shopping-add-actions{width:100%}.shopping-add-actions .button{flex:1}}
+@media(max-width:600px){.pantry-row{grid-template-columns:1fr}.pantry-row-actions{justify-content:flex-start}.pantry-use-row{grid-template-columns:auto minmax(0,1fr) 5.5rem}.pantry-use-row b{grid-column:3}.pantry-row>.bulk-select-control{position:absolute}.pantry-row:has(.bulk-select-control){padding-left:3rem}}
 
 /* v0.5.1 reliability and mobile fixes */
 body.menu-open { overflow: hidden; touch-action: none; }

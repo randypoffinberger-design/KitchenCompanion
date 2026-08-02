@@ -1,4 +1,16 @@
-# Kitchen Companion v0.17.5.2
+# Kitchen Companion v0.18.0
+
+## v0.18.0
+
+- Adds the first Pantry prototype with local, profile-specific inventory.
+- Adds manual and bulk Pantry entry plus multi-select removal.
+- Moves checked shopping purchases into Pantry and removes them from the trip.
+- Groups Pantry by category and alphabetizes items within each category.
+- Adds manual quantity adjustments, search, and a low-stock filter.
+- Adds optional restock thresholds that repopulate the shopping list without
+  duplicating an existing open item.
+- Adds recipe ingredient matching and confirmation before Pantry deductions.
+- Includes Pantry in backups, profile exports, restores, and normal upgrades.
 
 ## v0.17.5.2
 
