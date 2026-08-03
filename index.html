@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.18.0">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.18.0">
+  <link rel="manifest" href="app.webmanifest?v=0.18.1">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.18.1">
   <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.18.0">
+  <link rel="stylesheet" href="styles.css?v=0.18.1">
 </head>
 <body>
   <div class="app-shell">
@@ -249,7 +249,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.18.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.18.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -637,8 +637,10 @@
       <input id="pantryItemId" type="hidden">
       <label>Item<input id="pantryItemName" required></label>
       <div class="form-grid"><label>Amount<input id="pantryItemQuantity" type="number" min="0" step="any" value="1" required></label><label>Unit<input id="pantryItemUnit" placeholder="items, cans, lb, cups"></label></div>
+      <label>Conversion profile<select id="pantryConversionProfile"></select></label>
+      <p id="pantryConversionPreview" class="setting-help" aria-live="polite"></p>
       <label>Category<select id="pantryItemGroup"></select></label>
-      <fieldset class="pantry-restock-settings"><legend>Automatic restocking</legend><label class="setting-row"><span>Add to shopping list when low</span><input id="pantryAutoRestock" type="checkbox"></label><label>Restock at or below<input id="pantryItemThreshold" type="number" min="0" step="any" value="0"></label><label>Shopping quantity<input id="pantryRestockQuantity" placeholder="1 bag, 2 cans, etc."></label></fieldset>
+      <fieldset class="pantry-restock-settings"><legend>Automatic restocking</legend><label class="setting-row"><span>Add to shopping list when low</span><input id="pantryAutoRestock" type="checkbox"></label><label>Restock at or below<input id="pantryItemThreshold" type="number" min="0" step="any" value="0"><small id="pantryThresholdUnitHelp">Threshold uses the saved inventory unit.</small></label><label>Shopping quantity<input id="pantryRestockQuantity" placeholder="1 bag, 2 cans, etc."></label></fieldset>
       <div class="dialog-actions"><button id="cancelPantryItem" type="button" class="button secondary">Cancel</button><button type="submit" class="button">Save item</button></div>
     </form>
   </dialog>
@@ -705,11 +707,11 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.18.0"></script>
-  <script src="profile-storage.js?v=0.18.0"></script>
-  <script src="url-recipe-import.js?v=0.18.0"></script>
-  <script src="meal-planner.js?v=0.18.0"></script>
-  <script src="app.js?v=0.18.0"></script>
-  <script src="ocr-service.js?v=0.18.0"></script>
+  <script src="kitchen-engine.js?v=0.18.1"></script>
+  <script src="profile-storage.js?v=0.18.1"></script>
+  <script src="url-recipe-import.js?v=0.18.1"></script>
+  <script src="meal-planner.js?v=0.18.1"></script>
+  <script src="app.js?v=0.18.1"></script>
+  <script src="ocr-service.js?v=0.18.1"></script>
 </body>
 </html>

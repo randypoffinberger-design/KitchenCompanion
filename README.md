@@ -1,4 +1,4 @@
-# Kitchen Companion v0.18.0
+# Kitchen Companion v0.18.1
 
 ## Pantry prototype (v0.18.0)
 
@@ -10,6 +10,19 @@
 - Adds optional per-item low-stock thresholds and automatic shopping-list
   restocking without duplicate open entries.
 - Preserves Pantry through profiles, backups, exports, restores, and upgrades.
+
+### Pantry staple conversions (v0.18.1)
+
+- Converts recognized package weights into approximate recipe cups for common
+  flours, sugars, salts, ground pepper, and butter.
+- Includes separate profiles for table salt, kosher salt, fine sea salt, and
+  fine pink Himalayan salt.
+- Converts gallons, quarts, pints, fluid ounces, liters, and milliliters into
+  cups, plus dozens into individual items and butter sticks into cups.
+- Shows a conversion preview before saving and labels density-based balances as
+  estimates.
+- Uses the same conversions for manual entry, bulk Pantry entry, and purchased
+  shopping items moved into Pantry.
 
 ## Bulk shopping entry (v0.17.5.2)
 

@@ -1,4 +1,15 @@
-# Kitchen Companion v0.18.0
+# Kitchen Companion v0.18.1
+
+## v0.18.1
+
+- Adds ingredient-specific package-to-recipe conversions to Pantry.
+- Estimates cups from weight for common flours, sugars, salts, pepper, and
+  butter.
+- Separates table, kosher, sea, and pink Himalayan salt conversion profiles.
+- Adds liquid-package, dozen, and butter-stick conversions.
+- Adds automatic profile detection, manual profile override, and a live
+  conversion preview.
+- Clearly marks density-based Pantry quantities as approximate.
 
 ## v0.18.0
 

@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.18.0';
+  const ENGINE_VERSION = '0.18.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -402,6 +402,7 @@
     document.querySelector('#pantrySelectAll')?.addEventListener('click', selectAllPantry);
     document.querySelector('#pantryBulkDelete')?.addEventListener('click', deleteSelectedPantryItems);
     document.querySelector('#pantryItemForm')?.addEventListener('submit', savePantryItem);
+    ['pantryItemName','pantryItemQuantity','pantryItemUnit','pantryConversionProfile'].forEach(id=>document.querySelector(`#${id}`)?.addEventListener('input', updatePantryConversionPreview));
     document.querySelector('#closePantryItem')?.addEventListener('click', () => document.querySelector('#pantryItemDialog')?.close());
     document.querySelector('#cancelPantryItem')?.addEventListener('click', () => document.querySelector('#pantryItemDialog')?.close());
     document.querySelector('#closeUsePantry')?.addEventListener('click', () => document.querySelector('#usePantryDialog')?.close());
@@ -811,7 +812,7 @@
     const value = String(name || '').replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
     const singleAmount = String.raw`(?:\d+\s+\d+\/\d+|\d+[¼½¾⅓⅔⅛⅜⅝⅞]|\d+\/\d+|\d+(?:\.\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])`;
     const amount = String.raw`(?:${singleAmount})(?:\s*(?:-|to)\s*(?:${singleAmount}))?`;
-    const unit = String.raw`(?:cups?|c|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|pounds?|lbs?|grams?|g|kilograms?|kg|milliliters?|ml|liters?|litres?|l|dozen|boxes?|bags?|cartons?|cases?|bunches?|heads?|loaves?|rolls?|trays?|packs?|packets?|packages?|envelopes?|cans?|jars?|bottles?|cloves?|sticks?)`;
+    const unit = String.raw`(?:cups?|c|tablespoons?|tbsp|teaspoons?|tsp|fluid\s+ounces?|fl\s+oz|gallons?|gal|quarts?|qt|pints?|pt|ounces?|oz|pounds?|lbs?|grams?|g|kilograms?|kg|milliliters?|ml|liters?|litres?|l|dozen|boxes?|bags?|cartons?|cases?|bunches?|heads?|loaves?|rolls?|trays?|packs?|packets?|packages?|envelopes?|cans?|jars?|bottles?|cloves?|sticks?)`;
     const parenthetical = new RegExp(`^\\(\\s*(${amount}\\s*${unit})\\s*\\)\\s*`, 'i');
     const leading = new RegExp(`^(${amount}\\s*${unit})\\b\\s*`, 'i');
     const match = value.match(parenthetical) || value.match(leading);
@@ -997,7 +998,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.18.0').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.18.1').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2511,7 +2512,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.18.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.18.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3432,9 +3433,30 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function pantryId() { return globalThis.crypto?.randomUUID?.() || `pantry-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
+  const PANTRY_CONVERSION_PROFILES = Object.freeze({
+    'flour-all-purpose':{label:'All-purpose flour',pattern:/\b(all purpose flour|plain flour|flour)\b/,gramsPerCup:120},
+    'flour-bread':{label:'Bread flour',pattern:/\bbread flour\b/,gramsPerCup:127},
+    'flour-whole-wheat':{label:'Whole-wheat flour',pattern:/\bwhole wheat flour\b/,gramsPerCup:120},
+    'sugar-granulated':{label:'Granulated sugar',pattern:/\b(granulated sugar|white sugar|sugar)\b/,gramsPerCup:200},
+    'sugar-brown':{label:'Brown sugar, packed',pattern:/\bbrown sugar\b/,gramsPerCup:220},
+    'sugar-powdered':{label:'Powdered sugar',pattern:/\b(powdered sugar|confectioners sugar|icing sugar)\b/,gramsPerCup:120},
+    'salt-table':{label:'Table salt',pattern:/\b(table salt|salt)\b/,gramsPerCup:288},
+    'salt-kosher':{label:'Kosher salt',pattern:/\bkosher salt\b/,gramsPerCup:230},
+    'salt-sea':{label:'Sea salt, fine/default',pattern:/\bsea salt\b/,gramsPerCup:288},
+    'salt-himalayan':{label:'Pink Himalayan salt, fine/default',pattern:/\b(pink himalayan salt|himalayan salt|pink salt)\b/,gramsPerCup:288},
+    'pepper-ground':{label:'Ground black pepper',pattern:/\b(ground black pepper|black pepper|ground pepper|pepper)\b/,gramsPerCup:110},
+    'butter':{label:'Butter',pattern:/\bbutter\b/,gramsPerCup:227}
+  });
+
+  function detectPantryConversionProfile(name) {
+    const key=shoppingNameKey(name);
+    const prioritized=['flour-bread','flour-whole-wheat','sugar-brown','sugar-powdered','salt-kosher','salt-sea','salt-himalayan','salt-table','pepper-ground','butter','flour-all-purpose','sugar-granulated'];
+    return prioritized.find(id=>PANTRY_CONVERSION_PROFILES[id].pattern.test(key))||'';
+  }
+
   function normalizePantryUnit(unit) {
     const value=String(unit||'').trim().toLowerCase().replace(/[.]/g,'');
-    const aliases={item:'items',each:'items',ea:'items',can:'cans',jar:'jars',bag:'bags',box:'boxes',bottle:'bottles',carton:'cartons',dozen:'dozen',lb:'lb',lbs:'lb',pound:'lb',pounds:'lb',oz:'oz',ounce:'oz',ounces:'oz',cup:'cups',cups:'cups',tbsp:'tablespoons',tablespoon:'tablespoons',tablespoons:'tablespoons',tsp:'teaspoons',teaspoon:'teaspoons',teaspoons:'teaspoons',g:'g',gram:'g',grams:'g',kg:'kg',ml:'mL',l:'L'};
+    const aliases={item:'items',each:'items',ea:'items',can:'cans',jar:'jars',bag:'bags',box:'boxes',bottle:'bottles',carton:'cartons',dozen:'dozen',dozens:'dozen',stick:'sticks',sticks:'sticks',lb:'lb',lbs:'lb',pound:'lb',pounds:'lb',oz:'oz',ounce:'oz',ounces:'oz',cup:'cups',cups:'cups',gallon:'gallons',gallons:'gallons',gal:'gallons',quart:'quarts',quarts:'quarts',qt:'quarts',pint:'pints',pints:'pints',pt:'pints','fl oz':'fluid ounces','fluid ounce':'fluid ounces','fluid ounces':'fluid ounces',tbsp:'tablespoons',tablespoon:'tablespoons',tablespoons:'tablespoons',tsp:'teaspoons',teaspoon:'teaspoons',teaspoons:'teaspoons',g:'g',gram:'g',grams:'g',kg:'kg',ml:'mL',l:'L',liter:'L',liters:'L',litre:'L',litres:'L'};
     return aliases[value] || String(unit||'').trim();
   }
 
@@ -3456,15 +3478,39 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return {quantity:pantryNumber(match[1])||1,unit:normalizePantryUnit(match[2]||'items')};
   }
 
+  function pantryWeightInGrams(quantity,unit) {
+    return unit==='lb'?quantity*453.59237:unit==='oz'?quantity*28.349523125:unit==='kg'?quantity*1000:unit==='g'?quantity:null;
+  }
+
+  function convertPantryAmount(name,quantity,unit,requestedProfile='') {
+    const amount=Math.max(0,Number(quantity)||0);const normalizedUnit=normalizePantryUnit(unit||'items');const detected=detectPantryConversionProfile(name);const profileId=requestedProfile||detected;const profile=PANTRY_CONVERSION_PROFILES[profileId];
+    const grams=pantryWeightInGrams(amount,normalizedUnit);
+    if(grams!==null&&profile?.gramsPerCup)return {quantity:grams/profile.gramsPerCup,unit:'cups',profileId,estimated:true,sourceQuantity:amount,sourceUnit:normalizedUnit};
+    const liquidCups={gallons:16,quarts:4,pints:2,'fluid ounces':1/8,L:4.22675,mL:1/236.588};
+    if(liquidCups[normalizedUnit])return {quantity:amount*liquidCups[normalizedUnit],unit:'cups',profileId:profileId||'',estimated:false,sourceQuantity:amount,sourceUnit:normalizedUnit};
+    if(normalizedUnit==='dozen')return {quantity:amount*12,unit:'items',profileId:profileId||'',estimated:false,sourceQuantity:amount,sourceUnit:normalizedUnit};
+    if(normalizedUnit==='sticks'&&profileId==='butter')return {quantity:amount/2,unit:'cups',profileId,estimated:false,sourceQuantity:amount,sourceUnit:normalizedUnit};
+    return {quantity:amount,unit:normalizedUnit,profileId:profileId||'',estimated:false,sourceQuantity:amount,sourceUnit:normalizedUnit};
+  }
+
+  function preparePantrySource(source={}) {
+    const converted=convertPantryAmount(source.name,source.quantity,source.unit,source.conversionProfile||'');
+    return {...source,quantity:converted.quantity,unit:converted.unit,conversionProfile:converted.profileId,estimated:converted.estimated,sourceQuantity:converted.sourceQuantity,sourceUnit:converted.sourceUnit};
+  }
+
+  function pantryIngredientMatchKey(name) {
+    return shoppingNameKey(name).replace(/\b(?:table|kosher|sea|pink himalayan|himalayan|pink) salt\b/g,'salt').replace(/\b(?:all purpose|plain) flour\b/g,'flour').replace(/\b(?:granulated|white) sugar\b/g,'sugar').replace(/\b(?:ground black|black|ground) pepper\b/g,'pepper');
+  }
+
   function normalizePantryItem(item={}) {
     const name=displayShoppingName(item.name);
-    return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:Math.max(0,Number(item.quantity)||0),unit:normalizePantryUnit(item.unit||'items'),group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),updatedAt:item.updatedAt||new Date().toISOString()};
+    return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:Math.max(0,Number(item.quantity)||0),unit:normalizePantryUnit(item.unit||'items'),group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),conversionProfile:item.conversionProfile||detectPantryConversionProfile(name),estimated:!!item.estimated,sourceQuantity:Number(item.sourceQuantity)||0,sourceUnit:normalizePantryUnit(item.sourceUnit||''),autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),updatedAt:item.updatedAt||new Date().toISOString()};
   }
 
   function upsertPantryItem(source) {
-    const incoming=normalizePantryItem(source);
+    const incoming=normalizePantryItem(preparePantrySource(source));
     let item=state.pantryItems.find(entry=>shoppingNameKey(entry.normalizedName||entry.name)===incoming.normalizedName && normalizePantryUnit(entry.unit)===incoming.unit);
-    if(item){item.quantity=Math.max(0,(Number(item.quantity)||0)+incoming.quantity);item.group=incoming.group;item.updatedAt=new Date().toISOString();}
+    if(item){item.quantity=Math.max(0,(Number(item.quantity)||0)+incoming.quantity);item.group=incoming.group;item.estimated=!!(item.estimated||incoming.estimated);item.conversionProfile=item.conversionProfile||incoming.conversionProfile;item.updatedAt=new Date().toISOString();}
     else {item=incoming;state.pantryItems.push(item);}
     checkPantryRestock(item);
     return item;
@@ -3513,7 +3559,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     let group='';items.forEach(item=>{
       if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';heading.textContent=group;root.append(heading);}
       const low=Number(item.quantity)<=Number(item.threshold);const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
-      row.innerHTML=`${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<div class="pantry-item-info"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="button secondary pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="button secondary pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="text-button pantry-edit">Edit</button><button type="button" class="text-button danger-text pantry-remove">Remove</button></div>`;
+      const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
+      row.innerHTML=`${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<div class="pantry-item-info"><strong>${escapeHtml(item.name)}</strong><span>${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="button secondary pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="button secondary pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="text-button pantry-edit">Edit</button><button type="button" class="text-button danger-text pantry-remove">Remove</button></div>`;
       row.querySelector('.pantry-select-check')?.addEventListener('change',event=>{event.target.checked?pantrySelectedIds.add(item.id):pantrySelectedIds.delete(item.id);renderPantry();});
       row.querySelector('.pantry-minus')?.addEventListener('click',()=>adjustPantryItem(item,-1));row.querySelector('.pantry-plus')?.addEventListener('click',()=>adjustPantryItem(item,1));
       row.querySelector('.pantry-edit')?.addEventListener('click',()=>openPantryItemDialog(item));row.querySelector('.pantry-remove')?.addEventListener('click',()=>{if(confirm(`Remove ${item.name} from Pantry?`)){state.pantryItems=state.pantryItems.filter(entry=>entry.id!==item.id);saveState();renderPantry();renderCounts();}});
@@ -3525,11 +3572,20 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function openPantryItemDialog(item=null) {
     const form=document.querySelector('#pantryItemForm');form.reset();document.querySelector('#pantryItemDialogTitle').textContent=item?'Edit pantry item':'Add pantry item';document.querySelector('#pantryItemId').value=item?.id||'';document.querySelector('#pantryItemName').value=item?.name||'';document.querySelector('#pantryItemQuantity').value=item?.quantity??1;document.querySelector('#pantryItemUnit').value=item?.unit||'items';
-    const group=document.querySelector('#pantryItemGroup');group.innerHTML=SHOPPING_GROUPS.map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');group.value=item?.group||'Pantry';document.querySelector('#pantryAutoRestock').checked=!!item?.autoRestock;document.querySelector('#pantryItemThreshold').value=item?.threshold??0;document.querySelector('#pantryRestockQuantity').value=item?.restockQuantity||'';document.querySelector('#pantryItemDialog').showModal();
+    const profile=document.querySelector('#pantryConversionProfile');profile.innerHTML='<option value="">Automatic by item name</option>'+Object.entries(PANTRY_CONVERSION_PROFILES).map(([id,value])=>`<option value="${escapeHtml(id)}">${escapeHtml(value.label)}</option>`).join('');profile.value=item?.conversionProfile||'';
+    const group=document.querySelector('#pantryItemGroup');group.innerHTML=SHOPPING_GROUPS.map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');group.value=item?.group||'Pantry';document.querySelector('#pantryAutoRestock').checked=!!item?.autoRestock;document.querySelector('#pantryItemThreshold').value=item?.threshold??0;document.querySelector('#pantryRestockQuantity').value=item?.restockQuantity||'';updatePantryConversionPreview();document.querySelector('#pantryItemDialog').showModal();
+  }
+
+  function updatePantryConversionPreview() {
+    const preview=document.querySelector('#pantryConversionPreview');if(!preview)return;const name=document.querySelector('#pantryItemName')?.value||'';const quantity=document.querySelector('#pantryItemQuantity')?.value;const unit=document.querySelector('#pantryItemUnit')?.value||'';const requested=document.querySelector('#pantryConversionProfile')?.value||'';const converted=convertPantryAmount(name,quantity,unit,requested);const detected=converted.profileId&&PANTRY_CONVERSION_PROFILES[converted.profileId];
+    const thresholdHelp=document.querySelector('#pantryThresholdUnitHelp');if(thresholdHelp)thresholdHelp.textContent=`Threshold will be measured in ${converted.unit}.`;
+    if(converted.unit===normalizePantryUnit(unit||'items')&&converted.quantity===Number(quantity)){preview.textContent=detected?`${detected.label} selected. Enter lb, oz, kg, or g to estimate recipe cups.`:'Enter a recognized staple and package unit to preview conversion.';return;}
+    preview.textContent=`${converted.estimated?'Estimated inventory':'Converted inventory'}: ${formatNumber(converted.quantity)} ${converted.unit}${detected?` using ${detected.label}`:''}.`;
   }
 
   function savePantryItem(event) {
-    event.preventDefault();const id=document.querySelector('#pantryItemId').value;const existing=state.pantryItems.find(item=>item.id===id);const item=normalizePantryItem({id:id||pantryId(),name:document.querySelector('#pantryItemName').value,quantity:document.querySelector('#pantryItemQuantity').value,unit:document.querySelector('#pantryItemUnit').value,group:document.querySelector('#pantryItemGroup').value,autoRestock:document.querySelector('#pantryAutoRestock').checked,threshold:document.querySelector('#pantryItemThreshold').value,restockQuantity:document.querySelector('#pantryRestockQuantity').value});
+    event.preventDefault();const id=document.querySelector('#pantryItemId').value;const existing=state.pantryItems.find(item=>item.id===id);const enteredUnit=document.querySelector('#pantryItemUnit').value;const item=normalizePantryItem(preparePantrySource({id:id||pantryId(),name:document.querySelector('#pantryItemName').value,quantity:document.querySelector('#pantryItemQuantity').value,unit:enteredUnit,conversionProfile:document.querySelector('#pantryConversionProfile').value,group:document.querySelector('#pantryItemGroup').value,autoRestock:document.querySelector('#pantryAutoRestock').checked,threshold:document.querySelector('#pantryItemThreshold').value,restockQuantity:document.querySelector('#pantryRestockQuantity').value}));
+    if(existing?.estimated&&normalizePantryUnit(enteredUnit)===existing.unit){item.estimated=true;item.sourceQuantity=existing.sourceQuantity;item.sourceUnit=existing.sourceUnit;}
     if(existing)Object.assign(existing,item);else state.pantryItems.push(item);checkPantryRestock(existing||item);saveState();document.querySelector('#pantryItemDialog').close();renderPantry();renderCounts();
   }
 
@@ -3543,7 +3599,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function openUsePantryDialog(recipe) {
     const choices=document.querySelector('#usePantryChoices');choices.innerHTML='';
-    (recipe.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).forEach(ingredient=>{const name=cleanShoppingName(extractEmbeddedShoppingQuantity(ingredient.item).name);const item=state.pantryItems.find(entry=>shoppingNameKey(entry.name)===shoppingNameKey(name));if(!item)return;const recipeUnit=normalizePantryUnit(ingredient.unit);const compatible=!recipeUnit||!item.unit||recipeUnit===normalizePantryUnit(item.unit);const amount=typeof ingredient.quantity==='number'?(ingredient.scalable===false?ingredient.quantity:ingredient.quantity*activeScale):1;const row=document.createElement('label');row.className='pantry-use-row';row.innerHTML=`<input type="checkbox" data-pantry-use="${escapeHtml(item.id)}" ${compatible?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><small>Have ${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}${compatible?'':` · Recipe uses ${escapeHtml(recipeUnit||'another unit')}`}</small></span><input class="pantry-use-amount" type="number" min="0" step="any" value="${compatible?amount:0}" aria-label="Amount of ${escapeHtml(item.name)} used"><b>${escapeHtml(item.unit)}</b>`;choices.append(row);});
+    (recipe.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).forEach(ingredient=>{const name=cleanShoppingName(extractEmbeddedShoppingQuantity(ingredient.item).name);const item=state.pantryItems.find(entry=>pantryIngredientMatchKey(entry.name)===pantryIngredientMatchKey(name));if(!item)return;const recipeUnit=normalizePantryUnit(ingredient.unit);const compatible=!recipeUnit||!item.unit||recipeUnit===normalizePantryUnit(item.unit);const amount=typeof ingredient.quantity==='number'?(ingredient.scalable===false?ingredient.quantity:ingredient.quantity*activeScale):1;const row=document.createElement('label');row.className='pantry-use-row';row.innerHTML=`<input type="checkbox" data-pantry-use="${escapeHtml(item.id)}" ${compatible?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><small>Have ${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}${compatible?'':` · Recipe uses ${escapeHtml(recipeUnit||'another unit')}`}</small></span><input class="pantry-use-amount" type="number" min="0" step="any" value="${compatible?amount:0}" aria-label="Amount of ${escapeHtml(item.name)} used"><b>${escapeHtml(item.unit)}</b>`;choices.append(row);});
     document.querySelector('#usePantryStatus').textContent=choices.children.length?'':'No recipe ingredients matched items in Pantry.';document.querySelector('#confirmUsePantry').disabled=!choices.children.length;document.querySelector('#usePantryDialog').showModal();
   }
 
