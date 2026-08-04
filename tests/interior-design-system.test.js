@@ -13,6 +13,8 @@ assert.match(styles, /--tiffany:#167b75/);
 assert.match(styles, /--tiffany:#81d8d0/);
 assert.match(styles, /--header-height:60px/);
 assert.match(styles, /body:not\([.]home-view\)::before/);
+assert.match(styles, /opacity:[.]055/);
+assert.match(styles, /--watermark-color:#81d8d0;opacity:[.]08/);
 assert.match(styles, /env\(safe-area-inset-top\)/);
 assert.match(styles, /prefers-reduced-motion:reduce/);
 assert.match(styles, /[.]page-heading-icon/);
