@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.19.5';
+  const ENGINE_VERSION = '0.20.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1007,7 +1007,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.19.5').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.20.0').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1407,7 +1407,9 @@
     if (els.guidedSpeechRate) els.guidedSpeechRate.value = String(state.settings.guidedSpeechRate ?? 0.95);
     if (els.guidedSpeechPitch) els.guidedSpeechPitch.value = String(state.settings.guidedSpeechPitch ?? 1);
     updateGuidedVoiceLabels();
-    const accent = state.settings.accentColor || '#7b3f00';
+    const savedAccent = state.settings.accentColor || '#7b3f00';
+    const accent = savedAccent.toLowerCase() === '#7b3f00' ? '#c80d3e' : savedAccent;
+    if (savedAccent !== accent) state.settings.accentColor = accent;
     document.documentElement.style.setProperty('--accent', accent);
     document.documentElement.style.setProperty('--accent-2', adjustColor(accent, state.settings.darkMode ? 22 : -14));
     els.accentColorInput.value = accent;
@@ -1567,6 +1569,10 @@
     els.favoriteCount.textContent = [...new Set(state.favorites)].filter(key => visibleKeys.has(key)).length;
     els.shoppingCount.textContent = state.shoppingList.filter(x=>!x.checked).length;
     if (els.pantryCount) els.pantryCount.textContent = state.pantryItems.length;
+    const shoppingSummary=document.querySelector('#shoppingPageSummary');
+    if(shoppingSummary){const checked=state.shoppingList.filter(item=>item.checked).length;const remaining=state.shoppingList.length-checked;const store=els.shoppingStoreFilter?.value||'all';shoppingSummary.textContent=`${remaining} remaining • ${checked} checked • ${store==='all'?'All stores':displayStoreName(store)}`;}
+    const pantrySummary=document.querySelector('#pantryPageSummary');
+    if(pantrySummary){const low=state.pantryItems.filter(item=>Number(item.quantity)<=Number(item.threshold)).length;pantrySummary.textContent=`${state.pantryItems.length} item${state.pantryItems.length===1?'':'s'} on hand • ${low} low stock`;}
   }
 
   function renderModuleFilter() {
@@ -1675,7 +1681,10 @@
     else if (/^[3-5]$/.test(ratingFilter)) recipes = recipes.filter(recipe => recipeRatingValue(recipe.key) >= Number(ratingFilter));
 
     els.viewTitle.textContent = currentView === 'favorites' ? 'Favorites' : currentView === 'category' ? selectedCategory : 'All recipes';
-    els.viewSubtitle.textContent = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'} shown.`;
+    const activeFilterCount=[query,moduleId!=='all',selectedFilterCategory!=='all',ratingFilter!=='all',ratingSort!=='name',currentView==='favorites'].filter(Boolean).length;
+    els.viewSubtitle.textContent = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'} • ${activeFilterCount} filter${activeFilterCount===1?'':'s'} active`;
+    document.querySelectorAll('.filter-field').forEach(field=>field.classList.toggle('active',field.querySelector('select')?.value!=='all'&&field.querySelector('select')?.value!=='name'));
+    els.clearFiltersBtn.hidden=activeFilterCount===0;
     els.recipeGrid.innerHTML = '';
     els.emptyState.hidden = recipes.length > 0;
 
@@ -2022,7 +2031,7 @@
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
         ${renderRecipeRating(recipe)}
-        <div class="recipe-action-row"><button id="startGuidedCookingBtn" class="button">🍳 ${guidedProgress > 0 ? `Resume at step ${guidedProgress + 1}` : 'Start guided cooking'}</button><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">✎ Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
+        <div class="recipe-action-row"><button id="startGuidedCookingBtn" class="button">${uiIcon('cook')} ${guidedProgress > 0 ? `Resume at step ${guidedProgress + 1}` : 'Start guided cooking'}</button><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">${uiIcon('edit')} Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
@@ -2515,7 +2524,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const nums=String(minutePart).split(/\s*(?:[–-]|to)\s*/i).map(x=>Number(x.trim()));
         values=nums.map(n=>base+n);
       }
-      return `<button type="button" class="timer-link" data-minutes="${values.join(',')}" data-step="${stepIndex+1}" data-label="${escapeHtml(match)}">⏱ ${escapeHtml(match)}</button>`;
+      return `<button type="button" class="timer-link" data-minutes="${values.join(',')}" data-step="${stepIndex+1}" data-label="${escapeHtml(match)}">${uiIcon('timer')} ${escapeHtml(match)}</button>`;
     });
   }
 
@@ -2546,7 +2555,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.19.5');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.20.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2893,6 +2902,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const regular = document.querySelector('#shoppingBulkRegular');
     const del = document.querySelector('#shoppingBulkDelete');
     if (!normal || !actions) return;
+    document.querySelector('#shoppingBulkBar').hidden=!shoppingSelectionMode;
     normal.hidden = shoppingSelectionMode;
     actions.hidden = !shoppingSelectionMode;
     const n = shoppingSelectedIds.size;
@@ -3143,13 +3153,18 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return ({ skip:'Skipped', 'eat-out':'Eating out', leftovers:'Leftovers' })[kind] || '';
   }
 
+  function uiIcon(name) {
+    const paths={edit:'<path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20ZM13.5 7l3.5 3.5"/>',lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',unlock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7-2.5"/>',reroll:'<path d="M20 7v5h-5M4 17v-5h5M6.1 9a7 7 0 0 1 11.7-2L20 12M4 12l2.2 5a7 7 0 0 0 11.7-2"/>',remove:'<path d="m6 6 12 12M18 6 6 18"/>',timer:'<path d="M9 2h6M12 14V8M7 4l-2 2M17 4l2 2"/><circle cx="12" cy="14" r="7"/>',cook:'<path d="M4 14h14a7 7 0 0 1-14 0ZM18 16h3M8 11c-2-2 2-3 0-5M13 11c-2-2 2-3 0-5"/>'};
+    return `<svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name]||''}</svg>`;
+  }
+
   function renderMealPart(day, meal, part, slot, recipes) {
     const key = KCMealPlanner.slotKey(day, meal, part);
     const recipe = slot.kind === 'recipe' ? recipes.get(slot.recipeKey) : null;
     const name = recipe?.name || (slot.kind === 'custom' ? slot.text : specialMealLabel(slot.kind)) || 'Choose a recipe';
     const missing = slot.kind === 'recipe' && !recipe;
     const meta = missing ? 'Recipe is unavailable' : recipe ? `${recipe.moduleName || 'Recipe'}${slot.locked ? ' · Locked' : slot.source === 'random' ? ' · Random' : ''}` : slot.kind === 'empty' ? 'Empty' : '';
-    const classes = ['meal-part', part === 'main' ? 'meal-part-main' : '', slot.kind === 'empty' ? 'meal-empty' : '', ['skip','eat-out','leftovers'].includes(slot.kind) ? 'meal-special' : ''].filter(Boolean).join(' ');
+    const classes = ['meal-part', part === 'main' ? 'meal-part-main' : '', slot.kind === 'empty' ? 'meal-empty' : '', slot.locked ? 'meal-locked' : '', ['skip','eat-out','leftovers'].includes(slot.kind) ? 'meal-special' : ''].filter(Boolean).join(' ');
     const scale = Number(slot.scale) || 1;
     return `<div class="${classes}" data-meal-slot="${escapeHtml(key)}">
       <button type="button" class="meal-part-choice"${recipe ? ` data-meal-open-recipe="${escapeHtml(key)}"` : ` data-meal-choose="${escapeHtml(key)}"`}>
@@ -3158,8 +3173,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         ${meta ? `<span class="meal-part-meta">${escapeHtml(meta)}</span>` : ''}
       </button>
       <div class="meal-part-actions">
-        ${recipe ? `<button type="button" data-meal-change="${escapeHtml(key)}" aria-label="Change recipe">✎</button><select data-meal-scale="${escapeHtml(key)}" aria-label="Recipe amount">${[0.5,1,1.5,2,3].map(value => `<option value="${value}"${value===scale?' selected':''}>${value}×</option>`).join('')}</select><button type="button" data-meal-lock="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock':'Lock'}">${slot.locked?'🔒':'🔓'}</button><button type="button" data-meal-reroll="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock before rerolling':'Reroll'}"${slot.locked?' disabled':''}>↻</button>` : ''}
-        ${slot.kind !== 'empty' ? `<button type="button" data-meal-clear="${escapeHtml(key)}" aria-label="Clear">✕</button>` : ''}
+        ${recipe ? `<button type="button" data-meal-change="${escapeHtml(key)}" aria-label="Change recipe">${uiIcon('edit')}</button><select data-meal-scale="${escapeHtml(key)}" aria-label="Recipe amount">${[0.5,1,1.5,2,3].map(value => `<option value="${value}"${value===scale?' selected':''}>${value}×</option>`).join('')}</select><button type="button" data-meal-lock="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock':'Lock'}">${uiIcon(slot.locked?'lock':'unlock')}</button><button type="button" data-meal-reroll="${escapeHtml(key)}" aria-label="${slot.locked?'Unlock before rerolling':'Reroll'}"${slot.locked?' disabled':''}>${uiIcon('reroll')}</button>` : ''}
+        ${slot.kind !== 'empty' ? `<button type="button" data-meal-clear="${escapeHtml(key)}" aria-label="Clear">${uiIcon('remove')}</button>` : ''}
       </div>
     </div>`;
   }
@@ -3174,12 +3189,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     KCMealPlanner.DAYS.forEach((dayName, day) => {
       const allKeys = KCMealPlanner.MEALS.flatMap(meal => KCMealPlanner.MEAL_PARTS[meal].map(part => KCMealPlanner.slotKey(day, meal, part)));
       const daySkipped = allKeys.every(key => plan.slots[key]?.kind === 'skip');
+      const mainKeys=KCMealPlanner.MEALS.map(meal=>KCMealPlanner.slotKey(day,meal,'main'));const plannedMains=mainKeys.filter(key=>plan.slots[key]?.kind!=='empty').length;
       const card = document.createElement('details');
       card.className = 'meal-day-card';
       const today = new Date();
       const todayDay = today.getDay() === 0 ? 6 : today.getDay() - 1;
       card.open = mealPlannerWeek === KCMealPlanner.startOfWeek(today) ? day === todayDay : day === 0;
-      card.innerHTML = `<summary><span class="meal-day-title"><strong>${escapeHtml(dayName)}</strong><span>${escapeHtml(mealDateLabel(day))}</span></span><span>${daySkipped?'Skipped':'▾'}</span></summary>
+      card.innerHTML = `<summary><span class="meal-day-title"><strong>${escapeHtml(dayName)}</strong><span>${escapeHtml(mealDateLabel(day))} • ${plannedMains} of 4 meals planned</span></span><span class="meal-day-chevron">${daySkipped?'Skipped':'⌄'}</span></summary>
         <div class="meal-day-actions"><button type="button" class="button secondary" data-meal-day="${day}" data-day-action="${daySkipped?'restore':'skip'}">${daySkipped?'Restore day':'Skip day'}</button><button type="button" class="button secondary" data-meal-day="${day}" data-day-action="reroll">Reroll day</button></div>
         <div class="meal-day-slots">${KCMealPlanner.MEALS.map(meal => {
           const main = plan.slots[KCMealPlanner.slotKey(day, meal, 'main')];
@@ -3644,7 +3660,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const root=document.querySelector('#pantryGroups');const items=pantryVisibleItems();root.innerHTML='';updatePantryBulkBar();
     if(!items.length){root.innerHTML='<div class="empty-state"><h2>No pantry items found</h2><p>Add items manually or move checked purchases from the shopping list.</p></div>';return;}
     let group='';items.forEach(item=>{
-      if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';heading.textContent=group;root.append(heading);}
+      if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';const groupCount=items.filter(entry=>entry.group===group).length;heading.innerHTML=`<span>${escapeHtml(group)}</span><small>${groupCount}</small>`;root.append(heading);}
       const low=Number(item.quantity)<=Number(item.threshold);const expanded=!pantrySelectionMode&&pantryExpandedId===item.id;const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${expanded?' pantry-expanded':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
       const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
       row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${expanded?'⌃':'⌄'}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
@@ -3730,10 +3746,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function renderShoppingList(highlightId='') {
     populateStoreSelects();
+    renderCounts();
     updateShoppingBulkBar();
     const items=visibleShoppingItems();
     els.shoppingGroups.innerHTML='';
-    if(!items.length){els.shoppingGroups.innerHTML='<div class="empty-state"><h2>Your list is empty</h2><p>Add items manually, from regular items, or from a recipe.</p></div>';return;}
+    if(!items.length){els.shoppingGroups.innerHTML='<div class="empty-state"><h2>Your list is ready</h2><p>Add an item, choose from regular purchases, or pull ingredients from a recipe.</p></div>';return;}
     const groups={}; items.forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));
     Object.entries(groups).forEach(([store,list])=>{
       const remaining=list.filter(x=>!x.checked).length;

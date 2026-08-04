@@ -9,15 +9,15 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.19.5">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.19.5">
+  <link rel="manifest" href="app.webmanifest?v=0.20.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.20.0">
   <title>Serenity Kitchen</title>
-  <link rel="stylesheet" href="styles.css?v=0.19.5">
+  <link rel="stylesheet" href="styles.css?v=0.20.0">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <button id="menuBtn" class="icon-btn mobile-only" aria-label="Open navigation">☰</button>
+      <button id="menuBtn" class="icon-btn mobile-only" aria-label="Open navigation"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div class="brand-wrap">
         <div class="header-profile-wrap">
           <button id="headerProfileBtn" type="button" class="header-profile-button" aria-haspopup="menu" aria-expanded="false" aria-label="Switch profile">
@@ -33,7 +33,7 @@
         <input id="recipeImportFile" type="file" accept=".json,.kcrecipe,application/json" hidden>
         <input id="backupRestoreFile" type="file" hidden>
         <input id="shoppingImportFile" type="file" hidden>
-        <button id="timersBtn" class="icon-btn timer-header-btn" aria-label="Active timers">⏱<span id="timerCount" hidden>0</span></button>
+        <button id="timersBtn" class="icon-btn timer-header-btn" aria-label="Active timers"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6M12 14V8M7 4l-2 2M17 4l2 2"/><circle cx="12" cy="14" r="7"/></svg><span id="timerCount" hidden>0</span></button>
         <button id="homeBrandBtn" type="button" class="home-logo-button" aria-label="Go to Serenity Kitchen home">
           <img src="serenity-kitchen-icon-1024.png" alt="">
         </button>
@@ -70,22 +70,21 @@
         </div>
       </section>
       <section id="listPane" class="list-pane">
-        <div class="list-header">
-          <div>
+        <div class="list-header page-heading">
+          <span class="page-heading-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v18H7.5A3.5 3.5 0 0 0 4 23V5.5ZM20 5.5A3.5 3.5 0 0 0 16.5 2H13v18h3.5A3.5 3.5 0 0 1 20 23V5.5Z"/></svg></span>
+          <div class="page-heading-copy">
             <h1 id="viewTitle">All recipes</h1>
             <p id="viewSubtitle">Browse every enabled module.</p>
           </div>
           <div class="recipe-filters">
             <div class="main-search"><input id="searchInput" type="search" placeholder="Search name, ingredient, or tag…" autocomplete="off"><button id="clearSearchBtn" type="button" class="button secondary">Clear</button></div>
-            <div class="filter-select-row">
-              <label class="filter-field"><span>Module</span><select id="moduleFilter"><option value="all">All modules</option></select></label>
-              <label class="filter-field"><span>Category</span><select id="categoryFilter"><option value="all">All categories</option></select></label>
-              <label class="filter-field"><span>Rating</span><select id="ratingFilter"><option value="all">All ratings</option><option value="rated">Rated only</option><option value="5">5 stars</option><option value="4">4 stars & up</option><option value="3">3 stars & up</option><option value="unrated">Not rated</option></select></label>
-              <label class="filter-field"><span>Sort</span><select id="ratingSort"><option value="name">Name A–Z</option><option value="rating-high">Highest rated</option><option value="rating-low">Lowest rated</option><option value="recently-rated">Recently rated</option></select></label>
-            </div>
-            <div class="filter-action-row">
-              <button id="favoritesFilterBtn" type="button" class="button secondary" aria-pressed="false">☆ Favorites</button>
-              <button id="clearFiltersBtn" type="button" class="button secondary">Clear filters</button>
+            <div class="filter-chip-row">
+              <button id="favoritesFilterBtn" type="button" class="filter-chip" aria-pressed="false">Favorites</button>
+              <label class="filter-chip filter-field"><span>Module</span><select id="moduleFilter" aria-label="Filter by module"><option value="all">All modules</option></select></label>
+              <label class="filter-chip filter-field"><span>Category</span><select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option></select></label>
+              <label class="filter-chip filter-field"><span>Rating</span><select id="ratingFilter" aria-label="Filter by rating"><option value="all">All ratings</option><option value="rated">Rated only</option><option value="5">5 stars</option><option value="4">4 stars & up</option><option value="3">3 stars & up</option><option value="unrated">Not rated</option></select></label>
+              <label class="filter-chip filter-field"><span>Sort</span><select id="ratingSort" aria-label="Sort recipes"><option value="name">Name A–Z</option><option value="rating-high">Highest rated</option><option value="rating-low">Lowest rated</option><option value="recently-rated">Recently rated</option></select></label>
+              <button id="clearFiltersBtn" type="button" class="filter-clear" hidden>Clear all</button>
             </div>
           </div>
         </div>
@@ -113,18 +112,12 @@
       </section>
 
       <section id="shoppingPane" class="shopping-pane" hidden>
-        <div class="list-header"><div><h1>Shopping list</h1><p>Clean ingredient names, grouped recipe quantities, regular staples, and store organization.</p></div><div class="shopping-add-actions"><button id="addShoppingItemBtn" class="button">＋ Item</button><button id="addManyShoppingItemsBtn" class="button secondary">＋ Several items</button></div></div>
+        <div class="list-header page-heading"><span class="page-heading-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24"><path d="m5 9 2 11h10l2-11M3 9h18M8 9l4-6 4 6M9 13v3M15 13v3"/></svg></span><div class="page-heading-copy"><h1>Shopping list</h1><p id="shoppingPageSummary">Organize purchases by store and aisle.</p></div><div class="shopping-add-actions"><button id="addShoppingItemBtn" class="button">＋ Add item</button><button id="addManyShoppingItemsBtn" class="button secondary">＋ Several</button></div></div>
         <div class="shopping-toolbar">
           <select id="shoppingStoreFilter"><option value="all">All stores</option></select>
-          <button id="regularItemsBtn" class="button secondary">Regular items</button>
-          <button id="movePurchasedToPantryBtn" class="button secondary">Move purchased to pantry</button>
-          <button id="manageStoresBtn" class="button secondary">Manage stores</button>
-          <button id="shareShoppingBtn" class="button secondary">Share</button>
-          <button id="importShoppingBtn" class="button secondary">Import list</button>
-          <button id="clearCheckedBtn" class="button secondary">Clear checked</button>
+          <details class="more-actions"><summary>More actions</summary><div class="more-actions-menu"><button id="shoppingSelectBtn" type="button" class="button secondary">Select items</button><button id="regularItemsBtn" class="button secondary">Regular items</button><button id="movePurchasedToPantryBtn" class="button secondary">Move purchased to pantry</button><button id="manageStoresBtn" class="button secondary">Manage stores</button><button id="shareShoppingBtn" class="button secondary">Share</button><button id="importShoppingBtn" class="button secondary">Import list</button><button id="clearCheckedBtn" class="button secondary">Clear checked</button></div></details>
         </div>
-        <div id="shoppingBulkBar" class="shopping-bulk-bar" aria-live="polite">
-          <button id="shoppingSelectBtn" type="button" class="shopping-bar-button">Select items</button>
+        <div id="shoppingBulkBar" class="shopping-bulk-bar" aria-live="polite" hidden>
           <div id="shoppingBulkActions" class="shopping-bulk-actions" hidden>
             <button id="shoppingSelectionCancel" type="button" class="shopping-bar-button">Cancel</button>
             <strong id="shoppingSelectedCount">0 selected</strong>
@@ -140,7 +133,7 @@
       </section>
 
       <section id="pantryPane" class="pantry-pane" hidden>
-        <div class="list-header"><div><h1>Pantry</h1><p>Keep track of food on hand and automatically restock low items.</p></div><div class="shopping-add-actions"><button id="addPantryItemBtn" class="button">＋ Pantry item</button><button id="addManyPantryItemsBtn" class="button secondary">＋ Several items</button></div></div>
+        <div class="list-header page-heading"><span class="page-heading-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24"><path d="M4 3h16v18H4zM4 9h16M4 15h16M8 5v2M15 11v2M9 17v2"/></svg></span><div class="page-heading-copy"><h1>Pantry</h1><p id="pantryPageSummary">Track what is on hand and restock automatically.</p></div><div class="shopping-add-actions"><button id="addPantryItemBtn" class="button">＋ Add item</button><button id="addManyPantryItemsBtn" class="button secondary">＋ Several</button></div></div>
         <div class="pantry-toolbar"><input id="pantrySearch" type="search" placeholder="Find an item…" aria-label="Search pantry items" autocomplete="off"><select id="pantryGroupFilter" aria-label="Filter pantry by category"><option value="all">All categories</option></select><button id="pantryLowOnly" type="button" class="button secondary" aria-pressed="false">Low stock only</button></div>
         <div class="shopping-bulk-bar"><button id="pantrySelectBtn" type="button" class="shopping-bar-button">Select items</button><div id="pantryBulkActions" class="shopping-bulk-actions" hidden><button id="pantrySelectionCancel" type="button" class="shopping-bar-button">Cancel</button><strong id="pantrySelectedCount">0 selected</strong><button id="pantrySelectAll" type="button" class="shopping-bar-button">All</button><button id="pantryBulkDelete" type="button" class="shopping-bar-button danger-text" disabled>Remove</button></div></div>
         <p id="pantryStatus" class="shopping-action-status" aria-live="polite"></p>
@@ -148,8 +141,8 @@
       </section>
 
       <section id="mealPlannerPane" class="meal-planner-pane" hidden>
-        <div class="meal-planner-header">
-          <div><h1>Meal planner</h1><p id="mealPlannerWeekLabel">Plan one week at a time.</p></div>
+        <div class="meal-planner-header page-heading">
+          <span class="page-heading-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24"><path d="M5 4h14v17H5zM8 2v4M16 2v4M5 9h14M9 13h2M13 13h2M9 17h2M13 17h2"/></svg></span><div class="page-heading-copy"><h1>Meal planner</h1><p id="mealPlannerWeekLabel">Plan one week at a time.</p></div>
           <div class="meal-week-controls"><button id="mealPreviousWeek" type="button" class="button secondary" aria-label="Previous week">←</button><button id="mealCurrentWeek" type="button" class="button secondary">This week</button><button id="mealNextWeek" type="button" class="button secondary" aria-label="Next week">→</button></div>
         </div>
         <div class="meal-planner-toolbar">
@@ -257,7 +250,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.19.5</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.20.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -715,11 +708,11 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.19.5"></script>
-  <script src="profile-storage.js?v=0.19.5"></script>
-  <script src="url-recipe-import.js?v=0.19.5"></script>
-  <script src="meal-planner.js?v=0.19.5"></script>
-  <script src="app.js?v=0.19.5"></script>
-  <script src="ocr-service.js?v=0.19.5"></script>
+  <script src="kitchen-engine.js?v=0.20.0"></script>
+  <script src="profile-storage.js?v=0.20.0"></script>
+  <script src="url-recipe-import.js?v=0.20.0"></script>
+  <script src="meal-planner.js?v=0.20.0"></script>
+  <script src="app.js?v=0.20.0"></script>
+  <script src="ocr-service.js?v=0.20.0"></script>
 </body>
 </html>

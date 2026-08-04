@@ -1,4 +1,18 @@
-# Serenity Kitchen v0.19.5
+# Serenity Kitchen v0.20.0
+
+## v0.20.0
+
+- Introduces a reusable app-wide interior design system with three-level surfaces, restrained depth, consistent controls, Serenity red, and Tiffany-blue status styling.
+- Adds accessible light and dark palettes plus safe-area-aware sticky headers and controls for Safari and installed iPhone PWAs.
+- Adds a fixed, monochrome SK skillet-and-steam watermark behind every interior view using a small offline SVG asset.
+- Refines the shared header and replaces the stopwatch and Meal Planner lock/action emoji with a consistent SVG line-icon family.
+- Adds branded page-heading cards with matching line icons and live recipe, shopping, pantry, and week summaries.
+- Compresses recipe filters into chips while retaining every existing filter, sort choice, clear behavior, and saved default.
+- Refines recipe cards with a restrained red edge, quieter categories, compact metadata, and preserved pantry/crosslink indicators.
+- Consolidates infrequent Shopping List management tools into a More actions menu without removing any action.
+- Retains compact Shopping and Pantry expansion patterns, adding Pantry category counts and refined low-stock/filter states.
+- Improves Meal Planner hierarchy, day summaries, sticky action placement, and Tiffany-blue locked-meal treatment without changing planner behavior.
+- Adds reduced-motion support, accessible focus states, long-name handling, and consistent press feedback.
 
 ## v0.19.5
 

@@ -33,7 +33,7 @@
         personalRecipes: [],
         favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [],
         shoppingList: [], regularItems: [], pantryItems: [], stores: ['Unassigned', 'Costco', 'Walmart'],
-        settings: { darkMode:false, metricHelpers:false, accentColor:'#7b3f00', wakeLockMode:'recipes-and-timers', alarmVolume:0.85, alarmSoundEnabled:true, alarmTone:'bell' },
+        settings: { darkMode:false, metricHelpers:false, accentColor:'#c80d3e', wakeLockMode:'recipes-and-timers', alarmVolume:0.85, alarmSoundEnabled:true, alarmTone:'bell' },
         ratings: {}, learnedStorePreferences: {}, learnedShoppingGroups: {}, learnedAisles: {}, manualCrossLinks: [],
         mealPlans: {}, mealPlannerPreferences: { template:{}, recipes:{} }, mealPlanHistory: [],
         createdAt: now(), updatedAt: now()
