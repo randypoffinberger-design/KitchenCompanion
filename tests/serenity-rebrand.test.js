@@ -11,7 +11,7 @@ const manifest = JSON.parse(read('app.webmanifest'));
 const worker = read('service-worker.js');
 
 assert.equal(manifest.name, 'Serenity Kitchen');
-assert.equal(manifest.version, '0.20.5');
+assert.equal(manifest.version, '0.20.6');
 assert.match(html, /Serenity Kitchen by Serenity Valley Works|<strong>Serenity Kitchen<\/strong>[\s\S]*by Serenity Valley Works/);
 assert.match(app, /Serenity-Kitchen-Backup-/);
 assert.match(app, /[.]skbackup/);
