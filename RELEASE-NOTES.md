@@ -1,4 +1,13 @@
-# Serenity Kitchen v0.20.2
+# Serenity Kitchen v0.20.3
+
+## v0.20.3
+
+- Fixes the full-screen blank gap before every interior page by restoring the hidden mobile sidebar to a fixed overlay instead of an in-flow element.
+- Restores the top header to sticky positioning and the desktop sidebar to its original sticky behavior.
+- Replaces the externally filtered SVG watermark with a self-contained transparent PNG derived directly from the approved Serenity Kitchen logo.
+- Removes the black rounded-square tile while preserving the approved S, K, checkmark, and skillet geometry.
+- Keeps the watermark theme-colorable, subtle, fixed, noninteractive, and available offline.
+- Includes the v0.20.1 startup initialization correction.
 
 ## v0.20.2
 
