@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.19.4';
+  const ENGINE_VERSION = '0.19.5';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1007,7 +1007,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.19.4').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.19.5').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2546,7 +2546,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.19.4');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.19.5');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2873,6 +2873,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   let shoppingMoveTargetIds = [];
   let pantrySelectionMode = false;
   const pantrySelectedIds = new Set();
+  let pantryExpandedId = null;
 
   function visibleShoppingItems() {
     const filter = els.shoppingStoreFilter.value || 'all';
@@ -3644,10 +3645,12 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if(!items.length){root.innerHTML='<div class="empty-state"><h2>No pantry items found</h2><p>Add items manually or move checked purchases from the shopping list.</p></div>';return;}
     let group='';items.forEach(item=>{
       if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';heading.textContent=group;root.append(heading);}
-      const low=Number(item.quantity)<=Number(item.threshold);const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
+      const low=Number(item.quantity)<=Number(item.threshold);const expanded=!pantrySelectionMode&&pantryExpandedId===item.id;const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${expanded?' pantry-expanded':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
       const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
-      row.innerHTML=`${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<div class="pantry-item-info"><strong>${escapeHtml(item.name)}</strong><span>${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div>`;
+      row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${expanded?'⌃':'⌄'}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
       row.querySelector('.pantry-select-check')?.addEventListener('change',event=>{event.target.checked?pantrySelectedIds.add(item.id):pantrySelectedIds.delete(item.id);renderPantry();});
+      const toggle=()=>{pantryExpandedId=pantryExpandedId===item.id?null:item.id;renderPantry();};
+      row.querySelector('.pantry-name-toggle')?.addEventListener('click',toggle);row.querySelector('.pantry-detail-toggle')?.addEventListener('click',toggle);
       row.querySelector('.pantry-minus')?.addEventListener('click',()=>adjustPantryItem(item,-1));row.querySelector('.pantry-plus')?.addEventListener('click',()=>adjustPantryItem(item,1));
       row.querySelector('.pantry-edit')?.addEventListener('click',()=>openPantryItemDialog(item));row.querySelector('.pantry-remove')?.addEventListener('click',()=>{if(confirm(`Remove ${item.name} from Pantry?`)){state.pantryItems=state.pantryItems.filter(entry=>entry.id!==item.id);saveState();renderPantry();renderCounts();}});
       root.append(row);
@@ -3678,7 +3681,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function openBulkPantryDialog() {document.querySelector('#bulkPantryForm').reset();document.querySelector('#bulkPantryStatus').textContent='';document.querySelector('#bulkPantryDialog').showModal();}
   function addBulkPantryItems(event) {event.preventDefault();const lines=parseBulkShoppingLines(document.querySelector('#bulkPantryText').value);lines.forEach(line=>{const parsed=extractBulkShoppingQuantity(line);const amount=parsePantryAmount(parsed.quantity);upsertPantryItem({name:parsed.name,quantity:amount.quantity,unit:amount.unit,group:classifyShoppingGroup(parsed.name)});});saveState();renderPantry();renderCounts();document.querySelector('#bulkPantryStatus').textContent=`${lines.length} entr${lines.length===1?'y':'ies'} added to Pantry.`;setTimeout(()=>document.querySelector('#bulkPantryDialog').close(),800);}
   function togglePantryLowOnly() {const button=document.querySelector('#pantryLowOnly');const active=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active);renderPantry();}
-  function beginPantrySelection(){pantrySelectionMode=true;pantrySelectedIds.clear();renderPantry();}
+  function beginPantrySelection(){pantrySelectionMode=true;pantryExpandedId=null;pantrySelectedIds.clear();renderPantry();}
   function cancelPantrySelection(){pantrySelectionMode=false;pantrySelectedIds.clear();renderPantry();}
   function selectAllPantry(){const visible=pantryVisibleItems();const all=visible.length&&visible.every(item=>pantrySelectedIds.has(item.id));visible.forEach(item=>all?pantrySelectedIds.delete(item.id):pantrySelectedIds.add(item.id));renderPantry();}
   function deleteSelectedPantryItems(){if(!pantrySelectedIds.size||!confirm(`Remove ${pantrySelectedIds.size} selected pantry items?`))return;state.pantryItems=state.pantryItems.filter(item=>!pantrySelectedIds.has(item.id));saveState();cancelPantrySelection();renderCounts();}

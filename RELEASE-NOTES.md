@@ -1,4 +1,12 @@
-# Serenity Kitchen v0.19.4
+# Serenity Kitchen v0.19.5
+
+## v0.19.5
+
+- Collapses every Pantry item to a slim row showing only its complete name.
+- Expands an item when its name or chevron is tapped to show the amount on hand, conversion and restock information, quantity controls, Edit, and Remove.
+- Keeps only one Pantry item expanded at a time.
+- Closes expanded Pantry details when bulk-selection mode begins.
+- Preserves the compact Pantry behavior and contrast in both light and dark themes.
 
 ## v0.19.4
 
