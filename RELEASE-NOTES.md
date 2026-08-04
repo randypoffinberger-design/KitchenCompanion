@@ -1,4 +1,12 @@
-# Serenity Kitchen v0.19.3
+# Serenity Kitchen v0.19.4
+
+## v0.19.4
+
+- Restores full pantry item names, quantities, conversion details, and restock notes without truncation.
+- Keeps pantry rows compact by placing their small controls beneath item information on phones.
+- Adds an individual green, yellow, or red Pantry-readiness marker beside every recipe ingredient.
+- Adds a compact Have / Check / Missing legend above recipe ingredients.
+- Improves ingredient matching for preparation words, singular/plural produce, whole milk, fresh spinach, and garlic cloves.
 
 ## v0.19.3
 

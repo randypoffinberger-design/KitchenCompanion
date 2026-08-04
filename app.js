@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.19.3';
+  const ENGINE_VERSION = '0.19.4';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1007,7 +1007,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.19.3').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.19.4').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2026,7 +2026,7 @@
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
-        <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button><button id="usePantryIngredientsBtn" class="button secondary">Use pantry ingredients</button></div>${renderIngredientGroups(recipe, crossLinks)}</section>
+        <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><div class="pantry-readiness-legend" aria-label="Pantry ingredient status"><span>${pantryReadinessMarker('green')}Have</span><span>${pantryReadinessMarker('yellow')}Check</span><span>${pantryReadinessMarker('red')}Missing</span></div><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button><button id="usePantryIngredientsBtn" class="button secondary">Use pantry ingredients</button></div>${renderIngredientGroups(recipe, crossLinks)}</section>
         <section class="recipe-section"><h2>Instructions</h2><ol class="instruction-list">${(recipe.instructions || []).map((step,index) => `<li>${renderInstructionWithTimers(step, recipe, index)}</li>`).join('')}</ol></section>
       </div>
       ${renderCrossLinkSection(recipe, crossLinks, incomingLinks)}
@@ -2061,7 +2061,8 @@
           const linkButton = !link ? '' : link.targets.length === 1
             ? `<button type="button" class="crosslink-inline-button" data-crosslink-target="${escapeHtml(link.targets[0].key)}">${pantryReadinessMarker(recipePantryReadinessByKey(link.targets[0].key), 'outline')}View recipe</button>`
             : `<button type="button" class="crosslink-inline-button" data-crosslink-choice="${escapeHtml(link.id)}">${link.targets.length} recipe options</button>`;
-          return `<li><label><input type="checkbox"><span>${formatIngredient(ingredient)}</span></label>${linkButton}</li>`;
+          const readiness=ingredientPantryReadiness(ingredient,activeScale);
+          return `<li><label><input type="checkbox"><span class="ingredient-readiness-wrap">${pantryReadinessMarker(readiness,'solid')}<span>${formatIngredient(ingredient)}</span></span></label>${linkButton}</li>`;
         }).join('')}</ul>
       </div>`).join('');
   }
@@ -2545,7 +2546,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.19.3');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.19.4');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3533,7 +3534,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
   function pantryIngredientMatchKey(name) {
-    return shoppingNameKey(name).replace(/\b(?:table|kosher|sea|pink himalayan|himalayan|pink) salt\b/g,'salt').replace(/\b(?:all purpose|plain) flour\b/g,'flour').replace(/\b(?:granulated|white) sugar\b/g,'sugar').replace(/\b(?:ground black|black|ground) pepper\b/g,'pepper');
+    return shoppingNameKey(name)
+      .replace(/\b(?:fresh|frozen|dried|dry|canned|chopped|diced|sliced|shredded|minced|crushed|whole|large|medium|small)\b/g,' ')
+      .replace(/\b(?:table|kosher|sea|pink himalayan|himalayan|pink) salt\b/g,'salt')
+      .replace(/\b(?:all purpose|plain) flour\b/g,'flour').replace(/\b(?:granulated|white) sugar\b/g,'sugar').replace(/\b(?:ground black|black|ground) pepper\b/g,'pepper')
+      .replace(/\bgarlic cloves?\b/g,'garlic').replace(/\bcloves?\b/g,'garlic').replace(/\b(eggs|tomatoes|mushrooms|peppers|onions)\b/g,word=>word.slice(0,-1)).replace(/\bgarlic garlic\b/g,'garlic').replace(/\s+/g,' ').trim();
   }
 
   function pantryComparableAmount(quantity, unit) {
