@@ -26,7 +26,14 @@ assert.doesNotMatch(app, /🔒|🔓/);
 assert.match(app, /function uiIcon/);
 assert.match(app, /meal-locked/);
 assert.match(app, /activeFilterCount/);
+assert.ok(
+  app.indexOf("const ratingSort = els.ratingSort?.value || 'name'") < app.indexOf('const activeFilterCount='),
+  'Recipe sort must be initialized before the active-filter summary reads it.'
+);
 assert.match(worker, /sk-watermark[.]svg/);
 assert.match(watermark, /<svg/);
+assert.match(watermark, /serenity-kitchen-icon-1024[.]png/);
+assert.match(watermark, /approved-sk-symbol/);
+assert.doesNotMatch(watermark, /circle|M95 295/);
 
 console.log('Interior design-system regression passed: shared themes, watermark, headings, compact filters/actions, safe areas, line icons, and planner lock styling are wired.');
