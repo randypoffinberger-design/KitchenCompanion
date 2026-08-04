@@ -1,4 +1,10 @@
-# Serenity Kitchen v0.20.7
+# Serenity Kitchen v0.20.8
+
+## v0.20.8
+
+- Fixes an iPhone-only media-query override that reduced the watermark to 2.2% in light mode and 3.2% in dark mode.
+- Ensures mobile screens now receive the intended 18% light-mode and 22% dark-mode watermark opacity.
+- Adds a regression guard preventing mobile CSS from silently weakening the shared watermark again.
 
 ## v0.20.7
 
