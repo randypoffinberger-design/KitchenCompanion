@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.20.0';
+  const ENGINE_VERSION = '0.20.2';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1007,7 +1007,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.20.0').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.20.2').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1674,6 +1674,7 @@
     const query = els.searchInput.value.trim().toLowerCase();
     const moduleId = els.moduleFilter.value;
     const selectedFilterCategory = currentView === 'category' ? selectedCategory : els.categoryFilter.value;
+    const ratingSort = els.ratingSort?.value || 'name';
     let recipes = engine.filterRecipes(getAllRecipes(), { query, moduleId, category: selectedFilterCategory, favorites: currentView === 'favorites' ? state.favorites : null });
     const ratingFilter = els.ratingFilter?.value || 'all';
     if (ratingFilter === 'rated') recipes = recipes.filter(recipe => recipeRatingValue(recipe.key) > 0);
@@ -1688,7 +1689,6 @@
     els.recipeGrid.innerHTML = '';
     els.emptyState.hidden = recipes.length > 0;
 
-    const ratingSort = els.ratingSort?.value || 'name';
     recipes.sort((a, b) => {
       if (ratingSort === 'rating-high') return recipeRatingValue(b.key) - recipeRatingValue(a.key) || a.name.localeCompare(b.name);
       if (ratingSort === 'rating-low') {
@@ -2555,7 +2555,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.20.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.20.2');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

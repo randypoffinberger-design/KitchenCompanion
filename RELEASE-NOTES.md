@@ -1,4 +1,18 @@
-# Serenity Kitchen v0.20.0
+# Serenity Kitchen v0.20.2
+
+## v0.20.2
+
+- Replaces the temporary generic skillet watermark with the exact approved Serenity Kitchen SK, steam, checkmark, and skillet symbol.
+- Removes the black icon tile and full-color treatment through a monochrome SVG mask while preserving the approved logo geometry.
+- Keeps the approved symbol fixed, subtle, noninteractive, theme-colored, offline-ready, and free of the Serenity Kitchen wordmark.
+- Includes the v0.20.1 startup initialization fix so all interior pages render normally without recovery mode.
+
+## v0.20.1
+
+- Fixes the startup recovery-mode error caused by the recipe filter summary reading `ratingSort` before initialization.
+- Restores normal rendering and navigation for Recipes, Shopping List, Pantry, Meal Planner, and other interior views.
+- Adds a regression guard that verifies recipe sorting is initialized before the active-filter summary runs.
+- Preserves all saved profiles, recipes, ratings, shopping data, pantry data, meal plans, and backup compatibility.
 
 ## v0.20.0
 
