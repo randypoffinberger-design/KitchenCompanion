@@ -1,4 +1,10 @@
-# Serenity Kitchen v0.20.4
+# Serenity Kitchen v0.20.5
+
+## v0.20.5
+
+- Increases the Serenity Kitchen watermark visibility on every interior page while keeping it behind all content and controls.
+- Uses a restrained 5.5% watermark opacity in light mode and 8% Tiffany-blue opacity in dark mode.
+- Preserves the approved logo artwork, fixed placement, pointer transparency, offline support, and theme behavior.
 
 ## v0.20.4
 
