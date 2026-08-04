@@ -1,4 +1,13 @@
-# Serenity Kitchen v0.19.2
+# Serenity Kitchen v0.19.3
+
+## v0.19.3
+
+- Slims Pantry items into compact, shopping-list-style rows.
+- Adds Pantry word search, category filtering, and the existing low-stock filter in one compact toolbar.
+- Adds tiny green, yellow, and red Pantry-readiness markers to recipe cards.
+- Uses outlined readiness markers for a recipe linked as an ingredient, distinguishing it from the solid whole-recipe marker.
+- Treats estimated, incompatible, and naturally variable quantities—such as heads and cloves of garlic—as yellow instead of claiming an exact amount.
+- Tunes readiness colors and marker borders separately for light and dark themes.
 
 ## v0.19.2
 

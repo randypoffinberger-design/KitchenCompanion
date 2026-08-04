@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.19.2';
+  const ENGINE_VERSION = '0.19.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -399,6 +399,7 @@
     document.querySelector('#bulkPantryForm')?.addEventListener('submit', addBulkPantryItems);
     document.querySelector('#cancelBulkPantry')?.addEventListener('click', () => document.querySelector('#bulkPantryDialog')?.close());
     document.querySelector('#pantrySearch')?.addEventListener('input', renderPantry);
+    document.querySelector('#pantryGroupFilter')?.addEventListener('change', renderPantry);
     document.querySelector('#pantryLowOnly')?.addEventListener('click', togglePantryLowOnly);
     document.querySelector('#pantrySelectBtn')?.addEventListener('click', beginPantrySelection);
     document.querySelector('#pantrySelectionCancel')?.addEventListener('click', cancelPantrySelection);
@@ -1006,7 +1007,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.19.2').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.19.3').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1695,6 +1696,7 @@
       const fragment = document.querySelector('#recipeCardTemplate').content.cloneNode(true);
       const card = fragment.querySelector('.recipe-card');
       fragment.querySelector('.recipe-category').textContent = recipe.category || 'Uncategorized';
+      fragment.querySelector('.recipe-card-topline')?.insertAdjacentHTML('beforeend', pantryReadinessMarker(recipePantryReadiness(recipe), 'solid'));
       const favoriteButton = fragment.querySelector('.recipe-favorite');
       const isFavorite = state.favorites.includes(recipe.key);
       favoriteButton.textContent = isFavorite ? '★' : '☆';
@@ -2057,7 +2059,7 @@
           const groupIndex = (recipe.ingredientGroups || []).indexOf(group);
           const link = ingredientLinks.get(`${groupIndex}:${ingredientIndex}`);
           const linkButton = !link ? '' : link.targets.length === 1
-            ? `<button type="button" class="crosslink-inline-button" data-crosslink-target="${escapeHtml(link.targets[0].key)}">View recipe</button>`
+            ? `<button type="button" class="crosslink-inline-button" data-crosslink-target="${escapeHtml(link.targets[0].key)}">${pantryReadinessMarker(recipePantryReadinessByKey(link.targets[0].key), 'outline')}View recipe</button>`
             : `<button type="button" class="crosslink-inline-button" data-crosslink-choice="${escapeHtml(link.id)}">${link.targets.length} recipe options</button>`;
           return `<li><label><input type="checkbox"><span>${formatIngredient(ingredient)}</span></label>${linkButton}</li>`;
         }).join('')}</ul>
@@ -2543,7 +2545,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.19.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.19.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3534,6 +3536,44 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return shoppingNameKey(name).replace(/\b(?:table|kosher|sea|pink himalayan|himalayan|pink) salt\b/g,'salt').replace(/\b(?:all purpose|plain) flour\b/g,'flour').replace(/\b(?:granulated|white) sugar\b/g,'sugar').replace(/\b(?:ground black|black|ground) pepper\b/g,'pepper');
   }
 
+  function pantryComparableAmount(quantity, unit) {
+    const amount=Math.max(0,Number(quantity)||0);const normalized=normalizePantryUnit(unit);
+    const volume={cups:1,tablespoons:1/16,teaspoons:1/48,'fluid ounces':1/8,mL:1/236.588,L:4.22675};
+    const weight={g:1,kg:1000,oz:28.349523125,lb:453.59237};
+    if(volume[normalized])return {family:'volume',amount:amount*volume[normalized]};
+    if(weight[normalized])return {family:'weight',amount:amount*weight[normalized]};
+    return {family:normalized||'items',amount};
+  }
+
+  function ingredientPantryReadiness(ingredient, scale=1) {
+    const embedded=extractEmbeddedShoppingQuantity(ingredient?.item||'');const wantedName=cleanShoppingName(embedded.name);
+    const pantry=state.pantryItems.find(item=>pantryIngredientMatchKey(item.name)===pantryIngredientMatchKey(wantedName));
+    if(!pantry||Number(pantry.quantity)<=0)return 'red';
+    const requested=typeof ingredient?.quantity==='number'?ingredient.quantity*(ingredient.scalable===false?1:scale):pantryNumber(ingredient?.displayQuantity);
+    if(!requested)return 'yellow';
+    const have=pantryComparableAmount(pantry.quantity,pantry.unit);const need=pantryComparableAmount(requested,ingredient.unit);
+    if(have.family!==need.family)return 'yellow';
+    const ratio=have.amount/need.amount;
+    if(pantry.estimated||/\b(head|clove)s?\b/i.test(`${pantry.unit} ${ingredient.unit}`))return ratio<.75?'red':'yellow';
+    return ratio>=1?'green':ratio>=.75?'yellow':'red';
+  }
+
+  function recipePantryReadiness(recipe, scale=1) {
+    const ingredients=(recipe?.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).filter(ingredient=>ingredient?.item&&!/\b(optional|for serving|to taste|as needed)\b/i.test(`${ingredient.item} ${ingredient.notes||''}`));
+    if(!ingredients.length)return 'yellow';
+    const statuses=ingredients.map(ingredient=>ingredientPantryReadiness(ingredient,scale));
+    return statuses.includes('red')?'red':statuses.includes('yellow')?'yellow':'green';
+  }
+
+  function recipePantryReadinessByKey(key) {
+    return recipePantryReadiness(getAllRecipes({enabledOnly:false,includeOverridden:true}).find(recipe=>recipe.key===key));
+  }
+
+  function pantryReadinessMarker(status, style='solid') {
+    const labels={green:'Ingredients on hand',yellow:'Check pantry quantity',red:'Ingredients missing or short'};
+    return `<span class="pantry-readiness pantry-readiness-${escapeHtml(status)} ${style==='outline'?'pantry-readiness-outline':''}" title="${labels[status]}" role="img" aria-label="${labels[status]}"></span>`;
+  }
+
   function normalizePantryItem(item={}) {
     const name=displayShoppingName(item.name);
     return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:Math.max(0,Number(item.quantity)||0),unit:normalizePantryUnit(item.unit||'items'),group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),conversionProfile:item.conversionProfile||detectPantryConversionProfile(name),estimated:!!item.estimated,sourceQuantity:Number(item.sourceQuantity)||0,sourceUnit:normalizePantryUnit(item.sourceUnit||''),autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),updatedAt:item.updatedAt||new Date().toISOString()};
@@ -3569,13 +3609,21 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     selectedRecipeKey=null;
     els.homePane.hidden=true;els.listPane.hidden=true;els.detailPane.hidden=true;els.modulesPane.hidden=true;els.shoppingPane.hidden=true;els.pantryPane.hidden=false;els.mealPlannerPane.hidden=true;
     setHomeScreen(false);
-    pantrySelectionMode=false;pantrySelectedIds.clear();updatePantryBulkBar();renderPantry();updateWakeLock();window.scrollTo({top:0,behavior:'smooth'});
+    pantrySelectionMode=false;pantrySelectedIds.clear();populatePantryGroupFilter();updatePantryBulkBar();renderPantry();updateWakeLock();window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function populatePantryGroupFilter() {
+    const select=document.querySelector('#pantryGroupFilter');if(!select)return;const current=select.value||'all';
+    const groups=[...new Set(state.pantryItems.map(item=>item.group).filter(Boolean))].sort((a,b)=>(SHOPPING_GROUP_ORDER.get(a)??999)-(SHOPPING_GROUP_ORDER.get(b)??999)||a.localeCompare(b));
+    select.innerHTML='<option value="all">All categories</option>'+groups.map(group=>`<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join('');
+    select.value=groups.includes(current)?current:'all';
   }
 
   function pantryVisibleItems() {
     const query=String(document.querySelector('#pantrySearch')?.value||'').trim().toLowerCase();
     const lowOnly=document.querySelector('#pantryLowOnly')?.getAttribute('aria-pressed')==='true';
-    return state.pantryItems.filter(item=>(!query || item.name.toLowerCase().includes(query)) && (!lowOnly || Number(item.quantity)<=Number(item.threshold))).sort((a,b)=>(SHOPPING_GROUP_ORDER.get(a.group)??999)-(SHOPPING_GROUP_ORDER.get(b.group)??999)||a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+    const group=document.querySelector('#pantryGroupFilter')?.value||'all';
+    return state.pantryItems.filter(item=>(!query || item.name.toLowerCase().includes(query)) && (group==='all'||item.group===group) && (!lowOnly || Number(item.quantity)<=Number(item.threshold))).sort((a,b)=>(SHOPPING_GROUP_ORDER.get(a.group)??999)-(SHOPPING_GROUP_ORDER.get(b.group)??999)||a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
   }
 
   function updatePantryBulkBar() {
@@ -3593,7 +3641,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';heading.textContent=group;root.append(heading);}
       const low=Number(item.quantity)<=Number(item.threshold);const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
       const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
-      row.innerHTML=`${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<div class="pantry-item-info"><strong>${escapeHtml(item.name)}</strong><span>${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="button secondary pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="button secondary pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="text-button pantry-edit">Edit</button><button type="button" class="text-button danger-text pantry-remove">Remove</button></div>`;
+      row.innerHTML=`${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<div class="pantry-item-info"><strong>${escapeHtml(item.name)}</strong><span>${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div>`;
       row.querySelector('.pantry-select-check')?.addEventListener('change',event=>{event.target.checked?pantrySelectedIds.add(item.id):pantrySelectedIds.delete(item.id);renderPantry();});
       row.querySelector('.pantry-minus')?.addEventListener('click',()=>adjustPantryItem(item,-1));row.querySelector('.pantry-plus')?.addEventListener('click',()=>adjustPantryItem(item,1));
       row.querySelector('.pantry-edit')?.addEventListener('click',()=>openPantryItemDialog(item));row.querySelector('.pantry-remove')?.addEventListener('click',()=>{if(confirm(`Remove ${item.name} from Pantry?`)){state.pantryItems=state.pantryItems.filter(entry=>entry.id!==item.id);saveState();renderPantry();renderCounts();}});
