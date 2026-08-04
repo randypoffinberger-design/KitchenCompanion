@@ -16,6 +16,8 @@ assert.match(styles, /body:not\([.]home-view\)::before/);
 assert.match(styles, /position:fixed;z-index:2/);
 assert.match(styles, /--watermark-color,#7f1732\);opacity:[.]18/);
 assert.match(styles, /--watermark-color:#81d8d0;opacity:[.]22/);
+assert.doesNotMatch(styles, /@media\(max-width:600px\)[^}]*opacity:/);
+assert.doesNotMatch(styles, /opacity:[.]0(?:22|32)/);
 assert.match(styles, /env\(safe-area-inset-top\)/);
 assert.match(styles, /prefers-reduced-motion:reduce/);
 assert.match(styles, /[.]page-heading-icon/);
