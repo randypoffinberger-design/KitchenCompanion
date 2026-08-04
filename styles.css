@@ -741,7 +741,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   cursor: pointer;
 }
 
-/* v0.20.5 shared Serenity Kitchen interior design system */
+/* v0.20.6 shared Serenity Kitchen interior design system */
 :root{
   --bg:#f4efe9;--panel:#fffaf5;--panel-2:#eee5dd;--surface-3:#e3d6cc;
   --text:#2b2420;--muted:#71665f;--border:#d7c9bf;--accent:#c80d3e;--accent-2:#a90834;
@@ -754,8 +754,8 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   --tiffany:#81d8d0;--tiffany-soft:#183c39;--danger:#e55472;--shadow:0 14px 38px rgba(0,0,0,.3);
 }
 html{background:var(--bg)}body{background:var(--bg);font-weight:450}
-body:not(.home-view)::before{content:"";position:fixed;z-index:0;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,currentColor);opacity:.055;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.20.5') center/contain no-repeat;mask:url('sk-watermark.png?v=0.20.5') center/contain no-repeat}
-:root[data-theme="dark"] body:not(.home-view)::before{--watermark-color:#81d8d0;opacity:.08}
+body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.08;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.20.6') center/contain no-repeat;mask:url('sk-watermark.png?v=0.20.6') center/contain no-repeat}
+:root[data-theme="dark"] body:not(.home-view)::before{--watermark-color:#81d8d0;opacity:.1}
 .app-shell,.main{position:relative}.app-shell{z-index:1;grid-template-rows:var(--header-height) 1fr}.main{z-index:1;padding:clamp(1rem,2.6vw,2rem)}
 .topbar{z-index:50;min-height:var(--header-height);padding:max(7px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 7px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--panel) 92%,transparent);border-bottom:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.12)}
 .line-icon{display:block;width:1.25rem;height:1.25rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

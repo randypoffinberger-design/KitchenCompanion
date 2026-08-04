@@ -1,4 +1,11 @@
-# Serenity Kitchen v0.20.5
+# Serenity Kitchen v0.20.6
+
+## v0.20.6
+
+- Moves the Serenity Kitchen watermark above opaque interior card surfaces so it remains visible on dense pages such as Recipes.
+- Increases the visible treatment to 8% deep Serenity red in light mode and 10% Tiffany blue in dark mode.
+- Keeps the watermark beneath the sticky header and interactive overlays, fixed in place, and completely noninteractive.
+- Preserves card colors, text contrast, light/dark themes, offline behavior, saved data, and all existing functionality.
 
 ## v0.20.5
 

@@ -1,4 +1,4 @@
-# Serenity Kitchen v0.20.5
+# Serenity Kitchen v0.20.6
 
 ### Starter Kitchen publisher migration (v0.19.2)
 
