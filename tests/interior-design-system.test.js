@@ -21,11 +21,13 @@ assert.match(html, /id="shoppingPageSummary"/);
 assert.match(html, /id="pantryPageSummary"/);
 assert.match(html, /class="more-actions"/);
 assert.match(html, /class="line-icon"/);
+assert.match(html, /id="timersBtn"[^>]*hidden/);
 assert.doesNotMatch(html, /⏱/);
 assert.doesNotMatch(app, /🔒|🔓/);
 assert.match(app, /function uiIcon/);
 assert.match(app, /meal-locked/);
 assert.match(app, /activeFilterCount/);
+assert.match(app, /els[.]timersBtn[.]hidden=state[.]timers[.]length===0/);
 assert.ok(
   app.indexOf("const ratingSort = els.ratingSort?.value || 'name'") < app.indexOf('const activeFilterCount='),
   'Recipe sort must be initialized before the active-filter summary reads it.'
@@ -34,6 +36,7 @@ assert.match(worker, /sk-watermark[.]png/);
 assert.ok(fs.existsSync(watermarkPath));
 assert.ok(fs.statSync(watermarkPath).size > 10000);
 assert.match(styles, /[.]sidebar\{position:fixed;inset:/);
+assert.match(styles, /[.]profile-quick-menu\s*\{\s*position:fixed;\s*left:max\(10px, env\(safe-area-inset-left\)\);\s*right:max\(10px, env\(safe-area-inset-right\)\)/);
 assert.doesNotMatch(styles, /[.]app-shell,[.]main,[.]sidebar,[.]topbar\{position:relative\}/);
 
 console.log('Interior design-system regression passed: shared themes, watermark, headings, compact filters/actions, safe areas, line icons, and planner lock styling are wired.');

@@ -25,7 +25,7 @@ assert.match(app, /if \(plan\.slots\[key\]\?\.locked\) return/);
 assert.match(app, /slotKeys:eligibleKeys/);
 assert.match(app, /Locked choices were preserved/);
 assert.match(html, /Side dishes are included with their meal/);
-assert.match(worker, /meal-planner[.]js[?]v=0[.]20[.]3/);
+assert.match(worker, /meal-planner[.]js[?]v=0[.]20[.]4/);
 assert.match(profiles, /mealPlans/);
 assert.match(profiles, /mealPlannerPreferences/);
 assert.match(profiles, /mealPlanHistory/);
