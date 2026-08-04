@@ -7,7 +7,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const styles = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-const watermark = fs.readFileSync(path.join(root, 'sk-watermark.svg'), 'utf8');
+const watermarkPath = path.join(root, 'sk-watermark.png');
 
 assert.match(styles, /--tiffany:#167b75/);
 assert.match(styles, /--tiffany:#81d8d0/);
@@ -30,10 +30,10 @@ assert.ok(
   app.indexOf("const ratingSort = els.ratingSort?.value || 'name'") < app.indexOf('const activeFilterCount='),
   'Recipe sort must be initialized before the active-filter summary reads it.'
 );
-assert.match(worker, /sk-watermark[.]svg/);
-assert.match(watermark, /<svg/);
-assert.match(watermark, /serenity-kitchen-icon-1024[.]png/);
-assert.match(watermark, /approved-sk-symbol/);
-assert.doesNotMatch(watermark, /circle|M95 295/);
+assert.match(worker, /sk-watermark[.]png/);
+assert.ok(fs.existsSync(watermarkPath));
+assert.ok(fs.statSync(watermarkPath).size > 10000);
+assert.match(styles, /[.]sidebar\{position:fixed;inset:/);
+assert.doesNotMatch(styles, /[.]app-shell,[.]main,[.]sidebar,[.]topbar\{position:relative\}/);
 
 console.log('Interior design-system regression passed: shared themes, watermark, headings, compact filters/actions, safe areas, line icons, and planner lock styling are wired.');
