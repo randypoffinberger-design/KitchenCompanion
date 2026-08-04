@@ -1,4 +1,9 @@
-# Serenity Kitchen v0.19.1
+# Serenity Kitchen v0.19.2
+
+### Starter Kitchen publisher migration (v0.19.2)
+
+- Updates the public publisher shown on existing Starter Kitchen recipes from Kitchen Companion to Serenity Kitchen.
+- Preserves the Starter Kitchen module ID and both recipe IDs.
 
 ### Recovery and restore reliability (v0.19.1)
 

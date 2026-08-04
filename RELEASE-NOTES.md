@@ -1,4 +1,8 @@
-# Serenity Kitchen v0.19.1
+# Serenity Kitchen v0.19.2
+
+## v0.19.2
+
+- Migrates the stored public publisher on both Starter Kitchen recipes to Serenity Kitchen without changing any IDs.
 
 ## v0.19.1
 
