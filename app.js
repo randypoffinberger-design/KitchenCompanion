@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.19.0';
+  const ENGINE_VERSION = '0.19.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -157,7 +157,8 @@
     const notice = document.createElement('div');
     notice.className = 'startup-recovery-notice';
     notice.setAttribute('role', 'alert');
-    notice.innerHTML = `<strong>Serenity Kitchen opened in recovery mode.</strong><span>Your information was loaded, but ${startupIssues.length} startup task${startupIssues.length===1?'':'s'} could not finish. This is commonly caused by full iPhone website storage. The controls remain available so you can create a full backup and clean up storage.</span><button type="button" aria-label="Dismiss recovery notice">×</button>`;
+    const issueSummary = startupIssues.map(issue => `${issue.label}: ${issue.error?.message || 'unknown error'}`).join(' · ');
+    notice.innerHTML = `<strong>Serenity Kitchen opened in recovery mode.</strong><span>Your information was loaded, but ${startupIssues.length} startup task${startupIssues.length===1?'':'s'} could not finish. ${escapeHtml(issueSummary)}. Your saved information has not been intentionally removed.</span><button type="button" aria-label="Dismiss recovery notice">×</button>`;
     notice.querySelector('button').addEventListener('click', () => notice.remove());
     document.body.prepend(notice);
   }
@@ -177,7 +178,7 @@
     startupStep('safeguards', renderSafeguards);
     refreshOfflineOcrStatus().catch(error => console.warn('Offline OCR status unavailable', error));
     startupStep('profile setup', showProfileSetupIfNeeded);
-    startupStep('main interface', refreshAll);
+    startupStep('main interface', () => refreshAll({ save:false }));
     startupStep('home screen', showHome);
     startupStep('timers', startTimerTicker);
     startupStep('alarm', initBellAudio);
@@ -1000,7 +1001,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.19.0').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.19.1').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1479,7 +1480,7 @@
     return `#${[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
   }
 
-  function refreshAll() {
+  function refreshAll({ save = true } = {}) {
     renderCounts();
     renderModuleFilter();
     renderCategoryFilter();
@@ -1487,7 +1488,7 @@
     syncFavoriteFilterButton();
     renderRecipeList();
     renderModules();
-    saveState();
+    if (save) saveState();
   }
 
   function getAllRecipes(options = {}) {
@@ -1554,7 +1555,7 @@
   function renderCounts() {
     const recipes = getAllRecipes();
     const visibleKeys = new Set(recipes.map(recipe => recipe.key));
-    els.moduleCount.textContent = `${state.modules.length} module${state.modules.length === 1 ? '' : 's'}`;
+    if (els.moduleCount) els.moduleCount.textContent = `${state.modules.length} module${state.modules.length === 1 ? '' : 's'}`;
     els.navModuleCount.textContent = state.modules.length;
     els.allCount.textContent = recipes.length;
     els.favoriteCount.textContent = [...new Set(state.favorites)].filter(key => visibleKeys.has(key)).length;
@@ -2537,7 +2538,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.19.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.19.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -4465,10 +4466,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const previousProfileMeta = profileStore.getActiveProfileMeta();
     try {
       validateBackupPayload(pendingBackup);
-      requireSafetyCheckpoint('before-full-backup-restore');
-      const rollback = JSON.stringify(previousState);
-      localStorage.setItem(`${STORAGE_KEY}.rollback`, rollback);
-      if (localStorage.getItem(`${STORAGE_KEY}.rollback`) !== rollback) throw new Error('The restore rollback copy could not be verified.');
+      // The selected external backup is already validated. A local checkpoint is
+      // helpful when space permits, but restore must not fail merely because an
+      // iPhone cannot hold a second complete copy of the same recipe library.
+      profileStore.createSafetyBackup('before-full-backup-restore', { force:true });
+      localStorage.removeItem(`${STORAGE_KEY}.rollback`);
       const restored=mode==='replace'?JSON.parse(JSON.stringify(pendingBackup.state)):mergeBackupState(state,pendingBackup.state);
       Object.keys(state).forEach(key => delete state[key]); Object.assign(state, restored);
       if (mode === 'replace' && pendingBackup.activeProfile) profileStore.applyActiveProfileMeta(pendingBackup.activeProfile);
@@ -4478,7 +4480,6 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     } catch(error) {
       Object.keys(state).forEach(key => delete state[key]); Object.assign(state, previousState);
       try { profileStore.applyActiveProfileMeta(previousProfileMeta); } catch {}
-      try { saveState(); } catch {}
       alert(`Restore failed and your previous data was kept: ${error.message}`);
     }
   }

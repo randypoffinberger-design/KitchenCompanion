@@ -1,4 +1,10 @@
-# Serenity Kitchen v0.19.0
+# Serenity Kitchen v0.19.1
+
+## v0.19.1
+
+- Fixes the immediate recovery-mode warning caused by an unnecessary duplicate startup save.
+- Allows validated external backups to restore without first duplicating the full library in limited browser storage.
+- Makes recovery notices identify the actual startup failure.
 
 ## v0.19.0
 

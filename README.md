@@ -1,4 +1,10 @@
-# Serenity Kitchen v0.19.0
+# Serenity Kitchen v0.19.1
+
+### Recovery and restore reliability (v0.19.1)
+
+- Removes a redundant startup write that could produce a false recovery warning on storage-constrained iPhones.
+- Stops requiring a second complete in-browser rollback copy before restoring a validated external backup.
+- Reports the exact startup task and error when recovery mode is genuinely needed.
 
 Serenity Kitchen is the new name for Kitchen Companion. Existing module IDs, recipe IDs, profile data, local-storage keys, shared recipe formats, and legacy KC backups remain compatible.
 
