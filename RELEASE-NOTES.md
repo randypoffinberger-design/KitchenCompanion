@@ -1,4 +1,10 @@
-# Serenity Kitchen v0.20.6
+# Serenity Kitchen v0.20.7
+
+## v0.20.7
+
+- Makes the fixed Serenity Kitchen watermark unmistakably visible across dense and sparse interior pages.
+- Raises the watermark to 18% deep Serenity red in light mode and 22% Tiffany blue in dark mode.
+- Retains click-through behavior, fixed placement, safe layering beneath headers and dialogs, and the approved logo artwork.
 
 ## v0.20.6
 
