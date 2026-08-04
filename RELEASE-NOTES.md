@@ -1,4 +1,12 @@
-# Kitchen Companion v0.18.1
+# Serenity Kitchen v0.19.0
+
+## v0.19.0
+
+- Rebrands the app as Serenity Kitchen by Serenity Valley Works.
+- Adds the new full-screen Serenity Kitchen home and four direct feature destinations.
+- Adds the compact Serenity Kitchen home logo to all non-home screens.
+- Renames new backup files for Serenity Kitchen while preserving restoration of existing Kitchen Companion backups.
+- Preserves all module IDs, recipe IDs, profile data, cross-links, and internal storage namespaces.
 
 ## v0.18.1
 

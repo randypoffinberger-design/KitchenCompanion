@@ -35,11 +35,10 @@ button { color: inherit; }
 
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 66px 1fr; }
 .topbar { grid-column: 1 / -1; position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 18px; background: color-mix(in srgb, var(--panel) 94%, transparent); border-bottom: 1px solid var(--border); backdrop-filter: blur(14px); }
-.brand { display: flex; flex-direction: column; line-height: 1.1; }
-.brand-home { min-width:0; padding:4px 6px; border:0; border-radius:10px; background:transparent; color:inherit; text-align:left; cursor:pointer; touch-action:manipulation; }
-.brand-home:hover, .brand-home:focus-visible { background:var(--panel-2); outline:none; }
-.brand strong { font-size: 1.1rem; }
-.brand span { margin-top: 4px; font-size: .76rem; color: var(--muted); }
+.brand-wrap { display:flex; align-items:center; min-width:0; }
+.home-logo-button { display:grid; place-items:center; width:46px; height:46px; padding:3px; overflow:hidden; border:1px solid var(--border); border-radius:13px; background:#080808; cursor:pointer; }
+.home-logo-button img { display:block; width:100%; height:100%; object-fit:cover; border-radius:9px; }
+.home-logo-button:hover, .home-logo-button:focus-visible { border-color:var(--accent); outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); }
 .top-actions { display: flex; align-items: center; gap: 10px; }
 .button, .icon-btn, .back-btn { border: 0; border-radius: 12px; cursor: pointer; }
 .button { padding: 10px 14px; background: var(--accent); color: white; font-weight: 700; }
@@ -59,6 +58,25 @@ button { color: inherit; }
 .category-list { display: grid; gap: 4px; }
 
 .main { grid-column: 2; grid-row: 2; min-width: 0; padding: 24px; }
+.home-pane { min-height:100dvh; background:#080808; }
+.home-artwork { position:relative; width:min(100%, 864px); margin:0 auto; }
+.home-artwork > img { display:block; width:100%; height:auto; }
+.home-hotspot { position:absolute; z-index:2; border:0; border-radius:8%; background:transparent; cursor:pointer; touch-action:manipulation; }
+.home-hotspot:focus-visible { outline:4px solid #56d5d0; outline-offset:-4px; }
+.home-recipes { left:4.7%; top:55.8%; width:39.5%; height:19.3%; }
+.home-shopping { left:47.2%; top:55.8%; width:39.6%; height:19.3%; }
+.home-pantry { left:4.7%; top:75.9%; width:39.5%; height:19%; }
+.home-meal-planner { left:47.2%; top:75.9%; width:39.6%; height:19%; }
+body.home-view { background:#080808; overflow-x:hidden; }
+body.home-view .sidebar { display:none; }
+body.home-view .sidebar.open { display:block; position:fixed; inset:62px auto 0 0; z-index:60; width:min(86vw,320px); height:calc(100dvh - 62px); transform:none; }
+body.home-view .scrim.show { display:block; position:fixed; inset:62px 0 0; z-index:55; background:rgba(0,0,0,.55); }
+body.home-view .app-shell { display:block; }
+body.home-view .topbar { position:fixed; inset:0 0 auto; z-index:50; border:0; background:transparent; backdrop-filter:none; pointer-events:none; }
+body.home-view .topbar .brand-wrap, body.home-view .topbar .top-actions { visibility:hidden; }
+body.home-view #menuBtn { display:block; position:absolute; left:max(4.5%, calc((100vw - 864px) / 2 + 4.5%)); top:min(5.8vw,50px); width:min(9vw,78px); min-width:42px; height:auto; aspect-ratio:1; opacity:0; pointer-events:auto; }
+body.home-view #menuBtn:focus-visible { opacity:.35; outline:3px solid #56d5d0; }
+body.home-view .main { padding:0; }
 .list-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
 .list-header h1 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.5rem); }
 .list-header p { margin: 6px 0 0; color: var(--muted); }
@@ -174,6 +192,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .scrim { position: fixed; inset: 62px 0 0; z-index: 35; background: rgba(0,0,0,.42); }
   .scrim.show { display: block; }
   .main { padding: 18px 14px 40px; }
+  .home-logo-button { width:44px; height:44px; }
   .recipe-layout { grid-template-columns: 1fr; }
   .list-header { align-items: stretch; flex-direction: column; }
   .list-header select { width: 100%; }

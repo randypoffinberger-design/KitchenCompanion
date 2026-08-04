@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.18.1';
+  const ENGINE_VERSION = '0.19.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -18,7 +18,7 @@
     schemaVersion: 1,
     moduleId: 'starter-kitchen',
     name: 'Starter Kitchen',
-    publisher: 'Kitchen Companion',
+    publisher: 'Serenity Kitchen',
     version: '1.0.0',
     description: 'A small starter collection demonstrating the module format.',
     license: 'Demo content',
@@ -96,7 +96,7 @@
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
   state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
-  let currentView = 'all';
+  let currentView = 'home';
   let selectedCategory = null;
   let selectedRecipeKey = null;
   let recipeNavigationStack = [];
@@ -122,7 +122,7 @@
     searchInput: document.querySelector('#searchInput'), recipeGrid: document.querySelector('#recipeGrid'), emptyState: document.querySelector('#emptyState'),
     categoryList: document.querySelector('#categoryList'), moduleFilter: document.querySelector('#moduleFilter'), categoryFilter: document.querySelector('#categoryFilter'), ratingFilter: document.querySelector('#ratingFilter'), ratingSort: document.querySelector('#ratingSort'), clearSearchBtn: document.querySelector('#clearSearchBtn'), favoritesFilterBtn: document.querySelector('#favoritesFilterBtn'), clearFiltersBtn: document.querySelector('#clearFiltersBtn'),
     viewTitle: document.querySelector('#viewTitle'), viewSubtitle: document.querySelector('#viewSubtitle'),
-    listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'), pantryPane: document.querySelector('#pantryPane'),
+    homePane: document.querySelector('#homePane'), listPane: document.querySelector('#listPane'), detailPane: document.querySelector('#detailPane'), modulesPane: document.querySelector('#modulesPane'), shoppingPane: document.querySelector('#shoppingPane'), pantryPane: document.querySelector('#pantryPane'),
     recipeDetail: document.querySelector('#recipeDetail'), backBtn: document.querySelector('#backBtn'), moduleCards: document.querySelector('#moduleCards'),
     moduleFile: document.querySelector('#moduleFile'), importBtn: document.querySelector('#importBtn'), moduleImportBtn: document.querySelector('#moduleImportBtn'),
     moduleCount: document.querySelector('#moduleCount'), navModuleCount: document.querySelector('#navModuleCount'), allCount: document.querySelector('#allCount'), favoriteCount: document.querySelector('#favoriteCount'), pantryCount: document.querySelector('#pantryCount'),
@@ -157,7 +157,7 @@
     const notice = document.createElement('div');
     notice.className = 'startup-recovery-notice';
     notice.setAttribute('role', 'alert');
-    notice.innerHTML = `<strong>Kitchen Companion opened in recovery mode.</strong><span>Your information was loaded, but ${startupIssues.length} startup task${startupIssues.length===1?'':'s'} could not finish. This is commonly caused by full iPhone website storage. The controls remain available so you can create a full backup and clean up storage.</span><button type="button" aria-label="Dismiss recovery notice">×</button>`;
+    notice.innerHTML = `<strong>Serenity Kitchen opened in recovery mode.</strong><span>Your information was loaded, but ${startupIssues.length} startup task${startupIssues.length===1?'':'s'} could not finish. This is commonly caused by full iPhone website storage. The controls remain available so you can create a full backup and clean up storage.</span><button type="button" aria-label="Dismiss recovery notice">×</button>`;
     notice.querySelector('button').addEventListener('click', () => notice.remove());
     document.body.prepend(notice);
   }
@@ -178,6 +178,7 @@
     refreshOfflineOcrStatus().catch(error => console.warn('Offline OCR status unavailable', error));
     startupStep('profile setup', showProfileSetupIfNeeded);
     startupStep('main interface', refreshAll);
+    startupStep('home screen', showHome);
     startupStep('timers', startTimerTicker);
     startupStep('alarm', initBellAudio);
     startupStep('screen wake lock', updateWakeLock);
@@ -239,6 +240,7 @@
 
   function bindEvents() {
     document.querySelector('#homeBrandBtn')?.addEventListener('click', goHome);
+    document.querySelectorAll('[data-home-view]').forEach(button => button.addEventListener('click', () => openHomeDestination(button.dataset.homeView)));
     els.headerProfileBtn?.addEventListener('click', event => {
       event.stopPropagation();
       toggleProfileQuickMenu();
@@ -985,7 +987,7 @@
   async function forceAppUpdate() {
     const lastExport = state.backupMeta?.lastManualBackupAt;
     const oldExport = !lastExport || Date.now() - Date.parse(lastExport) > 7 * 24 * 60 * 60 * 1000;
-    if (oldExport && !confirm('Before updating, Kitchen Companion recommends creating a full backup file. Local checkpoints cannot help if browser storage is erased.\n\nContinue checking for an update without a recent exported backup?')) return;
+    if (oldExport && !confirm('Before updating, Serenity Kitchen recommends creating a full backup file. Local checkpoints cannot help if browser storage is erased.\n\nContinue checking for an update without a recent exported backup?')) return;
     try {
       requireSafetyCheckpoint('before-engine-update');
       if ('serviceWorker' in navigator) {
@@ -998,7 +1000,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.18.1').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.19.0').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1110,7 +1112,7 @@
     ];
     const passed = checks.filter(([, ok]) => ok).length;
     els.diagnosticsOutput.hidden = false;
-    els.diagnosticsOutput.textContent = `Kitchen Companion ${ENGINE_VERSION} diagnostics\n${checks.map(([name, ok]) => `${ok ? 'PASS' : 'FAIL'}  ${name}`).join('\n')}\n\nStorage used: ${(storageInfo.storageBytes/1024/1024).toFixed(2)} MB\nFull-module recovery points: ${storageInfo.fullBackupCount}\n${passed}/${checks.length} checks passed.`;
+    els.diagnosticsOutput.textContent = `Serenity Kitchen ${ENGINE_VERSION} diagnostics\n${checks.map(([name, ok]) => `${ok ? 'PASS' : 'FAIL'}  ${name}`).join('\n')}\n\nStorage used: ${(storageInfo.storageBytes/1024/1024).toFixed(2)} MB\nFull-module recovery points: ${storageInfo.fullBackupCount}\n${passed}/${checks.length} checks passed.`;
   }
 
   const FEEDBACK_TYPE_LABELS = {
@@ -1245,7 +1247,7 @@
 
   function feedbackReportText(report) {
     const lines = [
-      'Kitchen Companion Feedback Report',
+      'Serenity Kitchen Feedback Report',
       `Report ID: ${report.reportId}`,
       `Created: ${new Date().toLocaleString()}`,
       `Type: ${report.typeLabel}`,
@@ -1356,11 +1358,11 @@
     const reportFile = feedbackReportFile();
     const screenshot = els.feedbackScreenshot.files?.[0] || null;
     const files = screenshot ? [reportFile, screenshot] : [reportFile];
-    const shareTitle = `Kitchen Companion report ${els.feedbackReportId.value}`;
+    const shareTitle = `Serenity Kitchen report ${els.feedbackReportId.value}`;
     try {
       if (navigator.share) {
         if (!navigator.canShare || navigator.canShare({ files })) {
-          await navigator.share({ title:shareTitle, text:`Kitchen Companion ${FEEDBACK_TYPE_LABELS[els.feedbackType.value]} — ${els.feedbackSummary.value.trim()}`, files });
+          await navigator.share({ title:shareTitle, text:`Serenity Kitchen ${FEEDBACK_TYPE_LABELS[els.feedbackType.value]} — ${els.feedbackSummary.value.trim()}`, files });
         } else {
           await navigator.share({ title:shareTitle, text:els.feedbackReportPreview.value });
         }
@@ -1617,7 +1619,7 @@
   }
 
   function goHome() {
-    currentView = 'all';
+    currentView = 'home';
     selectedCategory = null;
     recipeNavigationStack = [];
     recipeReturnView = 'list';
@@ -1626,12 +1628,32 @@
     if (els.categoryFilter) els.categoryFilter.value = 'all';
     if (els.ratingFilter) els.ratingFilter.value = 'all';
     if (els.ratingSort) els.ratingSort.value = 'name';
-    document.querySelectorAll('.nav-item').forEach(button => button.classList.toggle('active', button.dataset.view === 'all'));
+    document.querySelectorAll('.nav-item').forEach(button => button.classList.remove('active'));
     document.querySelectorAll('.category-button').forEach(button => button.classList.remove('active'));
     closeProfileQuickMenu();
     toggleSidebar(false);
     syncFavoriteFilterButton();
-    showList();
+    showHome();
+  }
+
+  function setHomeScreen(active) {
+    document.body.classList.toggle('home-view', active);
+  }
+
+  function showHome() {
+    selectedRecipeKey = null;
+    els.homePane.hidden = false; els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    setHomeScreen(true); updateWakeLock(); window.scrollTo({ top:0, behavior:'auto' });
+  }
+
+  function openHomeDestination(view) {
+    currentView = view;
+    document.querySelectorAll('.nav-item').forEach(button => button.classList.toggle('active', button.dataset.view === view));
+    setHomeScreen(false);
+    if (view === 'shopping') showShopping();
+    else if (view === 'pantry') showPantry();
+    else if (view === 'meal-planner') showMealPlanner();
+    else showList();
   }
 
   function renderRecipeList() {
@@ -1707,7 +1729,8 @@
     recipeNavigationStack = [];
     recipeReturnView = 'list';
     selectedRecipeKey = null;
-    els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    els.homePane.hidden = true; els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    setHomeScreen(false);
     renderRecipeList();
     updateWakeLock();
     if (restoreScroll) {
@@ -1719,7 +1742,8 @@
   }
 
   function showDetail() {
-    els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    els.homePane.hidden = true; els.listPane.hidden = true; els.detailPane.hidden = false; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    setHomeScreen(false);
     renderRecipeDetail(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1748,7 +1772,8 @@
 
   function showModules() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    els.homePane.hidden = true; els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = false; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    setHomeScreen(false);
     renderModules(); updateWakeLock(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -2163,7 +2188,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function ensurePersonalModule() {
     let module = state.modules.find(m => m.moduleId === 'my-recipes');
     if (!module) {
-      module = { schemaVersion: 1, moduleId: 'my-recipes', name: 'My Recipes', publisher: 'Kitchen Companion user', version: '1.0.0', description: 'Recipes created or edited in Kitchen Companion.', license: 'Personal', enabled: true, recipes: [] };
+      module = { schemaVersion: 1, moduleId: 'my-recipes', name: 'My Recipes', publisher: 'Serenity Kitchen user', version: '1.0.0', description: 'Recipes created or edited in Serenity Kitchen.', license: 'Personal', enabled: true, recipes: [] };
       state.modules.push(module);
     }
     return module;
@@ -2233,7 +2258,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     } catch (directError) {
       const endpoint = document.querySelector('meta[name="kc-url-import-endpoint"]')?.content?.trim();
       if (!endpoint) {
-        throw new Error('This website blocks direct recipe import. The Kitchen Companion URL import service has not been connected yet.');
+        throw new Error('This website blocks direct recipe import. The Serenity Kitchen URL import service has not been connected yet.');
       }
       const response = await fetch(endpoint, {
         method:'POST',
@@ -2280,7 +2305,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (els.recognizedRecipeText.dataset.ocrQuality === 'low') {
         const truncated = els.recognizedRecipeText.dataset.ocrWarning === 'truncated';
         const message = truncated
-          ? 'Kitchen Companion believes the end of this recipe may be missing.\n\nContinue to the populated recipe editor anyway? Compare the editor closely with the image and add any missing instructions before saving.'
+          ? 'Serenity Kitchen believes the end of this recipe may be missing.\n\nContinue to the populated recipe editor anyway? Compare the editor closely with the image and add any missing instructions before saving.'
           : 'Parts of this scan may be unreliable.\n\nContinue to the populated recipe editor anyway? Compare every field closely with the image and make any necessary corrections before saving.';
         if (!confirm(message)) return;
       }
@@ -2512,7 +2537,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.18.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.19.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2693,7 +2718,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (els.wakeLockStatus) els.wakeLockStatus.textContent = 'Screen will stay awake while cooking.';
       wakeLockSentinel.addEventListener('release', () => {
         wakeLockSentinel = null;
-        if (els.wakeLockStatus) els.wakeLockStatus.textContent = 'Wake lock released. It will reconnect when Kitchen Companion is active.';
+        if (els.wakeLockStatus) els.wakeLockStatus.textContent = 'Wake lock released. It will reconnect when Serenity Kitchen is active.';
         if (document.visibilityState === 'visible' && shouldHoldWakeLock()) setTimeout(updateWakeLock, 250);
       });
     } catch (error) {
@@ -3087,7 +3112,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function showMealPlanner() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = false;
+    els.homePane.hidden = true; els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = false;
+    setHomeScreen(false);
     renderMealPlanner();
     updateWakeLock();
     window.scrollTo({ top:0, behavior:'smooth' });
@@ -3535,7 +3561,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function showPantry() {
     selectedRecipeKey=null;
-    els.listPane.hidden=true;els.detailPane.hidden=true;els.modulesPane.hidden=true;els.shoppingPane.hidden=true;els.pantryPane.hidden=false;els.mealPlannerPane.hidden=true;
+    els.homePane.hidden=true;els.listPane.hidden=true;els.detailPane.hidden=true;els.modulesPane.hidden=true;els.shoppingPane.hidden=true;els.pantryPane.hidden=false;els.mealPlannerPane.hidden=true;
+    setHomeScreen(false);
     pantrySelectionMode=false;pantrySelectedIds.clear();updatePantryBulkBar();renderPantry();updateWakeLock();window.scrollTo({top:0,behavior:'smooth'});
   }
 
@@ -3607,7 +3634,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function showShopping() {
     selectedRecipeKey = null;
-    els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    els.homePane.hidden = true; els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
+    setHomeScreen(false);
     shoppingSelectionMode=false; shoppingSelectedIds.clear(); populateStoreSelects(); updateShoppingBulkBar(); renderShoppingList(); updateWakeLock(); window.scrollTo({top:0,behavior:'smooth'});
   }
 
@@ -3941,14 +3969,14 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       schemaVersion:1,
       exportId:shoppingId(),
       exportedAt:new Date().toISOString(),
-      exportedBy:{ displayName:profile?.displayName || 'Kitchen Companion user' },
+      exportedBy:{ displayName:profile?.displayName || 'Serenity Kitchen user' },
       stores:[...new Set(items.map(item => item.store).filter(store => store !== 'Unassigned'))],
       items
     };
   }
 
   function validateShoppingListPayload(payload) {
-    if (!payload || payload.format !== 'kitchen-companion-shopping-list') throw new Error('This is not a Kitchen Companion shopping list.');
+    if (!payload || payload.format !== 'kitchen-companion-shopping-list') throw new Error('This is not a Serenity Kitchen shopping list.');
     if (Number(payload.schemaVersion) !== 1) throw new Error(`Shopping-list version ${payload.schemaVersion ?? 'unknown'} is not supported.`);
     if (!payload.exportId || typeof payload.exportId !== 'string') throw new Error('The shopping-list file has no sharing identifier.');
     if (!payload.exportedAt || !Number.isFinite(Date.parse(payload.exportedAt))) throw new Error('The shopping-list date is missing or invalid.');
@@ -4006,8 +4034,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
   function buildShoppingMessage(payload) {
-    const sender = payload.exportedBy?.displayName || 'A Kitchen Companion user';
-    const lines = [`Kitchen Companion shopping list from ${sender}`, ''];
+    const sender = payload.exportedBy?.displayName || 'A Serenity Kitchen user';
+    const lines = [`Serenity Kitchen shopping list from ${sender}`, ''];
     payload.items.forEach(item => {
       const quantities = [...new Set((item.entries || []).map(entry => String(entry.quantity || '').trim()).filter(Boolean))];
       const details = [
@@ -4019,7 +4047,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     });
     lines.push(
       '',
-      'Copy this entire message, then open Kitchen Companion → Shopping list → Import list → Paste shared list.',
+      'Copy this entire message, then open Serenity Kitchen → Shopping list → Import list → Paste shared list.',
       '',
       `KC-SHOPPING-LIST-V1:${encodeShoppingMessagePayload(payload)}`
     );
@@ -4074,7 +4102,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if (value.length > 7 * 1024 * 1024) throw new Error('The pasted shopping list is larger than the 7 MB safety limit.');
     if (value.startsWith('{')) return JSON.parse(value);
     const match = value.match(/KC-SHOPPING-LIST-V1:([A-Za-z0-9_-]+)/);
-    if (!match) throw new Error('No Kitchen Companion shopping-list data was found. Copy and paste the entire message.');
+    if (!match) throw new Error('No Serenity Kitchen shopping-list data was found. Copy and paste the entire message.');
     return decodeShoppingMessagePayload(match[1]);
   }
 
@@ -4089,7 +4117,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     let previousLearnedAisles = null;
     try {
       validateShoppingListPayload(payload);
-      const sender = String(payload.exportedBy?.displayName || 'another Kitchen Companion user').trim();
+      const sender = String(payload.exportedBy?.displayName || 'another Serenity Kitchen user').trim();
       if (!confirm(`Import ${payload.items.length} unchecked item${payload.items.length===1?'':'s'} from ${sender}?\n\nMatching ingredients will merge with your current list. Your existing stores and checked items will remain.`)) return false;
       requireSafetyCheckpoint('before-shopping-list-import');
       previousShoppingList = JSON.parse(JSON.stringify(state.shoppingList));
@@ -4193,7 +4221,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     section.id = 'catalogSection';
     section.className = 'catalog-section catalog-error-section';
     const missing = error?.status === 404;
-    section.innerHTML = `<h2>Available from GitHub</h2><div class="catalog-load-error"><strong>${missing ? 'The module catalog was not found.' : 'The module catalog is temporarily unavailable.'}</strong><p>${missing ? 'Confirm that catalog.json is uploaded to the repository root.' : 'Your installed recipes remain available. Check your connection and try again; after one successful load, Kitchen Companion can reuse the saved catalog when service is limited.'}</p><button type="button" class="button catalog-retry">Try again</button></div>`;
+    section.innerHTML = `<h2>Available from GitHub</h2><div class="catalog-load-error"><strong>${missing ? 'The module catalog was not found.' : 'The module catalog is temporarily unavailable.'}</strong><p>${missing ? 'Confirm that catalog.json is uploaded to the repository root.' : 'Your installed recipes remain available. Check your connection and try again; after one successful load, Serenity Kitchen can reuse the saved catalog when service is limited.'}</p><button type="button" class="button catalog-retry">Try again</button></div>`;
     section.querySelector('.catalog-retry').addEventListener('click', loadModuleCatalog);
     els.modulesPane.prepend(section);
   }
@@ -4381,11 +4409,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return { format:'kitchen-companion-backup', schemaVersion:2, engineVersion:ENGINE_VERSION, createdAt:new Date().toISOString(), activeProfile:profileStore.getActiveProfileMeta(), state:JSON.parse(JSON.stringify(state)) };
   }
 
-  async function createFullBackup() { const b=backupPayload(); await deliverFile(`Kitchen-Companion-Backup-${new Date().toISOString().slice(0,10)}.kcbackup`, JSON.stringify(b,null,2)); state.backupMeta.lastManualBackupAt=b.createdAt; saveState(); }
-  async function exportPersonalRecipes() { const module=state.modules.find(m=>m.moduleId==='my-recipes'); const payload={format:'kitchen-companion-personal-recipes',schemaVersion:1,exportedAt:new Date().toISOString(),recipes:module?.recipes||[]}; await deliverFile(`My-Kitchen-Companion-Recipes-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(payload,null,2)); }
+  async function createFullBackup() { const b=backupPayload(); b.appName='Serenity Kitchen'; await deliverFile(`Serenity-Kitchen-Backup-${new Date().toISOString().slice(0,10)}.skbackup`, JSON.stringify(b,null,2)); state.backupMeta.lastManualBackupAt=b.createdAt; saveState(); }
+  async function exportPersonalRecipes() { const module=state.modules.find(m=>m.moduleId==='my-recipes'); const payload={format:'kitchen-companion-personal-recipes',appName:'Serenity Kitchen',schemaVersion:1,exportedAt:new Date().toISOString(),recipes:module?.recipes||[]}; await deliverFile(`My-Serenity-Kitchen-Recipes-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(payload,null,2)); }
 
   function validateBackupPayload(payload) {
-    if (!payload || payload.format !== 'kitchen-companion-backup') throw new Error('This is not a Kitchen Companion backup.');
+    if (!payload || payload.format !== 'kitchen-companion-backup') throw new Error('This is not a Serenity Kitchen backup.');
     if (![1, 2].includes(Number(payload.schemaVersion))) throw new Error(`Backup schema ${payload.schemaVersion ?? 'unknown'} is not supported.`);
     if (!payload.createdAt || !Number.isFinite(Date.parse(payload.createdAt))) throw new Error('The backup date is missing or invalid.');
     const incoming = payload.state;
@@ -4446,7 +4474,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (mode === 'replace' && pendingBackup.activeProfile) profileStore.applyActiveProfileMeta(pendingBackup.activeProfile);
       saveState();
       pendingBackup=null; els.restoreBackupDialog.close();
-      alert('Backup restored and verified. Kitchen Companion will reload now.'); location.reload();
+      alert('Backup restored and verified. Serenity Kitchen will reload now.'); location.reload();
     } catch(error) {
       Object.keys(state).forEach(key => delete state[key]); Object.assign(state, previousState);
       try { profileStore.applyActiveProfileMeta(previousProfileMeta); } catch {}

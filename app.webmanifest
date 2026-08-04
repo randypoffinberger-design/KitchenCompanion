@@ -1,6 +1,6 @@
 {
-  "name": "Kitchen Companion",
-  "short_name": "Kitchen Companion",
+  "name": "Serenity Kitchen",
+  "short_name": "Serenity Kitchen",
   "description": "Recipes, timers, modules, notes, and shopping lists.",
   "start_url": "./?source=pwa",
   "scope": "./",
@@ -19,5 +19,5 @@
       "type": "image/png"
     }
   ],
-  "version": "0.18.1"
+  "version": "0.19.0"
 }

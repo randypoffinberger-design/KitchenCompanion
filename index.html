@@ -6,23 +6,19 @@
   <meta name="theme-color" id="themeColorMeta" content="#7b3f00">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Kitchen Companion">
+  <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.18.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.18.1">
-  <title>Kitchen Companion</title>
-  <link rel="stylesheet" href="styles.css?v=0.18.1">
+  <link rel="manifest" href="app.webmanifest?v=0.19.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.19.0">
+  <title>Serenity Kitchen</title>
+  <link rel="stylesheet" href="styles.css?v=0.19.0">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <button id="menuBtn" class="icon-btn mobile-only" aria-label="Open navigation">☰</button>
       <div class="brand-wrap">
-        <button id="homeBrandBtn" type="button" class="brand brand-home" aria-label="Go to all recipes">
-          <strong>Kitchen Companion</strong>
-          <span id="moduleCount">0 modules</span>
-        </button>
         <div class="header-profile-wrap">
           <button id="headerProfileBtn" type="button" class="header-profile-button" aria-haspopup="menu" aria-expanded="false" aria-label="Switch profile">
             <span id="headerProfileAvatar" class="header-profile-avatar">M</span>
@@ -38,6 +34,9 @@
         <input id="backupRestoreFile" type="file" hidden>
         <input id="shoppingImportFile" type="file" hidden>
         <button id="timersBtn" class="icon-btn timer-header-btn" aria-label="Active timers">⏱<span id="timerCount" hidden>0</span></button>
+        <button id="homeBrandBtn" type="button" class="home-logo-button" aria-label="Go to Serenity Kitchen home">
+          <img src="serenity-kitchen-icon-1024.png" alt="">
+        </button>
       </div>
     </header>
 
@@ -61,6 +60,15 @@
     <div id="scrim" class="scrim"></div>
 
     <main class="main">
+      <section id="homePane" class="home-pane" hidden aria-label="Serenity Kitchen home">
+        <div class="home-artwork">
+          <img src="serenity-kitchen-home.jpeg" alt="Serenity Kitchen home screen">
+          <button type="button" class="home-hotspot home-recipes" data-home-view="all" aria-label="Open recipes"></button>
+          <button type="button" class="home-hotspot home-shopping" data-home-view="shopping" aria-label="Open shopping lists"></button>
+          <button type="button" class="home-hotspot home-pantry" data-home-view="pantry" aria-label="Open pantry"></button>
+          <button type="button" class="home-hotspot home-meal-planner" data-home-view="meal-planner" aria-label="Open meal planner"></button>
+        </div>
+      </section>
       <section id="listPane" class="list-pane">
         <div class="list-header">
           <div>
@@ -235,7 +243,7 @@
   <dialog id="importShoppingDialog">
     <form method="dialog" class="dialog-card">
       <h2>Import shopping list</h2>
-      <p>Choose a <code>.kcshopping</code> file, or paste the complete Kitchen Companion list copied from a message.</p>
+      <p>Choose a <code>.kcshopping</code> file, or paste the complete Serenity Kitchen list copied from a message.</p>
       <button type="button" id="chooseShoppingFileBtn" class="button secondary">Choose list file</button>
       <label class="shopping-message-field">Message text<textarea id="shoppingMessageText" rows="10" placeholder="Paste the complete shared shopping-list message here"></textarea></label>
       <p id="shoppingPasteError" class="form-error" role="alert" hidden></p>
@@ -249,7 +257,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Kitchen Companion</strong><span>Engine version <b id="engineVersionLabel">0.18.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.19.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -282,7 +290,7 @@
             <button type="button" id="previewGuidedVoiceBtn" class="button secondary">Preview voice</button>
             <p id="guidedVoiceStatus" class="setting-help" aria-live="polite">Voice choices come from this device.</p>
             <label class="setting-column"><span>Keep the screen awake</span><select id="wakeLockMode"><option value="never">Never</option><option value="recipes">Only while viewing a recipe</option><option value="recipes-and-timers" selected>While viewing recipes or using timers</option></select></label>
-            <p id="wakeLockStatus" class="setting-help">Wake lock reconnects automatically when you return to Kitchen Companion.</p>
+            <p id="wakeLockStatus" class="setting-help">Wake lock reconnects automatically when you return to Serenity Kitchen.</p>
           </div>
         </details>
         <details class="settings-section">
@@ -293,12 +301,12 @@
             <label class="setting-slider"><span>Alarm volume</span><input id="alarmVolume" type="range" min="0.1" max="1" step="0.05" value="0.85"></label>
             <button type="button" id="testBellBtn" class="button secondary">Preview alarm</button>
             <p id="alarmPreviewStatus" class="setting-help" aria-live="polite">Preview plays three alarm cycles, then stops automatically.</p>
-            <p class="setting-help">Tap Preview alarm once on each device to authorize audio. A finished timer repeats continuously while Kitchen Companion is active until the alarm is dismissed.</p>
+            <p class="setting-help">Tap Preview alarm once on each device to authorize audio. A finished timer repeats continuously while Serenity Kitchen is active until the alarm is dismissed.</p>
           </div>
         </details>
         <details class="settings-section">
           <summary>Offline image recognition</summary>
-          <div class="settings-section-content"><p id="offlineOcrStatus" class="setting-help" aria-live="polite">Checking the local OCR package…</p><button type="button" id="repairOfflineOcrBtn" class="button secondary">Install or repair offline OCR</button><p class="setting-help">Kitchen Companion keeps its OCR engine and English model in a separate local cache so normal app updates do not remove them. Your device may still clear website data when storage is critically low.</p></div>
+          <div class="settings-section-content"><p id="offlineOcrStatus" class="setting-help" aria-live="polite">Checking the local OCR package…</p><button type="button" id="repairOfflineOcrBtn" class="button secondary">Install or repair offline OCR</button><p class="setting-help">Serenity Kitchen keeps its OCR engine and English model in a separate local cache so normal app updates do not remove them. Your device may still clear website data when storage is critically low.</p></div>
         </details>
         <details class="settings-section">
           <summary>Backup, restore, and safeguards</summary>
@@ -309,7 +317,7 @@
         </details>
         <details class="settings-section">
           <summary>Feedback and support</summary>
-          <div class="settings-section-content"><p>Report a problem or share an idea without leaving Kitchen Companion.</p><div class="feedback-launch-actions"><button type="button" id="reportProblemBtn" class="button">Report a problem</button><button type="button" id="sendFeedbackBtn" class="button secondary">Send feedback</button></div><p class="setting-help">Reports never include personal recipes, notes, shopping lists, profile names, profile images, or backups.</p></div>
+          <div class="settings-section-content"><p>Report a problem or share an idea without leaving Serenity Kitchen.</p><div class="feedback-launch-actions"><button type="button" id="reportProblemBtn" class="button">Report a problem</button><button type="button" id="sendFeedbackBtn" class="button secondary">Send feedback</button></div><p class="setting-help">Reports never include personal recipes, notes, shopping lists, profile names, profile images, or backups.</p></div>
         </details>
       </div>
     </form>
@@ -318,7 +326,7 @@
   <dialog id="feedbackDialog">
     <form id="feedbackForm" class="dialog-card feedback-card">
       <div class="dialog-title-row">
-        <div><div class="recipe-kicker">Kitchen Companion feedback</div><h2 id="feedbackDialogTitle">Report a problem</h2></div>
+        <div><div class="recipe-kicker">Serenity Kitchen feedback</div><h2 id="feedbackDialogTitle">Report a problem</h2></div>
         <button type="button" id="closeFeedbackBtn" class="icon-btn" aria-label="Close feedback form">×</button>
       </div>
       <p id="feedbackIntro">Tell us what happened. You can review everything before sharing it.</p>
@@ -434,7 +442,7 @@
   <dialog id="profileSetupDialog">
     <form id="profileSetupForm" class="dialog-card">
       <h2>Welcome to profiles</h2>
-      <p>Your existing Kitchen Companion data is now in its own local profile. Give it a name so you always know whose favorites, notes, and shopping list are open.</p>
+      <p>Your existing Serenity Kitchen data is now in its own local profile. Give it a name so you always know whose favorites, notes, and shopping list are open.</p>
       <label>Profile name<input id="profileSetupName" required maxlength="40" value="My Profile"></label>
       <div class="dialog-actions"><button type="submit" class="button">Continue</button></div>
     </form>
@@ -455,7 +463,7 @@
       <p id="shareRecipeName"></p>
       <label class="setting-row"><span>Include my private notes</span><input id="shareIncludeNotes" type="checkbox"></label>
       <div class="share-choice-grid">
-        <button type="button" id="shareRecipeJsonBtn" class="button">Kitchen Companion JSON</button>
+        <button type="button" id="shareRecipeJsonBtn" class="button">Serenity Kitchen JSON</button>
         <button type="button" id="shareRecipeTextBtn" class="button secondary">Plain text file</button>
       </div>
       <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button></div>
@@ -490,7 +498,7 @@
   <dialog id="pasteRecipeDialog">
     <form id="pasteRecipeForm" class="dialog-card recipe-import-card">
       <div class="dialog-title-row"><h2>Paste recipe text</h2><button type="button" class="icon-btn" id="closePasteRecipe" aria-label="Close">✕</button></div>
-      <p>Paste the entire recipe exactly as you have it. Kitchen Companion will separate the title, ingredients, instructions, times, yield, category, and notes for review.</p>
+      <p>Paste the entire recipe exactly as you have it. Serenity Kitchen will separate the title, ingredients, instructions, times, yield, category, and notes for review.</p>
       <label>Recipe text<textarea id="pastedRecipeText" rows="18" required placeholder="Recipe title&#10;&#10;Ingredients&#10;2 cups flour&#10;...&#10;&#10;Instructions&#10;1. Preheat oven..." ></textarea></label>
       <div class="dialog-actions"><button type="button" class="button secondary" id="cancelPasteRecipe">Cancel</button><button type="submit" class="button">Parse and review</button></div>
     </form>
@@ -499,7 +507,7 @@
   <dialog id="urlRecipeDialog">
     <form id="urlRecipeForm" class="dialog-card recipe-import-card">
       <div class="dialog-title-row"><h2>Import recipe from website</h2><button type="button" class="icon-btn" id="closeUrlRecipe" aria-label="Close">✕</button></div>
-      <p>Paste a link to a recipe page. Kitchen Companion looks for the page’s structured recipe data and opens the result for review before anything is saved.</p>
+      <p>Paste a link to a recipe page. Serenity Kitchen looks for the page’s structured recipe data and opens the result for review before anything is saved.</p>
       <label>Recipe website<input id="recipeUrl" type="url" inputmode="url" autocomplete="url" required placeholder="https://example.com/recipe"></label>
       <p id="urlImportStatus" class="import-status" aria-live="polite"></p>
       <div class="dialog-actions"><button type="button" class="button secondary" id="cancelUrlRecipe">Cancel</button><button type="submit" class="button" id="importRecipeUrl">Import and review</button></div>
@@ -509,7 +517,7 @@
   <dialog id="imageRecipeDialog">
     <form id="imageRecipeForm" class="dialog-card recipe-import-card">
       <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close">✕</button></div>
-      <p>Select one or more screenshots or photos. For printed pages, use the original full-resolution photo and fill the frame with the page. If the print is small, take separate close photos of the ingredients and instructions. Kitchen Companion will combine them in order and require review before saving.</p>
+      <p>Select one or more screenshots or photos. For printed pages, use the original full-resolution photo and fill the frame with the page. If the print is small, take separate close photos of the ingredients and instructions. Serenity Kitchen will combine them in order and require review before saving.</p>
       <label>Recipe images<input id="recipeImageFiles" type="file" accept="image/*" multiple required></label>
       <label class="setting-row"><span>Remove common website clutter</span><input id="ocrCleanupToggle" type="checkbox" checked></label>
       <div id="recipeImagePreviews" class="recipe-image-previews"></div>
@@ -580,7 +588,7 @@
   <dialog id="importOptionsDialog">
     <form method="dialog" class="dialog-card">
       <h2>Add a recipe module</h2>
-      <p>Install directly from the Kitchen Companion GitHub catalog, or choose a file already on this device.</p>
+      <p>Install directly from the Serenity Kitchen GitHub catalog, or choose a file already on this device.</p>
       <div class="import-choice-grid">
         <button type="button" id="browseGithubBtn" class="button">Browse GitHub modules</button>
         <button type="button" id="importFileBtn" class="button secondary">Import a file</button>
@@ -707,11 +715,11 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.18.1"></script>
-  <script src="profile-storage.js?v=0.18.1"></script>
-  <script src="url-recipe-import.js?v=0.18.1"></script>
-  <script src="meal-planner.js?v=0.18.1"></script>
-  <script src="app.js?v=0.18.1"></script>
-  <script src="ocr-service.js?v=0.18.1"></script>
+  <script src="kitchen-engine.js?v=0.19.0"></script>
+  <script src="profile-storage.js?v=0.19.0"></script>
+  <script src="url-recipe-import.js?v=0.19.0"></script>
+  <script src="meal-planner.js?v=0.19.0"></script>
+  <script src="app.js?v=0.19.0"></script>
+  <script src="ocr-service.js?v=0.19.0"></script>
 </body>
 </html>

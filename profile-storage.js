@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.18.1';
+  const APP_VERSION = '0.19.0';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -101,7 +101,7 @@
     validateStorageSnapshot(snapshot) {
       if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) throw new Error('Checkpoint data is missing or damaged.');
       const keys = Object.keys(snapshot);
-      if (!keys.length) throw new Error('No Kitchen Companion data was available to protect.');
+      if (!keys.length) throw new Error('No Serenity Kitchen data was available to protect.');
       for (const key of keys) {
         if (!(key.startsWith('kitchenCompanion.') || key === LEGACY_KEY) || key === BACKUP_KEY) throw new Error(`Checkpoint contains an unsupported storage key: ${key}`);
         if (typeof snapshot[key] !== 'string') throw new Error(`Checkpoint entry ${key} is damaged.`);
@@ -450,7 +450,7 @@
 
     loadActiveState() {
       const personalRecipes = clone(this.activeProfile.personalRecipes || []);
-      const personal = personalRecipes.length ? { schemaVersion:1, moduleId:'my-recipes', name:'My Recipes', publisher:'Kitchen Companion user', version:'1.0.0', description:'Recipes created or edited in Kitchen Companion.', license:'Personal', enabled:true, recipes:personalRecipes } : null;
+      const personal = personalRecipes.length ? { schemaVersion:1, moduleId:'my-recipes', name:'My Recipes', publisher:'Serenity Kitchen user', version:'1.0.0', description:'Recipes created or edited in Serenity Kitchen.', license:'Personal', enabled:true, recipes:personalRecipes } : null;
       return {
         modules: [...clone(this.shared.modules || []), ...(personal ? [personal] : [])],
         favorites: clone(this.activeProfile.favorites || []),
@@ -567,7 +567,7 @@
     }
 
     deleteProfile(profileId) {
-      if (this.device.profiles.length <= 1) throw new Error('Kitchen Companion must keep at least one profile.');
+      if (this.device.profiles.length <= 1) throw new Error('Serenity Kitchen must keep at least one profile.');
       if (profileId === this.device.activeProfileId) throw new Error('Switch to another profile before deleting this one.');
       this.device.profiles = this.device.profiles.filter(p => p.profileId !== profileId);
       localStorage.removeItem(PROFILE_PREFIX + profileId); this.persistAll();
@@ -581,7 +581,7 @@
     }
 
     importProfile(payload, mode = 'add-copy') {
-      if (!payload || payload.format !== 'kitchen-companion-profile' || !payload.profile || !payload.data) throw new Error('This is not a valid Kitchen Companion profile export.');
+      if (!payload || payload.format !== 'kitchen-companion-profile' || !payload.profile || !payload.data) throw new Error('This is not a valid Serenity Kitchen profile export.');
       const incomingData = this.normalizeProfileData(clone(payload.data));
       const existing = this.device.profiles.find(profile => profile.profileId === payload.profile.profileId);
       if (existing && mode === 'replace') {

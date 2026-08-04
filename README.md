@@ -1,4 +1,13 @@
-# Kitchen Companion v0.18.1
+# Serenity Kitchen v0.19.0
+
+Serenity Kitchen is the new name for Kitchen Companion. Existing module IDs, recipe IDs, profile data, local-storage keys, shared recipe formats, and legacy KC backups remain compatible.
+
+### Serenity Kitchen home and identity (v0.19.0)
+
+- Adds a dedicated full-screen home with Recipes, Shopping Lists, Pantry, and Meal Planner destinations.
+- Uses the Serenity Kitchen logo as the return-home control on every working screen.
+- Creates Serenity Kitchen-branded backups while continuing to recognize the established Kitchen Companion backup format.
+- Identifies the app in Settings as **Serenity Kitchen by Serenity Valley Works**.
 
 ## Pantry prototype (v0.18.0)
 
