@@ -1,4 +1,11 @@
-# Serenity Kitchen v0.20.3
+# Serenity Kitchen v0.20.4
+
+## v0.20.4
+
+- Keeps the profile switcher fully visible on narrow iPhone screens by positioning it within the viewport and safe-area insets.
+- Adds a bounded, scrollable profile menu for long profile lists on small screens.
+- Hides the header timer control when there are no timers and restores it automatically whenever a timer exists.
+- Preserves all profile switching, timer alerts, saved data, navigation, themes, and offline behavior.
 
 ## v0.20.3
 
