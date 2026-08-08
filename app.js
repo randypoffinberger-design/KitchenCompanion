@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.3';
+  const ENGINE_VERSION = '0.21.4';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1055,18 +1055,21 @@
     const oldExport = !lastExport || Date.now() - Date.parse(lastExport) > 7 * 24 * 60 * 60 * 1000;
     if (oldExport && !confirm('Before updating, Serenity Kitchen recommends creating a full backup file. Local checkpoints cannot help if browser storage is erased.\n\nContinue checking for an update without a recent exported backup?')) return;
     try {
-      requireSafetyCheckpoint('before-engine-update');
+      // An update check only refreshes the cached app shell; it does not alter
+      // profile or recipe data. Keep the local checkpoint best-effort so a
+      // full iPhone storage quota cannot prevent a safe update.
+      profileStore.createSafetyBackup('before-engine-update', { force:true });
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r => r.update()));
       }
       location.href = `${location.pathname}?app=${Date.now()}`;
-    } catch (error) { alert(`Update check stopped to protect your data: ${error.message}`); }
+    } catch (error) { alert(`The update check could not finish: ${error.message}`); }
   }
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.3').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.4').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2614,7 +2617,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.3');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.4');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

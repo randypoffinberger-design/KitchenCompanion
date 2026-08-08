@@ -2,18 +2,18 @@
 
 ## v0.21.4
 
-- Adds a guarded **Merge My Recipes into household** recovery action.
-- Merges local and server personal recipes by recipe ID instead of replacing either collection.
-- Preserves existing household favorites, notes, hidden recipes, ratings, categories, and manual links during repair.
-- Keeps the last upload/download count visible after the routine sync status changes.
+- Keeps the version footer visible at the bottom of the hamburger drawer on both the homepage and interior pages.
+- Allows a safe app-shell update check to continue when browser storage has no room for another local checkpoint.
+- Preserves existing safety checkpoints if a new checkpoint cannot be written because of storage quota pressure.
+- Uses a distinct version number so deployment can be verified directly in the drawer and Settings.
 
 ## v0.21.3
 
-- Prevents a temporarily missing active-profile record from being silently replaced with a blank “My Profile.”
-- Keeps edits queued when they occur while a household synchronization request is already running.
-- Adds **Refresh from household** with explicit downloaded recipe, shopping, and pantry counts.
-- Corrects the first-copy panel so it actually disappears after initialization.
-- Separates genuine sync completion from stale visual state in the account dialog.
+- Prevents an incomplete or temporarily unavailable offline storage view from being mistaken for a new installation.
+- Never creates or saves a blank profile when the expected active profile record is missing.
+- Attempts automatic recovery from the IndexedDB safety mirror, including the locally bound household profile and installed recipe modules.
+- Shows a non-writing recovery screen when saved data cannot be recovered immediately.
+- Adds regression coverage for airplane-mode startup, incomplete profile storage, and normal offline profile loading.
 
 ## v0.21.2
 

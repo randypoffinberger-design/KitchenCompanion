@@ -76,7 +76,7 @@ button { color: inherit; }
 .home-meal-planner { left:47.2%; top:75.9%; width:39.6%; height:19%; }
 body.home-view { background:#080808; overflow-x:hidden; }
 body.home-view .sidebar { display:none; }
-body.home-view .sidebar.open { display:block; position:fixed; inset:62px auto 0 0; z-index:60; width:min(86vw,320px); height:calc(100dvh - 62px); transform:none; }
+body.home-view .sidebar.open { display:flex; position:fixed; inset:62px auto 0 0; z-index:60; width:min(86vw,320px); height:calc(100dvh - 62px); transform:none; }
 body.home-view .scrim.show { display:block; position:fixed; inset:62px 0 0; z-index:55; background:rgba(0,0,0,.55); }
 body.home-view .app-shell { display:block; }
 body.home-view .topbar { position:fixed; inset:0 0 auto; z-index:50; border:0; background:transparent; backdrop-filter:none; pointer-events:none; }
@@ -748,7 +748,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   cursor: pointer;
 }
 
-/* v0.21.3 shared Serenity Kitchen interior design system */
+/* v0.21.4 shared Serenity Kitchen interior design system */
 :root{
   --bg:#f4efe9;--panel:#fffaf5;--panel-2:#eee5dd;--surface-3:#e3d6cc;
   --text:#2b2420;--muted:#71665f;--border:#d7c9bf;--accent:#c80d3e;--accent-2:#a90834;
@@ -761,7 +761,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   --tiffany:#81d8d0;--tiffany-soft:#183c39;--danger:#e55472;--shadow:0 14px 38px rgba(0,0,0,.3);
 }
 html{background:var(--bg)}body{background:var(--bg);font-weight:450}
-body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.3') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.3') center/contain no-repeat}
+body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.4') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.4') center/contain no-repeat}
 :root[data-theme="dark"] body:not(.home-view)::before{--watermark-color:#81d8d0;opacity:.22}
 .app-shell,.main{position:relative}.app-shell{z-index:1;grid-template-rows:var(--header-height) 1fr}.main{z-index:1;padding:clamp(1rem,2.6vw,2rem)}
 .topbar{z-index:50;min-height:var(--header-height);padding:max(7px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 7px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--panel) 92%,transparent);border-bottom:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.12)}

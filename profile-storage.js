@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.21.3';
+  const APP_VERSION = '0.21.4';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -170,12 +170,21 @@
     }
 
     saveSafetyBackups(backups) {
-      const encoded = JSON.stringify(backups);
-      try { this.writeAndVerify(BACKUP_KEY, encoded); }
-      catch (error) {
-        if (error?.name !== 'QuotaExceededError' && !/quota/i.test(error?.message || '')) throw error;
-        localStorage.removeItem(BACKUP_KEY);
-        this.writeAndVerify(BACKUP_KEY, encoded);
+      const candidates = [...backups];
+      while (candidates.length) {
+        try { this.writeAndVerify(BACKUP_KEY, JSON.stringify(candidates)); return; }
+        catch (error) {
+          if (error?.name !== 'QuotaExceededError' && !/quota/i.test(error?.message || '')) throw error;
+          if (candidates.length === 1) throw error;
+          // Remove the oldest automatic checkpoint first. A failed write leaves
+          // the previously saved BACKUP_KEY untouched, so quota pressure can
+          // never erase every existing recovery point.
+          let removeIndex = -1;
+          for (let index = candidates.length - 1; index >= 0; index -= 1) {
+            if (candidates[index]?.kind !== 'manual') { removeIndex = index; break; }
+          }
+          candidates.splice(removeIndex >= 0 ? removeIndex : candidates.length - 1, 1);
+        }
       }
     }
 
