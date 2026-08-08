@@ -1,4 +1,10 @@
-# Serenity Kitchen v0.21.0
+# Serenity Kitchen v0.21.1
+
+## v0.21.1
+
+- Consolidates duplicate Regular Shopping Items by normalized item name after backup merges and household synchronization.
+- Preserves an assigned store, aisle, category, and usable quantity when the matching duplicate contains blank or unassigned values.
+- Cleans duplicates already introduced by v0.21.0 and sends the corrected Regular Items collection back to the household automatically.
 
 ## v0.21.0
 

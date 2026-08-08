@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.0';
+  const ENGINE_VERSION = '0.21.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1009,9 +1009,9 @@
     });
 
     state.shoppingList = [...grouped.values()];
-    state.regularItems = (state.regularItems || []).map(item => ({
-      id:item.id || shoppingId(), name:displayShoppingName(item.name), normalizedName:shoppingNameKey(item.normalizedName || item.name), quantity:String(item.quantity || '').trim(), store:normalizeStore(item.store), group:SHOPPING_GROUPS.includes(item.group) ? item.group : classifyShoppingGroup(item.name), aisle:String(item.aisle || preferredAisleFor(item.name, item.store)).trim().slice(0, 40)
-    }));
+    const normalizedRegularItems = consolidateRegularItems(state.regularItems || []);
+    if (normalizedRegularItems.length !== (state.regularItems || []).length || JSON.stringify(normalizedRegularItems) !== JSON.stringify(state.regularItems || [])) changed = true;
+    state.regularItems = normalizedRegularItems;
     state.pantryItems = (state.pantryItems || []).map(normalizePantryItem);
     return changed;
   }
@@ -1034,7 +1034,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.0').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.1').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2582,7 +2582,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3896,6 +3896,29 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return regularItem;
   }
 
+  function consolidateRegularItems(items = []) {
+    const consolidated = new Map();
+    items.forEach(source => {
+      const name = displayShoppingName(source?.name || '');
+      const normalizedName = shoppingNameKey(source?.normalizedName || name);
+      if (!normalizedName) return;
+      const item = {
+        id:source.id || shoppingId(), name, normalizedName,
+        quantity:String(source.quantity || '').trim(), store:normalizeStore(source.store),
+        group:SHOPPING_GROUPS.includes(source.group) ? source.group : classifyShoppingGroup(name),
+        aisle:String(source.aisle || preferredAisleFor(name, source.store)).trim().slice(0, 40)
+      };
+      const existing = consolidated.get(normalizedName);
+      if (!existing) { consolidated.set(normalizedName, item); return; }
+      if (item.name.length > existing.name.length) existing.name = item.name;
+      if (item.quantity) existing.quantity = item.quantity;
+      if (item.store !== 'Unassigned') existing.store = item.store;
+      if (item.group !== 'Other') existing.group = item.group;
+      if (item.aisle) existing.aisle = item.aisle;
+    });
+    return [...consolidated.values()];
+  }
+
   function addManualShoppingItem(event){
     event.preventDefault(); const name=document.querySelector('#shoppingItemName').value.trim(); const quantity=document.querySelector('#shoppingItemQuantity').value.trim(); const store=normalizeStore(els.shoppingItemStore.value); const group=document.querySelector('#shoppingItemGroup').value; const aisle=document.querySelector('#shoppingItemAisle').value.trim().slice(0,40); if(!name)return;
     const saveAsRegular = new FormData(event.currentTarget).has('saveRegularItem');
@@ -4563,7 +4586,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function mergeBackupState(current, incoming) {
     const result=JSON.parse(JSON.stringify(current)); const incomingPersonal=incoming.modules.find(m=>m.moduleId==='my-recipes'); const personal=result.modules.find(m=>m.moduleId==='my-recipes') || ensurePersonalModule();
     if(incomingPersonal){ const byId=new Map(personal.recipes.map(r=>[r.id,r])); incomingPersonal.recipes.forEach(r=>byId.set(r.id,r)); personal.recipes=[...byId.values()]; }
-    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=[...(result.regularItems||[]),...(incoming.regularItems||[])]; result.pantryItems=[...(result.pantryItems||[]),...(incoming.pantryItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; result.mealPlans={...(incoming.mealPlans||{}),...(result.mealPlans||{})}; result.mealPlannerPreferences={template:{...(incoming.mealPlannerPreferences?.template||{}),...(result.mealPlannerPreferences?.template||{})},recipes:{...(incoming.mealPlannerPreferences?.recipes||{}),...(result.mealPlannerPreferences?.recipes||{})}}; result.mealPlanHistory=[...(incoming.mealPlanHistory||[]),...(result.mealPlanHistory||[])].slice(-400); const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
+    result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=consolidateRegularItems([...(result.regularItems||[]),...(incoming.regularItems||[])]); result.pantryItems=[...(result.pantryItems||[]),...(incoming.pantryItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; result.mealPlans={...(incoming.mealPlans||{}),...(result.mealPlans||{})}; result.mealPlannerPreferences={template:{...(incoming.mealPlannerPreferences?.template||{}),...(result.mealPlannerPreferences?.template||{})},recipes:{...(incoming.mealPlannerPreferences?.recipes||{}),...(result.mealPlannerPreferences?.recipes||{})}}; result.mealPlanHistory=[...(incoming.mealPlanHistory||[]),...(result.mealPlanHistory||[])].slice(-400); const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
   }
 
   function restoreSelectedBackup(event) {
@@ -4609,7 +4632,10 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     applyingRemoteSync = true;
     try {
       const shopping = snapshot['shopping-list'];
-      if (shopping) ['shoppingList','regularItems','stores','learnedStorePreferences','learnedShoppingGroups','learnedAisles'].forEach(key => { if (shopping[key] !== undefined) state[key] = JSON.parse(JSON.stringify(shopping[key])); });
+      if (shopping) {
+        ['shoppingList','stores','learnedStorePreferences','learnedShoppingGroups','learnedAisles'].forEach(key => { if (shopping[key] !== undefined) state[key] = JSON.parse(JSON.stringify(shopping[key])); });
+        if (shopping.regularItems !== undefined) state.regularItems = consolidateRegularItems(JSON.parse(JSON.stringify(shopping.regularItems)));
+      }
       if (snapshot.pantry?.pantryItems !== undefined) state.pantryItems = JSON.parse(JSON.stringify(snapshot.pantry.pantryItems));
       const recipes = snapshot.recipes;
       if (recipes) {
