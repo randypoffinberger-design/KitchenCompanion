@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.1';
+  const ENGINE_VERSION = '0.21.2';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -143,6 +143,7 @@
   });
 
   let applyingRemoteSync = false;
+  let householdSyncChangesEnabled = false;
   let cloudCreatingAccount = false;
   const householdSync = new SKHouseholdSync({
     profileId:profileStore.getActiveProfileMeta()?.profileId || '',
@@ -191,7 +192,11 @@
     startupStep('timers', startTimerTicker);
     startupStep('alarm', initBellAudio);
     startupStep('screen wake lock', updateWakeLock);
-    startupStep('household sync', () => { renderCloudAccount(); householdSync.start(buildHouseholdSnapshot); });
+    startupStep('household sync', () => {
+      renderCloudAccount();
+      householdSync.start(buildHouseholdSnapshot);
+      householdSyncChangesEnabled = true;
+    });
     showStartupIssues();
   }
 
@@ -224,7 +229,7 @@
   function saveState() {
     pruneUnusedMealPlans();
     profileStore.saveCombinedState(state);
-    if (!applyingRemoteSync) householdSync?.markDirty();
+    if (householdSyncChangesEnabled && !applyingRemoteSync) householdSync?.markDirty();
   }
 
   function normalizeRatingRecord(entry) {
@@ -1034,7 +1039,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.1').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.2').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2582,7 +2587,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.2');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

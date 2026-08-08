@@ -1,4 +1,11 @@
-# Serenity Kitchen v0.21.1
+# Serenity Kitchen v0.21.2
+
+## v0.21.2
+
+- Fixes false `409` household conflicts caused by treating the normal startup save as a new local edit.
+- Makes an opened or reloaded app pull newer household revisions before it is allowed to upload subsequent user changes.
+- Preserves both devices when the server rejects a stale revision; no conflicting local snapshot is silently accepted.
+- Restores Pantry updates after another household device changes the shared Pantry collection.
 
 ## v0.21.1
 
