@@ -30,6 +30,14 @@ vm.runInContext(fs.readFileSync(path.resolve(__dirname, '..', 'sync-client.js'),
   assert.equal(applied.recipes.personalRecipes[0].id, 'recipe-1');
   assert.equal(client.summary().initialized, true);
 
+  const merged = client.mergeRecipeCollections(
+    { personalRecipes:[{ id:'server-only' }, { id:'shared', name:'old' }], favorites:['a'] },
+    { personalRecipes:[{ id:'local-only' }, { id:'shared', name:'new' }], favorites:['b'] }
+  );
+  assert.equal(JSON.stringify(merged.personalRecipes.map(recipe => recipe.id).sort()), JSON.stringify(['local-only','server-only','shared']));
+  assert.equal(merged.personalRecipes.find(recipe => recipe.id === 'shared').name, 'new');
+  assert.equal(JSON.stringify([...merged.favorites].sort()), JSON.stringify(['a','b']));
+
   client.syncing = true;
   client.markDirty();
   assert.equal(client.dirty, true);

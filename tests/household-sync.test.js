@@ -10,11 +10,11 @@ const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 const styles = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const profiles = fs.readFileSync(path.join(root, 'profile-storage.js'), 'utf8');
 
-for (const id of ['cloudAccountDialog','cloudServerUrl','cloudEmail','cloudPassword','cloudHouseholdSelect','cloudUploadFirstBtn','cloudDownloadFirstBtn','cloudSyncNowBtn','cloudRefreshBtn']) {
+for (const id of ['cloudAccountDialog','cloudServerUrl','cloudEmail','cloudPassword','cloudHouseholdSelect','cloudUploadFirstBtn','cloudDownloadFirstBtn','cloudSyncNowBtn','cloudRefreshBtn','cloudRepairRecipesBtn','cloudTransferSummary']) {
   assert.match(html, new RegExp(`id="${id}"`));
 }
-assert.match(html, /sync-client[.]js[?]v=0[.]21[.]3/);
-assert.match(worker, /sync-client[.]js[?]v=0[.]21[.]3/);
+assert.match(html, /sync-client[.]js[?]v=0[.]21[.]4/);
+assert.match(worker, /sync-client[.]js[?]v=0[.]21[.]4/);
 assert.match(sync, /shopping-list/);
 assert.match(sync, /pantry/);
 assert.match(sync, /recipes/);
@@ -23,6 +23,8 @@ assert.match(sync, /mutationId/);
 assert.match(sync, /baseRevision/);
 assert.match(sync, /setInterval\(run, 5000\)/);
 assert.match(sync, /async downloadLatest\(\)/);
+assert.match(sync, /async repairRecipes\(localRecipes\)/);
+assert.match(sync, /mergeRecipeCollections/);
 assert.match(sync, /this[.]changeSequence \+= 1/);
 assert.match(sync, /if \(this[.]changeSequence === pushingSequence\) this[.]dirty = false/);
 assert.match(app, /createSafetyBackup\('before-household-download'/);
