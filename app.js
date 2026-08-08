@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.4';
+  const ENGINE_VERSION = '0.21.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -173,6 +173,18 @@
   }
 
   function init() {
+    if (profileStore.needsStorageRecovery?.()) {
+      showStorageRecoveryScreen();
+      profileStore.recoverFromIndexedDB().then(recovered => {
+        if (recovered) location.reload();
+        else if (navigator.onLine && profileStore.canInitializeFreshStorage?.()) {
+          profileStore.initializeFreshStorage();
+          location.reload();
+        }
+        else updateStorageRecoveryScreen('The recovery mirror was not available. Reconnect to the internet and tap Retry. No blank profile has been saved.');
+      }).catch(error => updateStorageRecoveryScreen(`Automatic recovery could not finish: ${error.message}. Reconnect to the internet and tap Retry. No blank profile has been saved.`));
+      return;
+    }
     // Controls and update recovery must be established before any storage
     // migration or write. A rejected housekeeping save must never freeze UI.
     startupStep('event controls', bindEvents);
@@ -198,6 +210,21 @@
       householdSyncChangesEnabled = true;
     });
     showStartupIssues();
+  }
+
+  function showStorageRecoveryScreen() {
+    const blocker = document.createElement('section');
+    blocker.id = 'storageRecoveryBlocker';
+    blocker.className = 'storage-recovery-blocker';
+    blocker.setAttribute('role', 'alert');
+    blocker.innerHTML = `<div class="storage-recovery-card"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z"/><path d="M9 12l2 2 4-5"/></svg><h1>Your saved kitchen is protected</h1><p id="storageRecoveryMessage">${escapeHtml(profileStore.storageRecoveryMessage?.() || 'Saved profile data is temporarily unavailable.')} Serenity Kitchen stopped before creating or overwriting a blank profile.</p><button type="button" class="button" id="storageRecoveryRetry">Retry recovery</button><small>Do not reinstall the app or clear website data. If recovery cannot complete, use your exported Serenity Kitchen backup after reconnecting.</small></div>`;
+    document.body.replaceChildren(blocker);
+    blocker.querySelector('#storageRecoveryRetry').addEventListener('click', () => location.reload());
+  }
+
+  function updateStorageRecoveryScreen(message) {
+    const status = document.querySelector('#storageRecoveryMessage');
+    if (status) status.textContent = message;
   }
 
   function loadState() {
@@ -314,8 +341,6 @@
     document.querySelector('#cloudUploadFirstBtn')?.addEventListener('click', () => initializeCloudHousehold('upload'));
     document.querySelector('#cloudDownloadFirstBtn')?.addEventListener('click', () => initializeCloudHousehold('download'));
     document.querySelector('#cloudSyncNowBtn')?.addEventListener('click', () => householdSync.syncNow(buildHouseholdSnapshot).catch(showCloudError));
-    document.querySelector('#cloudRefreshBtn')?.addEventListener('click', refreshCloudHousehold);
-    document.querySelector('#cloudRepairRecipesBtn')?.addEventListener('click', repairCloudRecipes);
     els.repairOfflineOcrBtn?.addEventListener('click', repairOfflineOcr);
     els.reportProblemBtn?.addEventListener('click', () => openFeedbackDialog('bug'));
     els.sendFeedbackBtn?.addEventListener('click', () => openFeedbackDialog('suggestion'));
@@ -1041,7 +1066,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.4').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.3').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2589,7 +2614,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.4');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -4669,7 +4694,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     cloudElement('cloudUserName').textContent=summary.user?.displayName||'Serenity Kitchen account'; cloudElement('cloudUserEmail').textContent=summary.user?.email||'';
     const select=cloudElement('cloudHouseholdSelect'); select.innerHTML='<option value="">No household selected</option>';
     summary.households.forEach(household=>{const option=document.createElement('option');option.value=household.id;option.textContent=`${household.name} (${household.role})`;select.append(option);}); select.value=summary.activeHousehold?.id||'';
-    const ready=summary.initialized&&summary.profileBound; cloudElement('cloudFirstSync').hidden=!summary.activeHousehold||ready; cloudElement('cloudSyncNowBtn').hidden=!ready; cloudElement('cloudRefreshBtn').hidden=!ready; cloudElement('cloudRepairRecipesBtn').hidden=!ready; cloudElement('cloudInviteBtn').hidden=!summary.activeHousehold||!['owner','adult'].includes(summary.activeHousehold.role);
+    const ready=summary.initialized&&summary.profileBound; cloudElement('cloudFirstSync').hidden=!summary.activeHousehold||ready; cloudElement('cloudSyncNowBtn').hidden=!ready; cloudElement('cloudInviteBtn').hidden=!summary.activeHousehold||!['owner','adult'].includes(summary.activeHousehold.role);
     if(!summary.profileBound){title.textContent=summary.user?.displayName||'Signed in';brief.textContent='This account is connected to another local profile. Select a household here to connect this profile.';}
     else if(summary.activeHousehold){title.textContent=summary.activeHousehold.name;brief.textContent=ready?`Live household sharing active${summary.lastSyncAt?` • Last sync ${new Date(summary.lastSyncAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:''}`:'Choose the first household copy to begin syncing.';}
     else{title.textContent=summary.user?.displayName||'Signed in';brief.textContent='Create a household or join one with an invitation code.';}
@@ -4686,8 +4711,6 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   async function joinCloudHousehold(){const code=prompt('Enter the Serenity Kitchen household invitation code:');if(!code)return;setCloudStatus('Joining household…','working');try{await householdSync.joinHousehold(code);renderCloudAccount();setCloudStatus('Household joined. Download the household copy to begin.','success');}catch(error){showCloudError(error);}}
   async function createCloudInvite(){setCloudStatus('Creating invitation…','working');try{const invite=await householdSync.createInvite('adult');try{await navigator.clipboard.writeText(invite.code);setCloudStatus(`Invitation code copied. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}catch{prompt('Copy this one-time household invitation code:',invite.code);setCloudStatus(`Invitation created. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}}catch(error){showCloudError(error);}}
   async function initializeCloudHousehold(mode){const warning=mode==='upload'?'Use this device as the first shared household copy? Existing household data cannot be replaced.':'Download the household copy to this profile? A local safety checkpoint will be created first.';if(!confirm(warning))return;setCloudStatus(mode==='upload'?'Uploading the first household copy…':'Downloading household data…','working');try{await householdSync.initialize(mode,buildHouseholdSnapshot());householdSync.start(buildHouseholdSnapshot);renderCloudAccount();}catch(error){showCloudError(error);}}
-  async function refreshCloudHousehold(){if(!confirm('Replace the household-shared portions of this profile with the latest server copy? Installed public modules remain on this device.'))return;setCloudStatus('Downloading the latest household copy…','working');try{const snapshot=await householdSync.downloadLatest();const recipes=snapshot.recipes?.personalRecipes?.length||0;const shopping=snapshot['shopping-list']?.shoppingList?.length||0;const pantry=snapshot.pantry?.pantryItems?.length||0;renderCloudAccount();const message=`Downloaded ${recipes} personal recipes, ${shopping} shopping items, and ${pantry} pantry items.`;cloudElement('cloudTransferSummary').textContent=message;setCloudStatus(message,'success');}catch(error){showCloudError(error);}}
-  async function repairCloudRecipes(){const local=buildHouseholdSnapshot().recipes;const count=local.personalRecipes.length;if(!confirm(`Merge this profile’s ${count} personal recipe${count===1?'':'s'} into the household copy? Existing household recipes will be preserved.`))return;setCloudStatus('Merging personal recipes into the household…','working');try{const merged=await householdSync.repairRecipes(local);renderCloudAccount();const message=`Household now contains ${merged.personalRecipes.length} personal recipes.`;cloudElement('cloudTransferSummary').textContent=message;setCloudStatus(message,'success');}catch(error){showCloudError(error);}}
   function showCloudError(error){setCloudStatus(error?.message||'The household request failed.','error');renderCloudAccount();}
 
   function escapeHtml(value) {

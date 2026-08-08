@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.21.4';
+  const APP_VERSION = '0.21.3';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -23,6 +23,9 @@
       this.device = null;
       this.shared = null;
       this.activeProfile = null;
+      this.recoveryRequired = false;
+      this.recoveryReason = '';
+      this.freshInstallAllowed = false;
       this.initialize();
     }
 
@@ -274,36 +277,17 @@
       const device = JSON.parse(localStorage.getItem(DEVICE_KEY));
       const shared = JSON.parse(localStorage.getItem(SHARED_KEY));
       if (!device?.profiles?.length || !shared) return false;
+      const savedProfile = this.readProfile(device.activeProfileId);
+      if (!savedProfile) throw new Error('The active profile record is unavailable. Startup was stopped before a blank profile could replace it.');
       this.device = device;
-      this.recoverOrphanedProfileMetadata();
       try { this.normalizeProfileMetadata(); }
       catch (error) { console.warn('Profile metadata cleanup was skipped because storage is not writable.', error); }
       this.shared = shared;
-      const storedProfile = this.readProfile(device.activeProfileId);
-      if (!storedProfile) throw new Error('The active profile record is missing; recovery is required.');
-      this.activeProfile = this.normalizeProfileData(storedProfile);
+      this.activeProfile = this.normalizeProfileData(savedProfile);
       this.markProfileUsed(device.activeProfileId);
       try { this.persistAll(); }
       catch (error) { console.warn('Loaded profile data, but startup normalization could not be saved.', error); }
       return true;
-    }
-
-    recoverOrphanedProfileMetadata() {
-      const known = new Set((this.device?.profiles || []).map(profile => profile.profileId));
-      const recovered = [];
-      for (let index = 0; index < localStorage.length; index += 1) {
-        const key = localStorage.key(index) || '';
-        if (!key.startsWith(PROFILE_PREFIX)) continue;
-        const profileId = key.slice(PROFILE_PREFIX.length);
-        if (!profileId || known.has(profileId)) continue;
-        const data = this.readProfile(profileId);
-        if (!data || data.profileId !== profileId) continue;
-        const createdAt = data.createdAt || now();
-        recovered.push({ profileId, displayName:'Recovered Profile', color:'#0f766e', kind:'personal', avatarType:'initials', avatarValue:'', setupComplete:true, createdAt, updatedAt:data.updatedAt || createdAt, migrationStatus:'recovered-orphan', lastUsedAt:data.updatedAt || createdAt });
-        known.add(profileId);
-      }
-      if (recovered.length) this.device.profiles.push(...recovered);
-      return recovered;
     }
 
     recoverLatestValidCheckpoint() {
@@ -363,7 +347,39 @@
           return;
         }
       } catch (error) { console.warn('Startup recovery failed.', error); }
+      const hasKnownStorage = !!localStorage.getItem(DEVICE_KEY) || !!localStorage.getItem(SHARED_KEY) || !!localStorage.getItem(LEGACY_KEY);
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      this.enterReadOnlyRecovery(hasKnownStorage
+        ? 'Saved profile storage is incomplete or unavailable.'
+        : offline
+          ? 'Serenity Kitchen opened offline without access to its saved local profile.'
+          : 'Serenity Kitchen is checking for an existing local profile before completing first-time setup.', !hasKnownStorage);
+    }
+
+    enterReadOnlyRecovery(reason, freshInstallAllowed = false) {
+      const profileId = `recovery-${uuid()}`;
+      const createdAt = now();
+      this.recoveryRequired = true;
+      this.recoveryReason = reason;
+      this.freshInstallAllowed = freshInstallAllowed;
+      this.device = {
+        schemaVersion:1,
+        activeProfileId:profileId,
+        profiles:[{ profileId, displayName:'Recovering profile…', color:'#0f766e', kind:'personal', setupComplete:true, createdAt, updatedAt:createdAt, migrationStatus:'read-only-recovery', avatarType:'initials', avatarValue:'' }]
+      };
+      this.shared = this.defaultShared();
+      this.activeProfile = this.defaultProfileData(profileId);
+    }
+
+    needsStorageRecovery() { return this.recoveryRequired; }
+    storageRecoveryMessage() { return this.recoveryReason; }
+    canInitializeFreshStorage() { return this.recoveryRequired && this.freshInstallAllowed; }
+    initializeFreshStorage() {
+      if (!this.canInitializeFreshStorage()) throw new Error('Existing saved data may still be recoverable; a blank profile was not created.');
+      this.recoveryRequired = false;
+      this.freshInstallAllowed = false;
       this.migrateLegacy();
+      return true;
     }
 
     normalizeProfileMetadata() {
@@ -449,6 +465,7 @@
     }
 
     persistAll() {
+      if (this.recoveryRequired) throw new Error('Saved data is unavailable. Serenity Kitchen is in read-only recovery mode and will not create or overwrite a blank profile.');
       this.shared.updatedAt = now();
       this.activeProfile.updatedAt = now();
       const writes = [
@@ -658,6 +675,44 @@
         tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
       });
       db.close();
+    }
+
+    async recoverFromIndexedDB() {
+      if (!this.recoveryRequired || !('indexedDB' in window)) return false;
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('The local recovery mirror could not be opened.'));
+      });
+      try {
+        const readStore = (storeName, mode = 'all') => new Promise((resolve, reject) => {
+          if (!db.objectStoreNames.contains(storeName)) { resolve(mode === 'all' ? [] : null); return; }
+          const tx = db.transaction(storeName, 'readonly');
+          const request = mode === 'all' ? tx.objectStore(storeName).getAll() : tx.objectStore(storeName).get(mode);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        const [mirroredDevice, mirroredShared, profileMetas, profileData, modules] = await Promise.all([
+          readStore('appMeta', 'device'), readStore('appMeta', 'shared'), readStore('profiles'), readStore('profileData'), readStore('modules')
+        ]);
+        let boundProfileId = '';
+        try { boundProfileId = JSON.parse(localStorage.getItem('serenityKitchen.sync.v1') || '{}').profileId || ''; } catch {}
+        const dataById = new Map((profileData || []).filter(item => item?.profileId).map(item => [item.profileId, item]));
+        const metaById = new Map((profileMetas || []).filter(item => item?.profileId).map(item => [item.profileId, item]));
+        const preferredId = [boundProfileId, mirroredDevice?.activeProfileId].find(id => id && dataById.has(id));
+        const activeProfileId = preferredId || [...dataById.keys()][0];
+        if (!activeProfileId || !mirroredShared) return false;
+        const recoveredMetas = [...dataById.keys()].map(profileId => metaById.get(profileId) || {
+          profileId, displayName:profileId === activeProfileId ? 'Recovered Profile' : 'Recovered Profile', color:'#0f766e', kind:'personal',
+          setupComplete:true, createdAt:now(), updatedAt:now(), migrationStatus:'indexeddb-recovery', avatarType:'initials', avatarValue:''
+        });
+        const recoveredDevice = { ...(mirroredDevice || {}), schemaVersion:1, activeProfileId, profiles:recoveredMetas };
+        const recoveredShared = { ...mirroredShared, modules:Array.isArray(modules) ? modules : [] };
+        this.writeAndVerify(DEVICE_KEY, JSON.stringify(recoveredDevice));
+        this.writeAndVerify(SHARED_KEY, JSON.stringify(recoveredShared));
+        dataById.forEach((data, profileId) => this.writeAndVerify(PROFILE_PREFIX + profileId, JSON.stringify(data)));
+        return true;
+      } finally { db.close(); }
     }
   }
 
