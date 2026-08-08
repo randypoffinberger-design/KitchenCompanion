@@ -1,4 +1,11 @@
-# Serenity Kitchen v0.21.3
+# Serenity Kitchen v0.21.4
+
+## v0.21.4
+
+- Adds a guarded **Merge My Recipes into household** recovery action.
+- Merges local and server personal recipes by recipe ID instead of replacing either collection.
+- Preserves existing household favorites, notes, hidden recipes, ratings, categories, and manual links during repair.
+- Keeps the last upload/download count visible after the routine sync status changes.
 
 ## v0.21.3
 

@@ -183,6 +183,34 @@
       return remote.snapshot;
     }
 
+    mergeRecipeCollections(remote = {}, local = {}) {
+      const recipes = new Map((remote.personalRecipes || []).map(recipe => [recipe.id, clone(recipe)]));
+      (local.personalRecipes || []).forEach(recipe => recipes.set(recipe.id, clone(recipe)));
+      const links = new Map((remote.manualCrossLinks || []).map(link => [link.id, clone(link)]));
+      (local.manualCrossLinks || []).forEach(link => links.set(link.id, clone(link)));
+      return {
+        personalRecipes:[...recipes.values()],
+        favorites:[...new Set([...(remote.favorites || []), ...(local.favorites || [])])],
+        recipeNotes:{ ...(remote.recipeNotes || {}), ...(local.recipeNotes || {}) },
+        hiddenRecipes:[...new Set([...(remote.hiddenRecipes || []), ...(local.hiddenRecipes || [])])],
+        customCategories:[...new Set([...(remote.customCategories || []), ...(local.customCategories || [])])],
+        ratings:{ ...(remote.ratings || {}), ...(local.ratings || {}) },
+        manualCrossLinks:[...links.values()]
+      };
+    }
+
+    async repairRecipes(localRecipes) {
+      if (!this.isReady()) throw new Error('Complete household setup before repairing My Recipes.');
+      this.stop();
+      const remote = await this.remoteSnapshot();
+      const merged = this.mergeRecipeCollections(remote.snapshot.recipes || {}, localRecipes || {});
+      await this.pushCollection('recipes', merged, this.config.revisions[this.key('recipes')] || 0);
+      this.onRemoteState({ recipes:merged }, { repair:true });
+      this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save();
+      this.start(); this.emit(`Household now contains ${merged.personalRecipes.length} personal recipes.`, 'success');
+      return merged;
+    }
+
     markDirty() {
       if (!this.isReady()) return;
       this.dirty = true; this.changeSequence += 1; clearTimeout(this.pushTimer);

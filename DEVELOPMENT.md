@@ -1,7 +1,7 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.21.3
+0.21.4
 
 ## Current task
 Private account, household, and live synchronization testing.

@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.3">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.3">
+  <link rel="manifest" href="app.webmanifest?v=0.21.4">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.4">
   <title>Serenity Kitchen</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.3">
+  <link rel="stylesheet" href="styles.css?v=0.21.4">
 </head>
 <body>
   <div class="app-shell">
@@ -250,7 +250,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.21.3</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.21.4</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -348,6 +348,8 @@
         </div>
         <button type="button" id="cloudSyncNowBtn" class="button" hidden>Sync now</button>
         <button type="button" id="cloudRefreshBtn" class="button secondary" hidden>Refresh from household</button>
+        <button type="button" id="cloudRepairRecipesBtn" class="button secondary" hidden>Merge My Recipes into household</button>
+        <p id="cloudTransferSummary" class="setting-help" aria-live="polite"></p>
       </div>
       <p id="cloudDialogStatus" class="import-status" aria-live="polite"></p>
     </form>
@@ -745,12 +747,12 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.3"></script>
-  <script src="profile-storage.js?v=0.21.3"></script>
-  <script src="url-recipe-import.js?v=0.21.3"></script>
-  <script src="meal-planner.js?v=0.21.3"></script>
-  <script src="sync-client.js?v=0.21.3"></script>
-  <script src="app.js?v=0.21.3"></script>
-  <script src="ocr-service.js?v=0.21.3"></script>
+  <script src="kitchen-engine.js?v=0.21.4"></script>
+  <script src="profile-storage.js?v=0.21.4"></script>
+  <script src="url-recipe-import.js?v=0.21.4"></script>
+  <script src="meal-planner.js?v=0.21.4"></script>
+  <script src="sync-client.js?v=0.21.4"></script>
+  <script src="app.js?v=0.21.4"></script>
+  <script src="ocr-service.js?v=0.21.4"></script>
 </body>
 </html>
