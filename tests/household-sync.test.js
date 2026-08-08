@@ -11,8 +11,8 @@ const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 for (const id of ['cloudAccountDialog','cloudServerUrl','cloudEmail','cloudPassword','cloudHouseholdSelect','cloudUploadFirstBtn','cloudDownloadFirstBtn','cloudSyncNowBtn']) {
   assert.match(html, new RegExp(`id="${id}"`));
 }
-assert.match(html, /sync-client[.]js[?]v=0[.]21[.]0/);
-assert.match(worker, /sync-client[.]js[?]v=0[.]21[.]0/);
+assert.match(html, /sync-client[.]js[?]v=0[.]21[.]1/);
+assert.match(worker, /sync-client[.]js[?]v=0[.]21[.]1/);
 assert.match(sync, /shopping-list/);
 assert.match(sync, /pantry/);
 assert.match(sync, /recipes/);
