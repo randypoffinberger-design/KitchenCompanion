@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.20.8">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.20.8">
+  <link rel="manifest" href="app.webmanifest?v=0.21.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.0">
   <title>Serenity Kitchen</title>
-  <link rel="stylesheet" href="styles.css?v=0.20.8">
+  <link rel="stylesheet" href="styles.css?v=0.21.0">
 </head>
 <body>
   <div class="app-shell">
@@ -159,7 +159,7 @@
 
   <dialog id="mealSlotDialog">
     <form method="dialog" class="dialog-card meal-slot-dialog-card">
-      <div class="dialog-title-row"><h2 id="mealSlotDialogTitle">Choose meal</h2><button type="button" id="closeMealSlotDialog" class="icon-btn" aria-label="Close">✕</button></div>
+      <div class="dialog-title-row"><h2 id="mealSlotDialogTitle">Choose meal</h2><button type="button" id="closeMealSlotDialog" class="icon-btn" aria-label="Close"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <div class="meal-special-actions">
         <button type="button" class="button secondary" data-meal-special="skip">Skip</button>
         <button type="button" class="button secondary" data-meal-special="eat-out">Eat out</button>
@@ -175,7 +175,7 @@
 
   <dialog id="mealPlannerPreferencesDialog">
     <form method="dialog" class="dialog-card meal-preferences-card">
-      <div class="dialog-title-row"><h2>Planner preferences</h2><button type="button" id="closeMealPreferences" class="icon-btn" aria-label="Close">✕</button></div>
+      <div class="dialog-title-row"><h2>Planner preferences</h2><button type="button" id="closeMealPreferences" class="icon-btn" aria-label="Close"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <details class="meal-preference-section" open>
         <summary>Default weekly schedule</summary>
         <p class="setting-help">New weeks use these defaults. Choose Plan, Skip, or Eat out for each meal.</p>
@@ -194,7 +194,7 @@
 
   <dialog id="mealShoppingDialog">
     <form method="dialog" class="dialog-card meal-shopping-card">
-      <div class="dialog-title-row"><h2>Add planned meals</h2><button type="button" id="closeMealShopping" class="icon-btn" aria-label="Close">✕</button></div>
+      <div class="dialog-title-row"><h2>Add planned meals</h2><button type="button" id="closeMealShopping" class="icon-btn" aria-label="Close"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <p>Select the days and meal types to send to the shopping list. Side dishes are included with their meal.</p>
       <div id="mealShoppingDays" class="meal-shopping-options"></div>
       <div class="meal-shopping-meals">
@@ -246,11 +246,20 @@
 
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card settings-card">
-      <div class="settings-sticky-header"><h2>Settings</h2><button class="icon-btn" value="cancel" aria-label="Close settings">✕</button></div>
+      <div class="settings-sticky-header"><h2>Settings</h2><button class="icon-btn" value="cancel" aria-label="Close settings"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.20.8</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.21.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+        </details>
+        <details class="settings-section" open>
+          <summary>Account and household sharing</summary>
+          <div class="settings-section-content">
+            <div class="setting-block cloud-account-summary">
+              <div><strong id="cloudAccountTitle">Not signed in</strong><p id="cloudAccountStatus" class="setting-help">Connect to the private Serenity Kitchen test server to share household data.</p></div>
+              <button type="button" id="manageCloudAccountBtn" class="button">Manage account</button>
+            </div>
+          </div>
         </details>
         <details class="settings-section">
           <summary>Profiles and recipes</summary>
@@ -316,11 +325,38 @@
     </form>
   </dialog>
 
+  <dialog id="cloudAccountDialog">
+    <form id="cloudAccountForm" class="dialog-card cloud-account-card">
+      <div class="settings-sticky-header"><h2>Account and household</h2><button type="button" id="closeCloudAccountBtn" class="icon-btn" aria-label="Close account settings"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <label>Private server address<input id="cloudServerUrl" type="url" inputmode="url" required value="https://pj.tail96598f.ts.net"></label>
+      <div id="cloudSignedOutPanel">
+        <div class="cloud-mode-tabs" role="group" aria-label="Account action"><button type="button" id="cloudLoginMode" class="filter-chip active">Sign in</button><button type="button" id="cloudRegisterMode" class="filter-chip">Create account</button></div>
+        <label id="cloudDisplayNameField" hidden>Display name<input id="cloudDisplayName" maxlength="80" autocomplete="name"></label>
+        <label>Email<input id="cloudEmail" type="email" autocomplete="email" required></label>
+        <label>Password<input id="cloudPassword" type="password" minlength="12" maxlength="200" autocomplete="current-password" required><span class="setting-help">At least 12 characters.</span></label>
+        <button type="submit" id="cloudAuthSubmit" class="button">Sign in</button>
+      </div>
+      <div id="cloudSignedInPanel" hidden>
+        <div class="cloud-user-card"><div><strong id="cloudUserName"></strong><span id="cloudUserEmail"></span></div><button type="button" id="cloudLogoutBtn" class="button secondary">Sign out</button></div>
+        <label>Household<select id="cloudHouseholdSelect"><option value="">No household yet</option></select></label>
+        <div class="cloud-household-actions"><button type="button" id="cloudCreateHouseholdBtn" class="button secondary">Create household</button><button type="button" id="cloudJoinHouseholdBtn" class="button secondary">Join with code</button><button type="button" id="cloudInviteBtn" class="button secondary">Invite household member</button></div>
+        <div id="cloudFirstSync" class="cloud-first-sync" hidden>
+          <strong>Choose the first household copy</strong>
+          <p>This is required once. No local information will be replaced without your choice.</p>
+          <button type="button" id="cloudUploadFirstBtn" class="button">Use this device’s data</button>
+          <button type="button" id="cloudDownloadFirstBtn" class="button secondary">Use household data</button>
+        </div>
+        <button type="button" id="cloudSyncNowBtn" class="button" hidden>Sync now</button>
+      </div>
+      <p id="cloudDialogStatus" class="import-status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
   <dialog id="feedbackDialog">
     <form id="feedbackForm" class="dialog-card feedback-card">
       <div class="dialog-title-row">
         <div><div class="recipe-kicker">Serenity Kitchen feedback</div><h2 id="feedbackDialogTitle">Report a problem</h2></div>
-        <button type="button" id="closeFeedbackBtn" class="icon-btn" aria-label="Close feedback form">×</button>
+        <button type="button" id="closeFeedbackBtn" class="icon-btn" aria-label="Close feedback form"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <p id="feedbackIntro">Tell us what happened. You can review everything before sharing it.</p>
       <input id="feedbackReportId" type="hidden">
@@ -397,7 +433,7 @@
         <button type="button" id="addKitchenProfileBtn" class="button secondary">Add Shared Kitchen profile</button>
         <input id="profileImportFile" type="file" accept=".kcprofile,application/json" hidden>
       </div>
-      <div id="profileStorageSummary" class="profile-storage-summary"></div><p class="setting-help">Profiles are stored only on this device unless you export or import them. Cloud backup is not connected.</p>
+      <div id="profileStorageSummary" class="profile-storage-summary"></div><p class="setting-help">Local profiles remain available offline. A profile may also be connected to a private household for shared recipes, shopping, Pantry, and Meal Planner updates.</p>
       <div class="dialog-actions"><button class="button secondary" value="cancel">Close</button></div>
     </form>
   </dialog>
@@ -490,7 +526,7 @@
 
   <dialog id="pasteRecipeDialog">
     <form id="pasteRecipeForm" class="dialog-card recipe-import-card">
-      <div class="dialog-title-row"><h2>Paste recipe text</h2><button type="button" class="icon-btn" id="closePasteRecipe" aria-label="Close">✕</button></div>
+      <div class="dialog-title-row"><h2>Paste recipe text</h2><button type="button" class="icon-btn" id="closePasteRecipe" aria-label="Close"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <p>Paste the entire recipe exactly as you have it. Serenity Kitchen will separate the title, ingredients, instructions, times, yield, category, and notes for review.</p>
       <label>Recipe text<textarea id="pastedRecipeText" rows="18" required placeholder="Recipe title&#10;&#10;Ingredients&#10;2 cups flour&#10;...&#10;&#10;Instructions&#10;1. Preheat oven..." ></textarea></label>
       <div class="dialog-actions"><button type="button" class="button secondary" id="cancelPasteRecipe">Cancel</button><button type="submit" class="button">Parse and review</button></div>
@@ -499,7 +535,7 @@
 
   <dialog id="urlRecipeDialog">
     <form id="urlRecipeForm" class="dialog-card recipe-import-card">
-      <div class="dialog-title-row"><h2>Import recipe from website</h2><button type="button" class="icon-btn" id="closeUrlRecipe" aria-label="Close">✕</button></div>
+      <div class="dialog-title-row"><h2>Import recipe from website</h2><button type="button" class="icon-btn" id="closeUrlRecipe" aria-label="Close"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <p>Paste a link to a recipe page. Serenity Kitchen looks for the page’s structured recipe data and opens the result for review before anything is saved.</p>
       <label>Recipe website<input id="recipeUrl" type="url" inputmode="url" autocomplete="url" required placeholder="https://example.com/recipe"></label>
       <p id="urlImportStatus" class="import-status" aria-live="polite"></p>
@@ -509,7 +545,7 @@
 
   <dialog id="imageRecipeDialog">
     <form id="imageRecipeForm" class="dialog-card recipe-import-card">
-      <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close">✕</button></div>
+      <div class="dialog-title-row"><h2>Import recipe images</h2><button type="button" class="icon-btn" id="closeImageRecipe" aria-label="Close"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <p>Select one or more screenshots or photos. For printed pages, use the original full-resolution photo and fill the frame with the page. If the print is small, take separate close photos of the ingredients and instructions. Serenity Kitchen will combine them in order and require review before saving.</p>
       <label>Recipe images<input id="recipeImageFiles" type="file" accept="image/*" multiple required></label>
       <label class="setting-row"><span>Remove common website clutter</span><input id="ocrCleanupToggle" type="checkbox" checked></label>
@@ -523,7 +559,7 @@
 
   <dialog id="recipeEditorDialog">
     <form id="recipeEditorForm" class="dialog-card recipe-editor">
-      <div class="dialog-title-row"><h2 id="recipeEditorTitle">Create recipe</h2><button type="button" class="icon-btn" id="closeRecipeEditor" aria-label="Close">✕</button></div>
+      <div class="dialog-title-row"><h2 id="recipeEditorTitle">Create recipe</h2><button type="button" class="icon-btn" id="closeRecipeEditor" aria-label="Close"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <input id="editRecipeKey" type="hidden">
       <label>Recipe name<input id="editName" required></label>
       <div class="form-grid"><label>Category<select id="editCategory"></select><button type="button" id="addCustomCategory" class="text-button">＋ Add custom category</button><input id="customCategoryInput" placeholder="New category name" hidden></label><label>Yield<input id="editYield" placeholder="4 servings"></label></div>
@@ -538,7 +574,7 @@
   </dialog>
 
   <section id="timerDock" class="timer-dock" hidden aria-live="polite">
-    <div class="timer-dock-header"><strong>Active timers</strong><button id="closeTimerDock" class="icon-btn" aria-label="Close timers">✕</button></div>
+    <div class="timer-dock-header"><strong>Active timers</strong><button id="closeTimerDock" class="icon-btn" aria-label="Close timers"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
     <div id="timerList" class="timer-list"></div>
   </section>
 
@@ -626,7 +662,7 @@
 
   <dialog id="regularItemsDialog">
     <form method="dialog" class="dialog-card regular-items-card">
-      <div class="regular-items-sticky-header"><h2>Regular items</h2><button id="closeRegularItems" type="button" class="icon-btn" aria-label="Close regular items">✕</button></div>
+      <div class="regular-items-sticky-header"><h2>Regular items</h2><button id="closeRegularItems" type="button" class="icon-btn" aria-label="Close regular items"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <p>Quick-add, edit, or remove things you buy often.</p><div id="regularItemsList"></div>
       <div class="dialog-actions"><button class="button secondary" value="cancel">Close</button></div>
     </form>
@@ -634,7 +670,7 @@
 
   <dialog id="pantryItemDialog">
     <form id="pantryItemForm" class="dialog-card pantry-item-card">
-      <div class="dialog-title-row"><h2 id="pantryItemDialogTitle">Add pantry item</h2><button id="closePantryItem" type="button" class="icon-btn" aria-label="Close pantry item">✕</button></div>
+      <div class="dialog-title-row"><h2 id="pantryItemDialogTitle">Add pantry item</h2><button id="closePantryItem" type="button" class="icon-btn" aria-label="Close pantry item"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <input id="pantryItemId" type="hidden">
       <label>Item<input id="pantryItemName" required></label>
       <div class="form-grid"><label>Amount<input id="pantryItemQuantity" type="number" min="0" step="any" value="1" required></label><label>Unit<input id="pantryItemUnit" placeholder="items, cans, lb, cups"></label></div>
@@ -658,7 +694,7 @@
 
   <dialog id="usePantryDialog">
     <form method="dialog" class="dialog-card pantry-use-card">
-      <div class="dialog-title-row"><h2>Use pantry ingredients</h2><button id="closeUsePantry" type="button" class="icon-btn" aria-label="Close pantry ingredients">✕</button></div>
+      <div class="dialog-title-row"><h2>Use pantry ingredients</h2><button id="closeUsePantry" type="button" class="icon-btn" aria-label="Close pantry ingredients"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <p>Only matched pantry items are shown. Confirm the amounts actually used before deducting anything.</p>
       <div id="usePantryChoices"></div>
       <p id="usePantryStatus" class="setting-help" aria-live="polite"></p>
@@ -698,7 +734,7 @@
     <article class="recipe-card" role="button" tabindex="0">
       <div class="recipe-card-topline">
         <span class="recipe-category"></span>
-        <button type="button" class="recipe-favorite" aria-label="Add to favorites" aria-pressed="false">☆</button>
+        <button type="button" class="recipe-favorite" aria-label="Add to favorites" aria-pressed="false"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></button>
       </div>
       <h2 class="recipe-name"></h2>
       <div class="recipe-card-rating" hidden></div>
@@ -708,11 +744,12 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.20.8"></script>
-  <script src="profile-storage.js?v=0.20.8"></script>
-  <script src="url-recipe-import.js?v=0.20.8"></script>
-  <script src="meal-planner.js?v=0.20.8"></script>
-  <script src="app.js?v=0.20.8"></script>
-  <script src="ocr-service.js?v=0.20.8"></script>
+  <script src="kitchen-engine.js?v=0.21.0"></script>
+  <script src="profile-storage.js?v=0.21.0"></script>
+  <script src="url-recipe-import.js?v=0.21.0"></script>
+  <script src="meal-planner.js?v=0.21.0"></script>
+  <script src="sync-client.js?v=0.21.0"></script>
+  <script src="app.js?v=0.21.0"></script>
+  <script src="ocr-service.js?v=0.21.0"></script>
 </body>
 </html>

@@ -6,6 +6,9 @@
 ## Application workflow responsibilities
 `app.js` owns browser state, rendering, dialogs, timers, shopping-list workflow, service-worker updates, and user interactions. It consumes the engine instead of defining module rules itself.
 
+## Private synchronization responsibilities
+`sync-client.js` owns private-server authentication, household membership, first-copy safeguards, event cursors, record revisions, and foreground polling. It exchanges only profile-owned Shopping List, Pantry, personal recipe, and Meal Planner collections. Installed public modules and local backup files remain device-owned.
+
 ## Module responsibilities
 `.recipepack`/JSON modules remain passive UTF-8 JSON. Modules contain metadata and recipe data only; they cannot execute code or control application UI.
 

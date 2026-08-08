@@ -1,4 +1,10 @@
-# Serenity Kitchen v0.20.8
+# Serenity Kitchen v0.21.0
+
+## Private account and household test
+
+Settings now includes account and household sharing for the private Serenity Kitchen test server. The first connected device explicitly uploads its local Shopping List, Pantry, personal recipe data, and Meal Planner data. Additional household devices explicitly download that shared copy before live synchronization begins.
+
+The default test endpoint is `https://pj.tail96598f.ts.net` and can be changed in the account dialog when the server moves to Raspberry Pi. Tailscale must be connected and the Node test server must be running. Local profiles and offline operation continue even when the test server is unavailable.
 
 ### Starter Kitchen publisher migration (v0.19.2)
 

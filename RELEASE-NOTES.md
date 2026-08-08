@@ -1,4 +1,22 @@
-# Serenity Kitchen v0.20.8
+# Serenity Kitchen v0.21.0
+
+## v0.21.0
+
+- Connects the PWA to the private Serenity Kitchen test server at a configurable HTTPS address.
+- Adds account registration, sign-in, sign-out, household creation, one-time household invitations, and household joining in Settings.
+- Adds guarded first-sync choices so a household cannot silently replace existing local information.
+- Synchronizes Shopping List, Pantry, personal recipes and recipe preferences, and Meal Planner data while the app is open.
+- Retains local-first operation: existing profiles, installed modules, backups, legacy storage keys, and offline startup remain compatible.
+- Stores server session and synchronization metadata separately from profile backups and creates a local safety checkpoint before the first household download.
+- Reports private-server connection errors and edit conflicts without intentionally deleting the local copy.
+- Caches the household sync client with the offline app shell.
+
+## v0.20.9
+
+- Completes the shared line-icon consistency sweep across Recipes, Shopping List, Pantry, Meal Planner, dialogs, Settings, recovery notices, and timers.
+- Replaces text close marks, emoji timer completion, Unicode favorite/rating stars, and text expand/collapse chevrons with accessible SVG or CSS line icons.
+- Retains arithmetic quantity and recipe-scale symbols where they communicate values rather than decorative actions.
+- Adds regression coverage preventing the removed mixed icon styles from returning.
 
 ## v0.20.8
 

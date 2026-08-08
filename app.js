@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.20.8';
+  const ENGINE_VERSION = '0.21.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -142,6 +142,14 @@
     mealShoppingDialog:document.querySelector('#mealShoppingDialog'), closeMealShopping:document.querySelector('#closeMealShopping'), cancelMealShopping:document.querySelector('#cancelMealShopping'), mealShoppingDays:document.querySelector('#mealShoppingDays'), mealShoppingStatus:document.querySelector('#mealShoppingStatus'), confirmMealShopping:document.querySelector('#confirmMealShopping')
   });
 
+  let applyingRemoteSync = false;
+  let cloudCreatingAccount = false;
+  const householdSync = new SKHouseholdSync({
+    profileId:profileStore.getActiveProfileMeta()?.profileId || '',
+    onRemoteState:applyHouseholdSnapshot,
+    onStatus:status => { renderCloudAccount(); setCloudStatus(status.message, status.kind); }
+  });
+
   const startupIssues = [];
   function startupStep(label, action) {
     try { return action(); }
@@ -158,7 +166,7 @@
     notice.className = 'startup-recovery-notice';
     notice.setAttribute('role', 'alert');
     const issueSummary = startupIssues.map(issue => `${issue.label}: ${issue.error?.message || 'unknown error'}`).join(' · ');
-    notice.innerHTML = `<strong>Serenity Kitchen opened in recovery mode.</strong><span>Your information was loaded, but ${startupIssues.length} startup task${startupIssues.length===1?'':'s'} could not finish. ${escapeHtml(issueSummary)}. Your saved information has not been intentionally removed.</span><button type="button" aria-label="Dismiss recovery notice">×</button>`;
+    notice.innerHTML = `<strong>Serenity Kitchen opened in recovery mode.</strong><span>Your information was loaded, but ${startupIssues.length} startup task${startupIssues.length===1?'':'s'} could not finish. ${escapeHtml(issueSummary)}. Your saved information has not been intentionally removed.</span><button type="button" aria-label="Dismiss recovery notice">${uiIcon('close')}</button>`;
     notice.querySelector('button').addEventListener('click', () => notice.remove());
     document.body.prepend(notice);
   }
@@ -183,6 +191,7 @@
     startupStep('timers', startTimerTicker);
     startupStep('alarm', initBellAudio);
     startupStep('screen wake lock', updateWakeLock);
+    startupStep('household sync', () => { renderCloudAccount(); householdSync.start(buildHouseholdSnapshot); });
     showStartupIssues();
   }
 
@@ -212,7 +221,11 @@
     });
   }
 
-  function saveState() { pruneUnusedMealPlans(); profileStore.saveCombinedState(state); }
+  function saveState() {
+    pruneUnusedMealPlans();
+    profileStore.saveCombinedState(state);
+    if (!applyingRemoteSync) householdSync?.markDirty();
+  }
 
   function normalizeRatingRecord(entry) {
     const rawValue = typeof entry === 'number' ? entry : entry?.value;
@@ -236,7 +249,7 @@
   function recipeRatingValue(recipeKey) { return recipeRatingRecord(recipeKey)?.value || 0; }
   function ratingStars(value) {
     const rating = Math.max(0, Math.min(5, Number(value) || 0));
-    return `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}`;
+    return `${uiIcon('star-filled').repeat(rating)}${uiIcon('star').repeat(5 - rating)}`;
   }
 
   function bindEvents() {
@@ -283,6 +296,19 @@
     els.importFileBtn.addEventListener('click', () => { els.importOptionsDialog.close(); els.moduleFile.click(); });
     els.moduleFile.addEventListener('change', importModules);
     els.settingsBtn.addEventListener('click', () => { toggleSidebar(false); renderHiddenRecipes(); renderActiveProfile(); refreshOfflineOcrStatus(); populateSpeechVoices(); els.settingsDialog.showModal(); });
+    document.querySelector('#manageCloudAccountBtn')?.addEventListener('click', openCloudAccount);
+    document.querySelector('#closeCloudAccountBtn')?.addEventListener('click', () => document.querySelector('#cloudAccountDialog')?.close());
+    document.querySelector('#cloudLoginMode')?.addEventListener('click', () => setCloudAuthMode(false));
+    document.querySelector('#cloudRegisterMode')?.addEventListener('click', () => setCloudAuthMode(true));
+    document.querySelector('#cloudAccountForm')?.addEventListener('submit', submitCloudAccount);
+    document.querySelector('#cloudLogoutBtn')?.addEventListener('click', logoutCloudAccount);
+    document.querySelector('#cloudHouseholdSelect')?.addEventListener('change', selectCloudHousehold);
+    document.querySelector('#cloudCreateHouseholdBtn')?.addEventListener('click', createCloudHousehold);
+    document.querySelector('#cloudJoinHouseholdBtn')?.addEventListener('click', joinCloudHousehold);
+    document.querySelector('#cloudInviteBtn')?.addEventListener('click', createCloudInvite);
+    document.querySelector('#cloudUploadFirstBtn')?.addEventListener('click', () => initializeCloudHousehold('upload'));
+    document.querySelector('#cloudDownloadFirstBtn')?.addEventListener('click', () => initializeCloudHousehold('download'));
+    document.querySelector('#cloudSyncNowBtn')?.addEventListener('click', () => householdSync.syncNow(buildHouseholdSnapshot).catch(showCloudError));
     els.repairOfflineOcrBtn?.addEventListener('click', repairOfflineOcr);
     els.reportProblemBtn?.addEventListener('click', () => openFeedbackDialog('bug'));
     els.sendFeedbackBtn?.addEventListener('click', () => openFeedbackDialog('suggestion'));
@@ -739,7 +765,8 @@
     if (els.profileStorageSummary) {
       const totals = profiles.reduce((acc, profile) => { const x=profileStore.profileSummary(profile.profileId); acc.recipes+=x.personalRecipes; acc.shopping+=x.shoppingItems; return acc; }, {recipes:0,shopping:0});
       const backupDate = state.backupMeta?.lastBackupAt || state.backupMeta?.createdAt;
-      els.profileStorageSummary.innerHTML = `<strong>Local profile storage</strong><span>${profiles.length} profile${profiles.length===1?'':'s'} · ${totals.recipes} personal recipe${totals.recipes===1?'':'s'} · ${totals.shopping} shopping item${totals.shopping===1?'':'s'}</span><span>Last full backup: ${backupDate ? escapeHtml(formatProfileDate(backupDate)) : 'Never'}</span><span>Cloud backup: Not connected</span>`;
+      const cloudSummary=householdSync.summary(); const cloudLabel=cloudSummary.initialized&&cloudSummary.profileBound?`Household sync: ${escapeHtml(cloudSummary.activeHousehold?.name||'Active')}`:cloudSummary.signedIn?'Household sync: Setup incomplete':'Household sync: Not connected';
+      els.profileStorageSummary.innerHTML = `<strong>Local profile storage</strong><span>${profiles.length} profile${profiles.length===1?'':'s'} · ${totals.recipes} personal recipe${totals.recipes===1?'':'s'} · ${totals.shopping} shopping item${totals.shopping===1?'':'s'}</span><span>Last full backup: ${backupDate ? escapeHtml(formatProfileDate(backupDate)) : 'Never'}</span><span>${cloudLabel}</span>`;
     }
   }
 
@@ -1007,7 +1034,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.20.8').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.0').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1617,7 +1644,7 @@
     const active = currentView === 'favorites';
     els.favoritesFilterBtn?.classList.toggle('active', active);
     els.favoritesFilterBtn?.setAttribute('aria-pressed', String(active));
-    if (els.favoritesFilterBtn) els.favoritesFilterBtn.textContent = active ? '★ Favorites' : '☆ Favorites';
+    if (els.favoritesFilterBtn) els.favoritesFilterBtn.innerHTML = `${uiIcon(active ? 'star-filled' : 'star')}<span>Favorites</span>`;
   }
 
   function clearRecipeFilters() {
@@ -1708,7 +1735,7 @@
       fragment.querySelector('.recipe-card-topline')?.insertAdjacentHTML('beforeend', pantryReadinessMarker(recipePantryReadiness(recipe), 'solid'));
       const favoriteButton = fragment.querySelector('.recipe-favorite');
       const isFavorite = state.favorites.includes(recipe.key);
-      favoriteButton.textContent = isFavorite ? '★' : '☆';
+      favoriteButton.innerHTML = uiIcon(isFavorite ? 'star-filled' : 'star');
       favoriteButton.setAttribute('aria-pressed', String(isFavorite));
       favoriteButton.setAttribute('aria-label', isFavorite ? `Remove ${recipe.name} from favorites` : `Add ${recipe.name} to favorites`);
       favoriteButton.addEventListener('click', event => { event.stopPropagation(); toggleFavoriteFromList(recipe.key); });
@@ -1717,7 +1744,7 @@
       const ratingSummary = fragment.querySelector('.recipe-card-rating');
       if (rating) {
         ratingSummary.hidden = false;
-        ratingSummary.textContent = `${ratingStars(rating)} ${rating}/5`;
+        ratingSummary.innerHTML = `${ratingStars(rating)}<span>${rating}/5</span>`;
         ratingSummary.setAttribute('aria-label', `My rating: ${rating} out of 5`);
       }
       fragment.querySelector('.recipe-description').textContent = recipe.description || 'No description yet.';
@@ -1985,7 +2012,7 @@
   function renderRecipeRating(recipe) {
     const value = recipeRatingValue(recipe.key);
     const stars = [1,2,3,4,5].map(star =>
-      `<button type="button" class="recipe-rating-star ${star <= value ? 'selected' : ''}" data-recipe-rating="${star}" aria-label="Rate ${star} out of 5" aria-pressed="${star === value}">★</button>`
+      `<button type="button" class="recipe-rating-star ${star <= value ? 'selected' : ''}" data-recipe-rating="${star}" aria-label="Rate ${star} out of 5" aria-pressed="${star === value}">${uiIcon('star-filled')}</button>`
     ).join('');
     return `<div class="recipe-rating-panel"><div><strong>My rating</strong><span>${value ? `${value} out of 5` : 'Not rated yet'}</span></div><div class="recipe-rating-controls" role="group" aria-label="Rate ${escapeHtml(recipe.name)}">${stars}${value ? '<button type="button" id="clearRecipeRating" class="recipe-rating-clear">Clear</button>' : ''}</div></div>`;
   }
@@ -2031,7 +2058,7 @@
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
         ${renderRecipeRating(recipe)}
-        <div class="recipe-action-row"><button id="startGuidedCookingBtn" class="button">${uiIcon('cook')} ${guidedProgress > 0 ? `Resume at step ${guidedProgress + 1}` : 'Start guided cooking'}</button><button id="favoriteRecipeBtn" class="favorite-button">${favorite ? '★ Saved' : '☆ Favorite'}</button><button id="editRecipeBtn" class="button secondary">${uiIcon('edit')} Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
+        <div class="recipe-action-row"><button id="startGuidedCookingBtn" class="button">${uiIcon('cook')} ${guidedProgress > 0 ? `Resume at step ${guidedProgress + 1}` : 'Start guided cooking'}</button><button id="favoriteRecipeBtn" class="favorite-button">${uiIcon(favorite ? 'star-filled' : 'star')}<span>${favorite ? 'Saved' : 'Favorite'}</span></button><button id="editRecipeBtn" class="button secondary">${uiIcon('edit')} Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
@@ -2555,7 +2582,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.20.8');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -2770,7 +2797,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     state.timers.forEach(timer=>{
       const card=document.createElement('div'); card.className=`timer-card ${timer.done?'done':''}`;
       const finished = timer.done && !timer.dismissed;
-      card.innerHTML=`<div class="timer-name">${escapeHtml(timer.recipeName)}</div><div class="timer-step">Step ${timer.step} · ${escapeHtml(timer.label)}</div><div class="timer-time">${finished?'⏰ Finished':timer.done?'Alarm dismissed':formatClock(timerRemaining(timer))}</div><div class="timer-actions">${finished?'<button class="dismiss-timer button danger">Dismiss alarm</button>':`<button class="pause-timer">${timer.paused?'Resume':'Pause'}</button><button class="add-timer">+1 min</button>`}<button class="cancel-timer">${timer.done?'Remove':'Cancel'}</button></div>`;
+      card.innerHTML=`<div class="timer-name">${escapeHtml(timer.recipeName)}</div><div class="timer-step">Step ${timer.step} · ${escapeHtml(timer.label)}</div><div class="timer-time">${finished?`${uiIcon('alarm')}<span>Finished</span>`:timer.done?'Alarm dismissed':formatClock(timerRemaining(timer))}</div><div class="timer-actions">${finished?'<button class="dismiss-timer button danger">Dismiss alarm</button>':`<button class="pause-timer">${timer.paused?'Resume':'Pause'}</button><button class="add-timer">+1 min</button>`}<button class="cancel-timer">${timer.done?'Remove':'Cancel'}</button></div>`;
       card.querySelector('.pause-timer')?.addEventListener('click',()=>{ if(timer.done)return; if(timer.paused){timer.endAt=Date.now()+timer.remainingMs;timer.paused=false;}else{timer.remainingMs=timerRemaining(timer);timer.paused=true;} saveState();renderTimers(); });
       card.querySelector('.add-timer')?.addEventListener('click',()=>{ timer.done=false; timer.dismissed=false; if(timer.paused) timer.remainingMs+=60000; else timer.endAt=Math.max(Date.now(),timer.endAt)+60000; saveState();renderTimers(); });
       card.querySelector('.dismiss-timer')?.addEventListener('click',()=>{ timer.dismissed=true; saveState(); updateAlarmLoop(); renderTimers(); updateWakeLock(); });
@@ -3155,7 +3182,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
   function uiIcon(name) {
-    const paths={edit:'<path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20ZM13.5 7l3.5 3.5"/>',lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',unlock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7-2.5"/>',reroll:'<path d="M20 7v5h-5M4 17v-5h5M6.1 9a7 7 0 0 1 11.7-2L20 12M4 12l2.2 5a7 7 0 0 0 11.7-2"/>',remove:'<path d="m6 6 12 12M18 6 6 18"/>',timer:'<path d="M9 2h6M12 14V8M7 4l-2 2M17 4l2 2"/><circle cx="12" cy="14" r="7"/>',cook:'<path d="M4 14h14a7 7 0 0 1-14 0ZM18 16h3M8 11c-2-2 2-3 0-5M13 11c-2-2 2-3 0-5"/>'};
+    const paths={edit:'<path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20ZM13.5 7l3.5 3.5"/>',lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',unlock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7-2.5"/>',reroll:'<path d="M20 7v5h-5M4 17v-5h5M6.1 9a7 7 0 0 1 11.7-2L20 12M4 12l2.2 5a7 7 0 0 0 11.7-2"/>',remove:'<path d="m6 6 12 12M18 6 6 18"/>',close:'<path d="m6 6 12 12M18 6 6 18"/>',timer:'<path d="M9 2h6M12 14V8M7 4l-2 2M17 4l2 2"/><circle cx="12" cy="14" r="7"/>',alarm:'<path d="M9 2h6M12 14V8M7 4l-2 2M17 4l2 2"/><circle cx="12" cy="14" r="7"/><path d="m7 21-1 1M17 21l1 1"/>',cook:'<path d="M4 14h14a7 7 0 0 1-14 0ZM18 16h3M8 11c-2-2 2-3 0-5M13 11c-2-2 2-3 0-5"/>',star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>','star-filled':'<path class="icon-fill" d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>','chevron-down':'<path d="m7 9 5 5 5-5"/>','chevron-up':'<path d="m7 15 5-5 5 5"/>'};
     return `<svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name]||''}</svg>`;
   }
 
@@ -3196,7 +3223,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       const today = new Date();
       const todayDay = today.getDay() === 0 ? 6 : today.getDay() - 1;
       card.open = mealPlannerWeek === KCMealPlanner.startOfWeek(today) ? day === todayDay : day === 0;
-      card.innerHTML = `<summary><span class="meal-day-title"><strong>${escapeHtml(dayName)}</strong><span>${escapeHtml(mealDateLabel(day))} • ${plannedMains} of 4 meals planned</span></span><span class="meal-day-chevron">${daySkipped?'Skipped':'⌄'}</span></summary>
+      card.innerHTML = `<summary><span class="meal-day-title"><strong>${escapeHtml(dayName)}</strong><span>${escapeHtml(mealDateLabel(day))} • ${plannedMains} of 4 meals planned</span></span><span class="meal-day-chevron">${daySkipped?'Skipped':uiIcon('chevron-down')}</span></summary>
         <div class="meal-day-actions"><button type="button" class="button secondary" data-meal-day="${day}" data-day-action="${daySkipped?'restore':'skip'}">${daySkipped?'Restore day':'Skip day'}</button><button type="button" class="button secondary" data-meal-day="${day}" data-day-action="reroll">Reroll day</button></div>
         <div class="meal-day-slots">${KCMealPlanner.MEALS.map(meal => {
           const main = plan.slots[KCMealPlanner.slotKey(day, meal, 'main')];
@@ -3664,7 +3691,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';const groupCount=items.filter(entry=>entry.group===group).length;heading.innerHTML=`<span>${escapeHtml(group)}</span><small>${groupCount}</small>`;root.append(heading);}
       const low=Number(item.quantity)<=Number(item.threshold);const expanded=!pantrySelectionMode&&pantryExpandedId===item.id;const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${expanded?' pantry-expanded':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
       const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
-      row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${expanded?'⌃':'⌄'}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
+      row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${uiIcon(expanded?'chevron-up':'chevron-down')}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
       row.querySelector('.pantry-select-check')?.addEventListener('change',event=>{event.target.checked?pantrySelectedIds.add(item.id):pantrySelectedIds.delete(item.id);renderPantry();});
       const toggle=()=>{pantryExpandedId=pantryExpandedId===item.id?null:item.id;renderPantry();};
       row.querySelector('.pantry-name-toggle')?.addEventListener('click',toggle);row.querySelector('.pantry-detail-toggle')?.addEventListener('click',toggle);
@@ -3790,7 +3817,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
           : `<label class="shopping-check" aria-label="Mark ${escapeHtml(item.name)} purchased"><input class="purchase-check" type="checkbox" ${item.checked?'checked':''}></label>`;
         const aisleDetail=item.aisle?`<small class="shopping-aisle-label">Aisle: ${escapeHtml(item.aisle)}</small>`:'';
         const aisleButtonLabel=item.aisle?`Aisle ${item.aisle}`:'＋ Set aisle';
-        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong></button><div class="shopping-location-actions"><button type="button" class="row-store-pill" aria-label="Change store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(displayStoreName(item.store))}</button><button type="button" class="aisle-quick-button" aria-label="Set aisle for ${escapeHtml(item.name)} at ${escapeHtml(displayStoreName(item.store))}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(aisleButtonLabel)}</button></div><button type="button" class="shopping-detail-toggle" aria-label="Show details for ${escapeHtml(item.name)}" aria-expanded="false"><span class="shopping-details-chevron">⌄</span></button></div><div class="shopping-row-details" hidden>${details}<small class="shopping-group-label">Group: ${escapeHtml(group)}</small>${aisleDetail}<div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
+        row.innerHTML=`<div class="shopping-row-mainline">${leading}<button type="button" class="shopping-name-toggle" aria-expanded="false"><strong>${escapeHtml(item.name)}</strong></button><div class="shopping-location-actions"><button type="button" class="row-store-pill" aria-label="Change store for ${escapeHtml(item.name)}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(displayStoreName(item.store))}</button><button type="button" class="aisle-quick-button" aria-label="Set aisle for ${escapeHtml(item.name)} at ${escapeHtml(displayStoreName(item.store))}" ${shoppingSelectionMode?'disabled':''}>${escapeHtml(aisleButtonLabel)}</button></div><button type="button" class="shopping-detail-toggle" aria-label="Show details for ${escapeHtml(item.name)}" aria-expanded="false"><span class="shopping-details-chevron">${uiIcon('chevron-down')}</span></button></div><div class="shopping-row-details" hidden>${details}<small class="shopping-group-label">Group: ${escapeHtml(group)}</small>${aisleDetail}<div class="shopping-detail-actions"><button type="button" class="text-button edit-shopping">Edit</button><button type="button" class="text-button danger-text remove-shopping">Remove</button></div></div>`;
         const storeButton=row.querySelector('.row-store-pill');
         storeButton.addEventListener('click',()=>openShoppingMoveDialog([item.id],`Move ${item.name}`));
         const purchase=row.querySelector('.purchase-check');
@@ -3805,7 +3832,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
           const panel=row.querySelector('.shopping-row-details');
           panel.hidden=!panel.hidden;
           detailToggle.setAttribute('aria-expanded',String(!panel.hidden));
-          row.querySelector('.shopping-details-chevron').textContent=panel.hidden?'⌄':'⌃';
+          row.querySelector('.shopping-details-chevron').innerHTML=uiIcon(panel.hidden?'chevron-down':'chevron-up');
         };
         nameToggle.addEventListener('click',toggleDetails);
         aisleButton.addEventListener('click',()=>{
@@ -4562,6 +4589,71 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       alert(`Restore failed and your previous data was kept: ${error.message}`);
     }
   }
+
+  function buildHouseholdSnapshot() {
+    const personal = state.modules.find(module => module.moduleId === 'my-recipes');
+    return {
+      'shopping-list': {
+        shoppingList:JSON.parse(JSON.stringify(state.shoppingList || [])), regularItems:JSON.parse(JSON.stringify(state.regularItems || [])), stores:JSON.parse(JSON.stringify(state.stores || [])),
+        learnedStorePreferences:JSON.parse(JSON.stringify(state.learnedStorePreferences || {})), learnedShoppingGroups:JSON.parse(JSON.stringify(state.learnedShoppingGroups || {})), learnedAisles:JSON.parse(JSON.stringify(state.learnedAisles || {}))
+      },
+      pantry:{ pantryItems:JSON.parse(JSON.stringify(state.pantryItems || [])) },
+      recipes:{ personalRecipes:JSON.parse(JSON.stringify(personal?.recipes || [])), favorites:JSON.parse(JSON.stringify(state.favorites || [])), recipeNotes:JSON.parse(JSON.stringify(state.recipeNotes || {})), hiddenRecipes:JSON.parse(JSON.stringify(state.hiddenRecipes || [])), customCategories:JSON.parse(JSON.stringify(state.customCategories || [])), ratings:JSON.parse(JSON.stringify(state.ratings || {})), manualCrossLinks:JSON.parse(JSON.stringify(state.manualCrossLinks || [])) },
+      'meal-plans':{ mealPlans:JSON.parse(JSON.stringify(state.mealPlans || {})), mealPlannerPreferences:JSON.parse(JSON.stringify(state.mealPlannerPreferences || {template:{},recipes:{}})), mealPlanHistory:JSON.parse(JSON.stringify(state.mealPlanHistory || [])) }
+    };
+  }
+
+  function applyHouseholdSnapshot(snapshot, options = {}) {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    if (options.initial) profileStore.createSafetyBackup('before-household-download', { force:true });
+    applyingRemoteSync = true;
+    try {
+      const shopping = snapshot['shopping-list'];
+      if (shopping) ['shoppingList','regularItems','stores','learnedStorePreferences','learnedShoppingGroups','learnedAisles'].forEach(key => { if (shopping[key] !== undefined) state[key] = JSON.parse(JSON.stringify(shopping[key])); });
+      if (snapshot.pantry?.pantryItems !== undefined) state.pantryItems = JSON.parse(JSON.stringify(snapshot.pantry.pantryItems));
+      const recipes = snapshot.recipes;
+      if (recipes) {
+        ensurePersonalModule().recipes = JSON.parse(JSON.stringify(recipes.personalRecipes || []));
+        ['favorites','recipeNotes','hiddenRecipes','customCategories','ratings','manualCrossLinks'].forEach(key => { if (recipes[key] !== undefined) state[key] = JSON.parse(JSON.stringify(recipes[key])); });
+      }
+      const meals = snapshot['meal-plans'];
+      if (meals) ['mealPlans','mealPlannerPreferences','mealPlanHistory'].forEach(key => { if (meals[key] !== undefined) state[key] = JSON.parse(JSON.stringify(meals[key])); });
+      migrateState(); profileStore.saveCombinedState(state); refreshAll({ save:false });
+      if (currentView === 'shopping') renderShoppingList();
+      if (currentView === 'pantry') renderPantry();
+      if (currentView === 'meal-planner') renderMealPlanner();
+    } finally { applyingRemoteSync = false; }
+  }
+
+  function cloudElement(id) { return document.querySelector(`#${id}`); }
+  function setCloudStatus(message = '', kind = '') { const status=cloudElement('cloudDialogStatus'); if(status){status.textContent=message;status.dataset.kind=kind||'';} }
+
+  function renderCloudAccount() {
+    const summary=householdSync.summary(), title=cloudElement('cloudAccountTitle'), brief=cloudElement('cloudAccountStatus'), signedOut=cloudElement('cloudSignedOutPanel'), signedIn=cloudElement('cloudSignedInPanel');
+    if(!title||!brief)return;
+    cloudElement('cloudServerUrl').value=summary.serverUrl; signedOut.hidden=summary.signedIn; signedIn.hidden=!summary.signedIn;
+    if(!summary.signedIn){title.textContent='Not signed in';brief.textContent='Connect to the private Serenity Kitchen test server to share household data.';return;}
+    cloudElement('cloudUserName').textContent=summary.user?.displayName||'Serenity Kitchen account'; cloudElement('cloudUserEmail').textContent=summary.user?.email||'';
+    const select=cloudElement('cloudHouseholdSelect'); select.innerHTML='<option value="">No household selected</option>';
+    summary.households.forEach(household=>{const option=document.createElement('option');option.value=household.id;option.textContent=`${household.name} (${household.role})`;select.append(option);}); select.value=summary.activeHousehold?.id||'';
+    const ready=summary.initialized&&summary.profileBound; cloudElement('cloudFirstSync').hidden=!summary.activeHousehold||ready; cloudElement('cloudSyncNowBtn').hidden=!ready; cloudElement('cloudInviteBtn').hidden=!summary.activeHousehold||!['owner','adult'].includes(summary.activeHousehold.role);
+    if(!summary.profileBound){title.textContent=summary.user?.displayName||'Signed in';brief.textContent='This account is connected to another local profile. Select a household here to connect this profile.';}
+    else if(summary.activeHousehold){title.textContent=summary.activeHousehold.name;brief.textContent=ready?`Live household sharing active${summary.lastSyncAt?` • Last sync ${new Date(summary.lastSyncAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:''}`:'Choose the first household copy to begin syncing.';}
+    else{title.textContent=summary.user?.displayName||'Signed in';brief.textContent='Create a household or join one with an invitation code.';}
+  }
+
+  function setCloudAuthMode(create) {
+    cloudCreatingAccount=!!create; cloudElement('cloudDisplayNameField').hidden=!create; cloudElement('cloudDisplayName').required=!!create; cloudElement('cloudAuthSubmit').textContent=create?'Create account':'Sign in'; cloudElement('cloudPassword').autocomplete=create?'new-password':'current-password'; cloudElement('cloudLoginMode').classList.toggle('active',!create); cloudElement('cloudRegisterMode').classList.toggle('active',create); setCloudStatus('');
+  }
+  function openCloudAccount(){renderCloudAccount();setCloudAuthMode(false);setCloudStatus('');els.settingsDialog.close();cloudElement('cloudAccountDialog').showModal();}
+  async function submitCloudAccount(event){event.preventDefault();setCloudStatus(cloudCreatingAccount?'Creating account…':'Signing in…','working');try{householdSync.setServerUrl(cloudElement('cloudServerUrl').value);const credentials={email:cloudElement('cloudEmail').value,password:cloudElement('cloudPassword').value,displayName:cloudElement('cloudDisplayName').value};if(cloudCreatingAccount)await householdSync.register(credentials);else await householdSync.login(credentials);cloudElement('cloudPassword').value='';householdSync.start(buildHouseholdSnapshot);renderCloudAccount();setCloudStatus('Signed in successfully.','success');}catch(error){showCloudError(error);}}
+  async function logoutCloudAccount(){await householdSync.logout();renderCloudAccount();setCloudStatus('Signed out.','success');}
+  function selectCloudHousehold(){const id=cloudElement('cloudHouseholdSelect').value;if(!id)return;try{householdSync.selectHousehold(id);householdSync.start(buildHouseholdSnapshot);renderCloudAccount();setCloudStatus(householdSync.isReady()?'Household selected and syncing.':'Household selected. Choose the first copy to sync.','success');}catch(error){showCloudError(error);}}
+  async function createCloudHousehold(){const name=prompt('Household name:','Poffinberger Household');if(!name)return;setCloudStatus('Creating household…','working');try{await householdSync.createHousehold(name);renderCloudAccount();setCloudStatus('Household created. Choose which copy should become the first shared copy.','success');}catch(error){showCloudError(error);}}
+  async function joinCloudHousehold(){const code=prompt('Enter the Serenity Kitchen household invitation code:');if(!code)return;setCloudStatus('Joining household…','working');try{await householdSync.joinHousehold(code);renderCloudAccount();setCloudStatus('Household joined. Download the household copy to begin.','success');}catch(error){showCloudError(error);}}
+  async function createCloudInvite(){setCloudStatus('Creating invitation…','working');try{const invite=await householdSync.createInvite('adult');try{await navigator.clipboard.writeText(invite.code);setCloudStatus(`Invitation code copied. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}catch{prompt('Copy this one-time household invitation code:',invite.code);setCloudStatus(`Invitation created. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}}catch(error){showCloudError(error);}}
+  async function initializeCloudHousehold(mode){const warning=mode==='upload'?'Use this device as the first shared household copy? Existing household data cannot be replaced.':'Download the household copy to this profile? A local safety checkpoint will be created first.';if(!confirm(warning))return;setCloudStatus(mode==='upload'?'Uploading the first household copy…':'Downloading household data…','working');try{await householdSync.initialize(mode,buildHouseholdSnapshot());householdSync.start(buildHouseholdSnapshot);renderCloudAccount();}catch(error){showCloudError(error);}}
+  function showCloudError(error){setCloudStatus(error?.message||'The household request failed.','error');renderCloudAccount();}
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));

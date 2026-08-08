@@ -1,10 +1,10 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.12.1
+0.21.0
 
 ## Current task
-Storage quota recovery and compact checkpoint migration.
+Private account, household, and live synchronization testing.
 
 ## Completed
 - Rolling automatic local safety checkpoints (maximum five).
