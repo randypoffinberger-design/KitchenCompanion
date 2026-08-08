@@ -283,7 +283,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .version-card{display:grid;gap:.35rem;padding:1rem;border:1px solid var(--border);border-radius:1rem;background:var(--surface-2);margin-bottom:1rem}
 .module-header-actions,.shopping-toolbar,.section-title-row{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap}
 .shopping-pane,.pantry-pane{padding:clamp(1rem,3vw,2rem);max-width:1100px;margin:0 auto;width:100%}
-.shopping-toolbar{margin:1rem 0 1.5rem}.shopping-toolbar select{min-width:180px}
+.shopping-toolbar{margin:1rem 0 1.5rem}.shopping-toolbar select{min-width:0}
 .shopping-store-card{background:var(--surface);border:1px solid var(--border);border-radius:1.25rem;padding:1rem;margin-bottom:1rem}
 .shopping-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.85rem 0;border-bottom:1px dashed var(--border)}
 .shopping-row:last-child{border-bottom:0}.shopping-row label{display:flex;gap:.75rem;align-items:flex-start;flex:1}.shopping-row label span{display:grid}.shopping-row em{font-size:.78rem;color:var(--muted);font-style:normal}.shopping-row.checked span{text-decoration:line-through;opacity:.6}
@@ -748,7 +748,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   cursor: pointer;
 }
 
-/* v0.21.4 shared Serenity Kitchen interior design system */
+/* v0.21.5 shared Serenity Kitchen interior design system */
 :root{
   --bg:#f4efe9;--panel:#fffaf5;--panel-2:#eee5dd;--surface-3:#e3d6cc;
   --text:#2b2420;--muted:#71665f;--border:#d7c9bf;--accent:#c80d3e;--accent-2:#a90834;
@@ -761,7 +761,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   --tiffany:#81d8d0;--tiffany-soft:#183c39;--danger:#e55472;--shadow:0 14px 38px rgba(0,0,0,.3);
 }
 html{background:var(--bg)}body{background:var(--bg);font-weight:450}
-body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.4') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.4') center/contain no-repeat}
+body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.5') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.5') center/contain no-repeat}
 :root[data-theme="dark"] body:not(.home-view)::before{--watermark-color:#81d8d0;opacity:.22}
 .app-shell,.main{position:relative}.app-shell{z-index:1;grid-template-rows:var(--header-height) 1fr}.main{z-index:1;padding:clamp(1rem,2.6vw,2rem)}
 .topbar{z-index:50;min-height:var(--header-height);padding:max(7px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 7px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--panel) 92%,transparent);border-bottom:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.12)}
@@ -792,7 +792,7 @@ input,select,textarea{border-color:var(--border)!important;background:var(--pane
 .empty-state{margin:16px 0;padding:42px 20px;border:1px dashed var(--border);border-radius:20px;background:color-mix(in srgb,var(--panel) 88%,transparent)}.empty-state::before{content:"";display:block;width:54px;height:54px;margin:0 auto 12px;border:2px solid var(--muted);border-radius:16px;opacity:.55}.empty-state h2{color:var(--text)}
 .back-btn{top:calc(var(--header-height) + env(safe-area-inset-top) + 8px);border-color:var(--border);background:color-mix(in srgb,var(--panel) 94%,transparent)}.scale-bar{top:calc(var(--header-height) + env(safe-area-inset-top) + 8px)}
 @media(max-width:860px){.topbar{position:sticky;min-height:calc(var(--header-height) + env(safe-area-inset-top));}.sidebar{position:fixed;inset:calc(var(--header-height) + env(safe-area-inset-top)) auto 0 0;height:calc(100dvh - var(--header-height) - env(safe-area-inset-top))}.scrim{inset:calc(var(--header-height) + env(safe-area-inset-top)) 0 0}.main{padding:14px max(12px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.page-heading{grid-template-columns:auto minmax(0,1fr);padding:12px}.page-heading>.shopping-add-actions,.page-heading>.meal-week-controls{grid-column:1/-1}.recipe-filters{grid-column:1/-1}.shopping-toolbar{align-items:stretch}.shopping-toolbar>select{max-width:none}.more-actions-menu{left:0;right:auto}.meal-planner-toolbar{top:calc(var(--header-height) + env(safe-area-inset-top) + 6px)}}
-@media(max-width:600px){body:not(.home-view)::before{width:90vw}.page-heading-icon{width:40px;height:40px}.shopping-add-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.shopping-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto}.more-actions-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));max-height:70dvh;overflow:auto}.pantry-toolbar{display:grid;grid-template-columns:1fr 1fr}.pantry-toolbar input{grid-column:1/-1}.meal-planner-toolbar{grid-template-columns:1fr 1fr!important}.meal-planner-toolbar .button{min-height:42px;font-size:.82rem}.meal-week-controls{width:100%}.recipe-card{min-height:0}.recipe-description{-webkit-line-clamp:2}}
+@media(max-width:600px){body:not(.home-view)::before{width:90vw}.page-heading-icon{width:40px;height:40px}.shopping-add-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.shopping-toolbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.shopping-toolbar>select,.shopping-toolbar>.more-actions{box-sizing:border-box;width:100%;min-width:0;max-width:none}.more-actions>summary{box-sizing:border-box;width:100%;min-width:0;justify-content:space-between;padding-inline:12px}.more-actions-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));max-height:70dvh;overflow:auto}.pantry-toolbar{display:grid;grid-template-columns:1fr 1fr}.pantry-toolbar input{grid-column:1/-1}.meal-planner-toolbar{grid-template-columns:1fr 1fr!important}.meal-planner-toolbar .button{min-height:42px;font-size:.82rem}.meal-week-controls{width:100%}.recipe-card{min-height:0}.recipe-description{-webkit-line-clamp:2}}
 @media(max-width:390px){.header-profile-button{max-width:165px}.header-profile-button #headerProfileName{overflow:hidden;text-overflow:ellipsis}.filter-chip-row{gap:5px}.meal-planner-toolbar{grid-template-columns:1fr!important}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
 /* Safe startup shown when iOS temporarily withholds local profile storage. */
