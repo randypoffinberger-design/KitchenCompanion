@@ -14,7 +14,7 @@
 }
 
 /* Account and private household synchronization */
-.cloud-account-summary{display:flex;align-items:center;justify-content:space-between;gap:1rem}.cloud-account-summary>div{min-width:0}.cloud-account-summary p{margin:.35rem 0 0}.cloud-account-card{width:min(94vw,620px);max-height:min(88vh,760px);overflow:auto}.cloud-account-card>label,.cloud-account-card>div>label{display:grid;gap:.4rem;margin:.85rem 0;font-weight:700}.cloud-mode-tabs{display:flex;gap:.55rem;margin:.9rem 0}.cloud-mode-tabs .filter-chip.active{background:var(--tiffany-soft);border-color:var(--tiffany);color:var(--text)}.cloud-user-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:16px;background:var(--surface-2)}.cloud-user-card>div{display:grid;gap:.2rem;min-width:0}.cloud-user-card span{color:var(--muted);overflow-wrap:anywhere}.cloud-household-actions{display:flex;flex-wrap:wrap;gap:.6rem}.cloud-first-sync{display:grid;gap:.7rem;margin-top:1rem;padding:1rem;border:1px solid color-mix(in srgb,var(--tiffany) 65%,var(--border));border-radius:16px;background:var(--tiffany-soft)}.cloud-first-sync p{margin:0;color:var(--muted)}#cloudDialogStatus[data-kind="error"]{color:var(--danger,#d52b50)}#cloudDialogStatus[data-kind="success"]{color:var(--tiffany)}
+.cloud-account-summary{display:flex;align-items:center;justify-content:space-between;gap:1rem}.cloud-account-summary>div{min-width:0}.cloud-account-summary p{margin:.35rem 0 0}.cloud-account-card{width:min(94vw,620px);max-height:min(88vh,760px);overflow:auto}.cloud-account-card>label,.cloud-account-card>div>label{display:grid;gap:.4rem;margin:.85rem 0;font-weight:700}.cloud-mode-tabs{display:flex;gap:.55rem;margin:.9rem 0}.cloud-mode-tabs .filter-chip.active{background:var(--tiffany-soft);border-color:var(--tiffany);color:var(--text)}.cloud-user-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:16px;background:var(--surface-2)}.cloud-user-card>div{display:grid;gap:.2rem;min-width:0}.cloud-user-card span{color:var(--muted);overflow-wrap:anywhere}.cloud-household-actions{display:flex;flex-wrap:wrap;gap:.6rem}.cloud-first-sync{display:grid;gap:.7rem;margin-top:1rem;padding:1rem;border:1px solid color-mix(in srgb,var(--tiffany) 65%,var(--border));border-radius:16px;background:var(--tiffany-soft)}.cloud-first-sync p{margin:0;color:var(--muted)}#cloudDialogStatus[data-kind="error"]{color:var(--danger,#d52b50)}#cloudDialogStatus[data-kind="success"]{color:var(--tiffany)}#cloudFirstSync[hidden],#cloudSyncNowBtn[hidden],#cloudRefreshBtn[hidden],#cloudInviteBtn[hidden],#cloudSignedInPanel[hidden],#cloudSignedOutPanel[hidden]{display:none!important}
 @media(max-width:560px){.cloud-account-summary,.cloud-user-card{align-items:stretch;flex-direction:column}.cloud-household-actions .button,.cloud-first-sync .button{width:100%}}
 
 :root[data-theme="dark"] {
@@ -745,7 +745,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   cursor: pointer;
 }
 
-/* v0.21.2 shared Serenity Kitchen interior design system */
+/* v0.21.3 shared Serenity Kitchen interior design system */
 :root{
   --bg:#f4efe9;--panel:#fffaf5;--panel-2:#eee5dd;--surface-3:#e3d6cc;
   --text:#2b2420;--muted:#71665f;--border:#d7c9bf;--accent:#c80d3e;--accent-2:#a90834;
@@ -758,7 +758,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   --tiffany:#81d8d0;--tiffany-soft:#183c39;--danger:#e55472;--shadow:0 14px 38px rgba(0,0,0,.3);
 }
 html{background:var(--bg)}body{background:var(--bg);font-weight:450}
-body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.2') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.2') center/contain no-repeat}
+body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.3') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.3') center/contain no-repeat}
 :root[data-theme="dark"] body:not(.home-view)::before{--watermark-color:#81d8d0;opacity:.22}
 .app-shell,.main{position:relative}.app-shell{z-index:1;grid-template-rows:var(--header-height) 1fr}.main{z-index:1;padding:clamp(1rem,2.6vw,2rem)}
 .topbar{z-index:50;min-height:var(--header-height);padding:max(7px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 7px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--panel) 92%,transparent);border-bottom:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.12)}

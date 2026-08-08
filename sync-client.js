@@ -17,6 +17,7 @@
       this.pushTimer = null;
       this.syncing = false;
       this.dirty = false;
+      this.changeSequence = 0;
       this.config = this.load();
     }
 
@@ -171,9 +172,21 @@
       this.emit('Household sync is active.', 'success');
     }
 
+    async downloadLatest() {
+      if (!this.isSignedIn() || !this.activeHousehold() || !this.isProfileBound()) throw new Error('Sign in and select this profile’s household first.');
+      const remote = await this.remoteSnapshot();
+      if (!remote.hasData) throw new Error('The household server does not contain a shared copy.');
+      this.onRemoteState(remote.snapshot, { initial:true, forced:true });
+      this.config.initializedHouseholds[this.initializationKey()] = true;
+      this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save();
+      this.start(); this.emit('Household copy downloaded.', 'success');
+      return remote.snapshot;
+    }
+
     markDirty() {
-      if (!this.isReady() || this.syncing) return;
-      this.dirty = true; clearTimeout(this.pushTimer);
+      if (!this.isReady()) return;
+      this.dirty = true; this.changeSequence += 1; clearTimeout(this.pushTimer);
+      if (this.syncing) return;
       this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), 900);
     }
 
@@ -197,13 +210,20 @@
       this.syncing = true; this.emit('Syncing household…', 'working');
       try {
         if (this.dirty && localSnapshotProvider) {
+          const pushingSequence = this.changeSequence;
           const snapshot = localSnapshotProvider();
           for (const collection of COLLECTIONS) await this.pushCollection(collection, snapshot[collection], this.config.revisions[this.key(collection)] || 0);
-          this.dirty = false;
+          if (this.changeSequence === pushingSequence) this.dirty = false;
         }
         await this.pullUpdates();
         this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save(); this.emit('Household is up to date.', 'success');
-      } finally { this.syncing = false; }
+      } finally {
+        this.syncing = false;
+        if (this.dirty && this.isReady()) {
+          clearTimeout(this.pushTimer);
+          this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), 250);
+        }
+      }
     }
 
     start(localSnapshotProvider) {

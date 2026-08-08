@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.21.2';
+  const APP_VERSION = '0.21.3';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -275,14 +275,35 @@
       const shared = JSON.parse(localStorage.getItem(SHARED_KEY));
       if (!device?.profiles?.length || !shared) return false;
       this.device = device;
+      this.recoverOrphanedProfileMetadata();
       try { this.normalizeProfileMetadata(); }
       catch (error) { console.warn('Profile metadata cleanup was skipped because storage is not writable.', error); }
       this.shared = shared;
-      this.activeProfile = this.normalizeProfileData(this.readProfile(device.activeProfileId) || this.defaultProfileData(device.activeProfileId));
+      const storedProfile = this.readProfile(device.activeProfileId);
+      if (!storedProfile) throw new Error('The active profile record is missing; recovery is required.');
+      this.activeProfile = this.normalizeProfileData(storedProfile);
       this.markProfileUsed(device.activeProfileId);
       try { this.persistAll(); }
       catch (error) { console.warn('Loaded profile data, but startup normalization could not be saved.', error); }
       return true;
+    }
+
+    recoverOrphanedProfileMetadata() {
+      const known = new Set((this.device?.profiles || []).map(profile => profile.profileId));
+      const recovered = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index) || '';
+        if (!key.startsWith(PROFILE_PREFIX)) continue;
+        const profileId = key.slice(PROFILE_PREFIX.length);
+        if (!profileId || known.has(profileId)) continue;
+        const data = this.readProfile(profileId);
+        if (!data || data.profileId !== profileId) continue;
+        const createdAt = data.createdAt || now();
+        recovered.push({ profileId, displayName:'Recovered Profile', color:'#0f766e', kind:'personal', avatarType:'initials', avatarValue:'', setupComplete:true, createdAt, updatedAt:data.updatedAt || createdAt, migrationStatus:'recovered-orphan', lastUsedAt:data.updatedAt || createdAt });
+        known.add(profileId);
+      }
+      if (recovered.length) this.device.profiles.push(...recovered);
+      return recovered;
     }
 
     recoverLatestValidCheckpoint() {

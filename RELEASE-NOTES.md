@@ -1,4 +1,12 @@
-# Serenity Kitchen v0.21.2
+# Serenity Kitchen v0.21.3
+
+## v0.21.3
+
+- Prevents a temporarily missing active-profile record from being silently replaced with a blank “My Profile.”
+- Keeps edits queued when they occur while a household synchronization request is already running.
+- Adds **Refresh from household** with explicit downloaded recipe, shopping, and pantry counts.
+- Corrects the first-copy panel so it actually disappears after initialization.
+- Separates genuine sync completion from stale visual state in the account dialog.
 
 ## v0.21.2
 
