@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.5">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.5">
+  <link rel="manifest" href="app.webmanifest?v=0.21.6">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.6">
   <title>Serenity Kitchen</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.5">
+  <link rel="stylesheet" href="styles.css?v=0.21.6">
 </head>
 <body>
   <div class="app-shell">
@@ -50,13 +50,14 @@
         <button class="nav-item" id="menuCreateRecipe">＋ Create recipe</button>
         <button class="nav-item" data-view="modules">Modules <span id="navModuleCount">0</span></button>
         <button class="nav-item" id="menuImportModule">Import module</button>
+        <button class="nav-item" id="menuUserManual">User manual</button>
         <button class="nav-item settings-nav" id="menuSettings">Settings</button>
       </nav>
 
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen <strong>v0.21.5</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen <strong>v0.21.6</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -246,13 +247,81 @@
     </form>
   </dialog>
 
+  <dialog id="userManualDialog" class="user-manual-dialog">
+    <div class="dialog-card user-manual-card">
+      <div class="manual-sticky-header">
+        <div><h2>Serenity Kitchen manual</h2><small>For app version <span id="manualVersionLabel">0.21.6</span></small></div>
+        <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="manual-search-wrap">
+        <label for="manualSearch">Find help</label>
+        <input id="manualSearch" type="search" autocomplete="off" placeholder="Search recipes, pantry, sharing…">
+      </div>
+      <p id="manualNoResults" class="manual-no-results" hidden>No manual sections match that search.</p>
+      <div id="manualSections" class="manual-sections">
+        <details class="manual-section" data-manual-section open>
+          <summary>Getting around</summary>
+          <div><p>Open the hamburger menu to reach Recipes, Favorites, Meal Planner, Shopping List, Pantry, Modules, this manual, and Settings. Tap the SK button in the upper-right corner of an interior page to return home.</p><p>The app version stays visible at the bottom of the hamburger menu.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Recipes and filters</summary>
+          <div><p>Search by recipe name, ingredient, or tag. Filter by Favorites, Module, Category, or Rating, and use Sort to change the order. Active filters appear in Tiffany blue.</p><p>Open a recipe to scale it, rate it, favorite it, edit a personal copy, share it, add ingredients to Shopping List, or use tracked Pantry ingredients.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Ingredient and instruction headings</summary>
+          <div><p>In the recipe editor, put a heading on its own line inside square brackets.</p><ul><li><code>[Optional Pizza Toppings]</code> creates an ingredient-group heading.</li><li><code>[Prepare the sauce]</code> creates an instruction heading and continues numbering.</li><li><code>[Prepare the sauce | restart]</code> creates the heading and restarts that section at step 1.</li></ul><p>Instruction headings are not counted as cooking steps.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Pantry availability colors</summary>
+          <div><ul><li><strong class="manual-status-green">Green:</strong> enough is on hand.</li><li><strong class="manual-status-yellow">Yellow:</strong> check the actual amount or package size.</li><li><strong class="manual-status-red">Red:</strong> missing or not enough.</li></ul><p>An outlined marker represents the availability of a cross-linked recipe used as an ingredient.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Pantry</summary>
+          <div><p>Search by word, filter by category, or show only low-stock items. Tap an item to expand its quantity, unit, threshold, increase, decrease, edit, and remove controls.</p><p>Automatic restock can add an item to Shopping List when its Pantry amount reaches the chosen threshold.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Shopping List</summary>
+          <div><p>Add one item or several at once, then organize items by store, aisle, category, and quantity. Checked purchases can be moved into Pantry.</p><p>More actions contains selection tools, Regular Items, store management, sharing, importing, and clearing checked items.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Meal Planner</summary>
+          <div><p>Choose a week, generate meals, fill empty slots, or make manual choices. Each day contains Breakfast, Lunch, Dinner, and Snack. Meals can be locked, replaced, rerolled, skipped, removed, or opened as recipes.</p><p>Locked choices use a Tiffany-blue indicator and remain unchanged when other slots are regenerated.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Guided Cooking and timers</summary>
+          <div><p>Start Guided Cooking from a recipe for one large step at a time, optional spoken directions, ingredient checklists, and tappable times. Section headings appear above their steps but are skipped during navigation.</p><p>The timer button in the header appears only while a timer is active.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Profiles, accounts, and households</summary>
+          <div><p>Local profiles keep personal recipes, favorites, ratings, notes, shopping information, and preferences separate on one device. A private account can connect a local profile to a household.</p><p>Household sync shares Shopping List, Pantry, Regular Items, and Meal Planner data. During the first connection, carefully choose whether the device copy or household copy should become the starting household data.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Modules and importing</summary>
+          <div><p>Modules are recipe collections that can be imported, enabled, disabled, exported, or removed. Personal recipes remain in the My Recipes module.</p><p>Recipe imports support pasted text, supported webpages, images with offline text recognition, and shared recipe files. Always review imported information before saving.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Backups, offline use, and updates</summary>
+          <div><p>Create a full backup before major imports, restores, or household changes. Backups preserve profiles, recipes, modules, Pantry, Shopping List, Meal Planner, and settings.</p><p>Installed content remains available offline. Household changes queue locally and synchronize after the private server becomes reachable again. Use Settings → App and updates to check for a new build.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Appearance and accessibility</summary>
+          <div><p>Settings includes light and dark themes, measurement helpers, accent colors, and Guided Cooking voice controls. Buttons and fields support keyboard focus, mobile safe areas, and reduced-motion preferences.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Troubleshooting</summary>
+          <div><p>If an update seems missing, open the hamburger menu and confirm the version at the bottom. Then use Check for app update in Settings and reopen the installed app.</p><p>If household data stops updating, confirm the server and Tailscale connection are available, open Account and household, and use Sync now. Do not choose a first-copy option again unless the app specifically requires it.</p></div>
+        </details>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="settingsDialog">
     <form method="dialog" class="dialog-card settings-card">
       <div class="settings-sticky-header"><h2>Settings</h2><button class="icon-btn" value="cancel" aria-label="Close settings"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.21.5</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen</strong><span>by Serenity Valley Works</span><span>Engine version <b id="engineVersionLabel">0.21.6</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -569,7 +638,7 @@
       <label>Notes<textarea id="editNotes" rows="3" placeholder="Optional recipe notes"></textarea></label>
       <div class="form-grid"><label>Prep time<input id="editPrepTime" placeholder="15 minutes"></label><label>Cook time<input id="editCookTime" placeholder="30 minutes"></label></div>
       <label>Ingredients <small>One per line, such as: 1 1/2 cups flour</small><textarea id="editIngredients" rows="9" required></textarea></label>
-      <label>Instructions <small>One step per line</small><textarea id="editInstructions" rows="9" required></textarea></label>
+      <label>Instructions <small>One step per line · [Heading] continues numbering · [Heading | restart] starts at 1</small><textarea id="editInstructions" rows="9" required></textarea></label>
       <label>Tags <small>Separate with commas</small><input id="editTags"></label>
       <div class="dialog-actions"><button type="button" class="button secondary" id="cancelRecipeEditor">Cancel</button><button type="submit" class="button">Save recipe</button></div>
     </form>
@@ -596,6 +665,7 @@
         <button type="button" id="exitGuidedCooking" class="button secondary">Exit</button>
       </header>
       <main class="guided-cooking-main">
+        <div id="guidedSectionName" class="guided-section-name" hidden></div>
         <div id="guidedStepNumber" class="guided-step-number"></div>
         <div id="guidedStepText" class="guided-step-text" aria-live="polite"></div>
         <div id="guidedTimerActions" class="guided-timer-actions"></div>
@@ -746,12 +816,12 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.5"></script>
-  <script src="profile-storage.js?v=0.21.5"></script>
-  <script src="url-recipe-import.js?v=0.21.5"></script>
-  <script src="meal-planner.js?v=0.21.5"></script>
-  <script src="sync-client.js?v=0.21.5"></script>
-  <script src="app.js?v=0.21.5"></script>
-  <script src="ocr-service.js?v=0.21.5"></script>
+  <script src="kitchen-engine.js?v=0.21.6"></script>
+  <script src="profile-storage.js?v=0.21.6"></script>
+  <script src="url-recipe-import.js?v=0.21.6"></script>
+  <script src="meal-planner.js?v=0.21.6"></script>
+  <script src="sync-client.js?v=0.21.6"></script>
+  <script src="app.js?v=0.21.6"></script>
+  <script src="ocr-service.js?v=0.21.6"></script>
 </body>
 </html>

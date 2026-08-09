@@ -163,8 +163,12 @@ body.home-view .main { padding:0; }
 .manual-crosslink-choice:hover,.manual-crosslink-choice:focus-visible { border-color:var(--accent); }
 .manual-crosslink-choice:disabled { cursor:default; opacity:.58; }
 .ingredient-list input:checked + span { text-decoration: line-through; color: var(--muted); }
-.instruction-list { padding-left: 1.35rem; }
-.instruction-list li { padding: 0 0 14px 8px; line-height: 1.55; }
+.instruction-list { display:grid; gap:0; margin:0; padding:0; list-style:none; }
+.instruction-step { display:grid; grid-template-columns:1.75rem minmax(0,1fr); gap:.5rem; padding:0 0 14px; line-height:1.55; }
+.instruction-number { color:var(--muted); font-weight:800; text-align:right; }
+.instruction-section-heading { margin:12px 0 10px; padding:0; }
+.instruction-section-heading:first-child { margin-top:0; }
+.instruction-section-heading h3 { margin:0; color:var(--accent); font-size:1.05rem; }
 .module-badge { display: inline-flex; margin-top: 14px; padding: 7px 10px; border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: .82rem; }
 .recipe-rating-panel { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:18px; padding:13px 15px; border:1px solid var(--border); border-radius:14px; background:var(--panel-2); }
 .recipe-rating-panel > div:first-child { display:grid; gap:2px; }
@@ -304,6 +308,13 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .import-choice-grid { display:grid; gap:.75rem; margin-top:1rem; }
 .version-card .button { margin-top:.5rem; }
 .settings-card{box-sizing:border-box;width:100%;min-width:0;max-height:92dvh;margin:0;padding:0 1rem 1rem;overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:none;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.user-manual-dialog{width:min(94vw,760px);max-height:92dvh;padding:0}
+.user-manual-card{box-sizing:border-box;width:100%;min-width:0;max-height:92dvh;margin:0;padding:0 1rem 1rem;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.manual-sticky-header{position:sticky;z-index:3;top:0;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0 -1rem;padding:1rem;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--panel) 96%,transparent);backdrop-filter:blur(10px)}
+.manual-sticky-header h2{margin:0}.manual-sticky-header small{color:var(--muted)}
+.manual-search-wrap{position:sticky;z-index:2;top:78px;display:grid;gap:.35rem;margin:0 -1rem;padding:.8rem 1rem;background:var(--panel)}
+.manual-search-wrap label{font-size:.78rem;font-weight:800;color:var(--muted)}.manual-search-wrap input{min-height:44px}
+.manual-sections{display:grid;gap:.65rem}.manual-section{border:1px solid var(--border);border-radius:15px;background:var(--panel-2);overflow:hidden}.manual-section>summary{padding:.9rem 1rem;color:var(--text);font-weight:800;cursor:pointer}.manual-section>div{padding:0 1rem 1rem;color:var(--muted);line-height:1.5}.manual-section p{margin:.55rem 0}.manual-section ul{margin:.55rem 0;padding-left:1.25rem}.manual-section code{color:var(--tiffany);font-weight:750}.manual-no-results{padding:1rem;border:1px dashed var(--border);border-radius:14px;color:var(--muted);text-align:center}.manual-status-green{color:#39a878}.manual-status-yellow{color:#d4a72c}.manual-status-red{color:#e35d6a}
 #settingsDialog{box-sizing:border-box;width:min(94vw,720px);max-width:720px;max-height:92dvh;margin:auto;padding:0;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:var(--panel)}
 .settings-sticky-header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0 -1rem .75rem;padding:.85rem 1rem;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--panel) 96%,transparent);backdrop-filter:blur(12px)}
 .settings-sticky-header h2{margin:0}
@@ -555,6 +566,7 @@ body.menu-open { overflow: hidden; touch-action: none; }
 .guided-cooking-header>div{display:grid;gap:.2rem}
 .guided-recipe-name{color:var(--muted);font-size:.88rem;font-weight:750}
 .guided-cooking-main{display:grid;align-content:center;justify-items:center;gap:1rem;overflow:auto;padding:clamp(1.2rem,5vw,4rem);text-align:center}
+.guided-section-name{padding:.35rem .7rem;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--panel));color:var(--accent);font-size:.95rem;font-weight:850}
 .guided-step-number{display:grid;place-items:center;width:4.5rem;height:4.5rem;border-radius:50%;background:var(--accent);color:#fff;font-size:2rem;font-weight:900}
 .guided-step-text{max-width:24ch;font-size:clamp(1.6rem,5vw,3rem);font-weight:800;line-height:1.3}
 .guided-step-text .timer-link{font-size:.55em;vertical-align:.12em}
@@ -748,7 +760,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   cursor: pointer;
 }
 
-/* v0.21.5 shared Serenity Kitchen interior design system */
+/* v0.21.6 shared Serenity Kitchen interior design system */
 :root{
   --bg:#f4efe9;--panel:#fffaf5;--panel-2:#eee5dd;--surface-3:#e3d6cc;
   --text:#2b2420;--muted:#71665f;--border:#d7c9bf;--accent:#c80d3e;--accent-2:#a90834;
@@ -761,7 +773,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   --tiffany:#81d8d0;--tiffany-soft:#183c39;--danger:#e55472;--shadow:0 14px 38px rgba(0,0,0,.3);
 }
 html{background:var(--bg)}body{background:var(--bg);font-weight:450}
-body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.5') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.5') center/contain no-repeat}
+body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.6') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.6') center/contain no-repeat}
 :root[data-theme="dark"] body:not(.home-view)::before{--watermark-color:#81d8d0;opacity:.22}
 .app-shell,.main{position:relative}.app-shell{z-index:1;grid-template-rows:var(--header-height) 1fr}.main{z-index:1;padding:clamp(1rem,2.6vw,2rem)}
 .topbar{z-index:50;min-height:var(--header-height);padding:max(7px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 7px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--panel) 92%,transparent);border-bottom:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.12)}
