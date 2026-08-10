@@ -1,5 +1,5 @@
 {
-  "name": "Serenity Kitchen",
+  "name": "Serenity Kitchen™",
   "short_name": "Serenity Kitchen",
   "description": "Recipes, timers, modules, notes, and shopping lists.",
   "start_url": "./?source=pwa",
@@ -19,5 +19,5 @@
       "type": "image/png"
     }
   ],
-  "version": "0.21.6"
+  "version": "0.21.7"
 }
