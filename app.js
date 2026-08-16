@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.7';
+  const ENGINE_VERSION = '0.21.8';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -434,11 +434,21 @@
     els.addCustomCategory.addEventListener('click', () => { els.customCategoryInput.hidden = !els.customCategoryInput.hidden; if (!els.customCategoryInput.hidden) els.customCategoryInput.focus(); });
     document.querySelectorAll('.color-swatch').forEach(button => button.addEventListener('click', () => setAccentColor(button.dataset.color)));
     els.shoppingStoreFilter.addEventListener('change', () => { shoppingSelectedIds.clear(); updateShoppingBulkBar(); renderShoppingList(); });
-    document.querySelector('.more-actions-menu')?.addEventListener('click', event => {
-      if (!event.target.closest('button')) return;
-      const menu = event.currentTarget.closest('.more-actions');
-      if (menu) menu.open = false;
+    document.querySelector('#shoppingMoreActionsToggle')?.addEventListener('click', () => {
+      const toggle = document.querySelector('#shoppingMoreActionsToggle');
+      setShoppingMoreActionsOpen(toggle?.getAttribute('aria-expanded') !== 'true');
+    });
+    document.querySelector('#shoppingMoreActionsMenu')?.addEventListener('click', event => {
+      if (event.target.closest('button')) closeShoppingMoreActions();
     }, true);
+    document.addEventListener('pointerdown', event => {
+      const menu = document.querySelector('#shoppingMoreActions');
+      if (menu?.classList.contains('open') && !menu.contains(event.target)) closeShoppingMoreActions();
+    }, true);
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeShoppingMoreActions(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') closeShoppingMoreActions(); });
+    window.addEventListener('pagehide', closeShoppingMoreActions);
+    window.addEventListener('pageshow', closeShoppingMoreActions);
     document.querySelector('#shoppingSelectBtn')?.addEventListener('click', beginShoppingSelection);
     document.querySelector('#shoppingSelectionCancel')?.addEventListener('click', cancelShoppingSelection);
     document.querySelector('#shoppingSelectAll')?.addEventListener('click', selectAllVisibleShopping);
@@ -1102,7 +1112,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.7').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.8').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1727,6 +1737,7 @@
   }
 
   function goHome() {
+    closeShoppingMoreActions();
     currentView = 'home';
     selectedCategory = null;
     recipeNavigationStack = [];
@@ -2684,7 +2695,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.7');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.8');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3841,11 +3852,25 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function confirmUsePantryIngredients(){let used=0;document.querySelectorAll('[data-pantry-use]:checked').forEach(check=>{const item=state.pantryItems.find(entry=>entry.id===check.dataset.pantryUse);const amount=Math.max(0,Number(check.closest('.pantry-use-row').querySelector('.pantry-use-amount').value)||0);if(!item||!amount)return;item.quantity=Math.max(0,Number(item.quantity)-amount);item.updatedAt=new Date().toISOString();checkPantryRestock(item);used++;});saveState();renderCounts();document.querySelector('#usePantryStatus').textContent=`Updated ${used} pantry item${used===1?'':'s'}.`;setTimeout(()=>document.querySelector('#usePantryDialog').close(),700);}
 
   function showShopping() {
+    closeShoppingMoreActions();
     selectedRecipeKey = null;
     els.homePane.hidden = true; els.listPane.hidden = true; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = false; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
     setHomeScreen(false);
     shoppingSelectionMode=false; shoppingSelectedIds.clear(); populateStoreSelects(); updateShoppingBulkBar(); renderShoppingList(); updateWakeLock(); window.scrollTo({top:0,behavior:'smooth'});
   }
+
+  function setShoppingMoreActionsOpen(open) {
+    const wrapper = document.querySelector('#shoppingMoreActions');
+    const toggle = document.querySelector('#shoppingMoreActionsToggle');
+    const panel = document.querySelector('#shoppingMoreActionsMenu');
+    if (!wrapper || !toggle || !panel) return;
+    wrapper.classList.toggle('open', Boolean(open));
+    toggle.setAttribute('aria-expanded', String(Boolean(open)));
+    panel.hidden = !open;
+    if (!open) toggle.blur();
+  }
+
+  function closeShoppingMoreActions() { setShoppingMoreActionsOpen(false); }
 
   function normalizeStore(store) { return store && store.trim() ? store.trim() : 'Unassigned'; }
   function displayStoreName(store) { return normalizeStore(store) === 'Unassigned' ? 'No store' : normalizeStore(store); }

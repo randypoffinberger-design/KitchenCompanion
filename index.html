@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.7">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.7">
+  <link rel="manifest" href="app.webmanifest?v=0.21.8">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.8">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.7">
+  <link rel="stylesheet" href="styles.css?v=0.21.8">
 </head>
 <body>
   <div class="app-shell">
@@ -57,7 +57,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.7</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.8</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -119,7 +119,7 @@
         <div class="list-header page-heading"><span class="page-heading-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24"><path d="m5 9 2 11h10l2-11M3 9h18M8 9l4-6 4 6M9 13v3M15 13v3"/></svg></span><div class="page-heading-copy"><h1>Shopping list</h1><p id="shoppingPageSummary">Organize purchases by store and aisle.</p></div><div class="shopping-add-actions"><button id="addShoppingItemBtn" class="button">＋ Add item</button><button id="addManyShoppingItemsBtn" class="button secondary">＋ Several</button></div></div>
         <div class="shopping-toolbar">
           <select id="shoppingStoreFilter"><option value="all">All stores</option></select>
-          <details class="more-actions"><summary>More actions</summary><div class="more-actions-menu"><button id="shoppingSelectBtn" type="button" class="button secondary">Select items</button><button id="regularItemsBtn" class="button secondary">Regular items</button><button id="movePurchasedToPantryBtn" class="button secondary">Move purchased to pantry</button><button id="manageStoresBtn" class="button secondary">Manage stores</button><button id="shareShoppingBtn" class="button secondary">Share</button><button id="importShoppingBtn" class="button secondary">Import list</button><button id="clearCheckedBtn" class="button secondary">Clear checked</button></div></details>
+          <div id="shoppingMoreActions" class="more-actions"><button id="shoppingMoreActionsToggle" type="button" class="more-actions-toggle" aria-expanded="false" aria-controls="shoppingMoreActionsMenu">More actions</button><div id="shoppingMoreActionsMenu" class="more-actions-menu" hidden><button id="shoppingSelectBtn" type="button" class="button secondary">Select items</button><button id="regularItemsBtn" class="button secondary">Regular items</button><button id="movePurchasedToPantryBtn" class="button secondary">Move purchased to pantry</button><button id="manageStoresBtn" class="button secondary">Manage stores</button><button id="shareShoppingBtn" class="button secondary">Share</button><button id="importShoppingBtn" class="button secondary">Import list</button><button id="clearCheckedBtn" class="button secondary">Clear checked</button></div></div>
         </div>
         <div id="shoppingBulkBar" class="shopping-bulk-bar" aria-live="polite" hidden>
           <div id="shoppingBulkActions" class="shopping-bulk-actions" hidden>
@@ -251,7 +251,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.7</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.8</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -322,7 +322,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.7</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.8</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -817,12 +817,12 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.7"></script>
-  <script src="profile-storage.js?v=0.21.7"></script>
-  <script src="url-recipe-import.js?v=0.21.7"></script>
-  <script src="meal-planner.js?v=0.21.7"></script>
-  <script src="sync-client.js?v=0.21.7"></script>
-  <script src="app.js?v=0.21.7"></script>
-  <script src="ocr-service.js?v=0.21.7"></script>
+  <script src="kitchen-engine.js?v=0.21.8"></script>
+  <script src="profile-storage.js?v=0.21.8"></script>
+  <script src="url-recipe-import.js?v=0.21.8"></script>
+  <script src="meal-planner.js?v=0.21.8"></script>
+  <script src="sync-client.js?v=0.21.8"></script>
+  <script src="app.js?v=0.21.8"></script>
+  <script src="ocr-service.js?v=0.21.8"></script>
 </body>
 </html>
