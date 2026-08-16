@@ -1,4 +1,9 @@
-# Serenity Kitchen v0.21.9
+# Serenity Kitchen v0.21.10
+
+## v0.21.10
+
+- Corrected range scaling when legacy or imported recipes store the unit inside `displayQuantity`, such as `4–6 cups` or `1½–2 tsp`.
+- Added executable range-scaling tests for plain, unit-suffixed, fractional, and dimensional values.
 
 ## v0.21.9
 
