@@ -1,4 +1,35 @@
-# Serenity Kitchen v0.21.4
+# Serenity Kitchen v0.21.9
+
+## v0.21.9
+
+- Ingredient quantity ranges now scale with the selected recipe multiplier throughout recipe display, pantry readiness/use, meal-planner shopping, and Shopping List transfers.
+- Preparation dimensions contained in ingredient names, such as `¾–1-inch cubes`, remain unchanged.
+
+## v0.21.8
+
+- Replaced Shopping List's native iOS `details`-based More actions control with an explicit app-controlled menu.
+- More actions now closes before any selected action runs, when tapping elsewhere, on Escape, when leaving Shopping, and whenever the PWA is hidden or resumed.
+- Added regression coverage for the menu's accessible expanded state and lifecycle cleanup.
+
+## v0.21.7
+
+- Replaces the PWA, iOS touch, and in-app Home icons with the new SK design carrying the ™ notice.
+- Adds restrained Serenity Kitchen™ identification to the homepage, navigation footer, User Manual, browser title, install metadata, and Settings identity card.
+- Adds a trademark notice identifying Serenity Valley Works while intentionally making no LLC claim before formation.
+
+## v0.21.6
+
+- Adds instruction section headings using the same bracket style as ingredient groups.
+- Keeps numbering continuous with `[Section Name]` or restarts it with `[Section Name | restart]`.
+- Excludes headings from Guided Cooking's step count while showing the active section and chosen step number.
+- Preserves bracket headings in recipes, shares, modules, imports, backups, and household synchronization without changing the recipe data format.
+- Adds an offline, searchable User Manual to the hamburger menu with collapsible help for the app's major features and troubleshooting.
+
+## v0.21.5
+
+- Prevents the Shopping List store selector and More actions control from overlapping on narrow phones.
+- Gives both Shopping List controls equal, contained mobile columns with a clear gap.
+- Closes More actions immediately after any menu choice is selected.
 
 ## v0.21.4
 

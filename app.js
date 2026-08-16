@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.8';
+  const ENGINE_VERSION = '0.21.9';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1112,7 +1112,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.8').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.9').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2213,8 +2213,10 @@
 
   function formatIngredient(ingredient) {
     let amount = '';
-    if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
-    else if (typeof ingredient.quantity === 'number') amount = formatPracticalMeasurement(ingredient.scalable === false ? ingredient.quantity : ingredient.quantity * activeScale, ingredient.unit);
+    const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
+    if (displayRange) amount = scaleDisplayQuantityRange(displayRange, activeScale);
+    else if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
+    else if (typeof ingredient.quantity === 'number') amount = formatPracticalMeasurement(ingredientShouldScale(ingredient) ? ingredient.quantity * activeScale : ingredient.quantity, ingredient.unit);
     const optional = ingredient.optional ? ' (optional)' : '';
     const metric = state.settings.metricHelpers ? metricHelper(ingredient, activeScale) : '';
     const unit = amount.includes('tablespoon') || amount.includes('teaspoon') || amount.includes(' cup') ? '' : ingredient.unit;
@@ -2223,7 +2225,7 @@
 
   function metricHelper(ingredient, scale) {
     if (typeof ingredient.quantity !== 'number') return '';
-    const q = ingredient.quantity * (ingredient.scalable === false ? 1 : scale);
+    const q = ingredient.quantity * (ingredientShouldScale(ingredient) ? scale : 1);
     const unit = (ingredient.unit || '').toLowerCase();
     if (['tablespoon','tablespoons','tbsp'].includes(unit)) return ` · ≈ ${formatNumber(q * 15)} mL`;
     if (['teaspoon','teaspoons','tsp'].includes(unit)) return ` · ≈ ${formatNumber(q * 5)} mL`;
@@ -2240,6 +2242,24 @@
     if (best && best.diff < 0.035) return `${whole || ''}${best.glyph}`;
     return formatNumber(value);
   }
+
+  function parseDisplayQuantityRange(value) {
+    const token = '(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:\\.\\d+)?[⅛¼⅓⅜½⅝⅔¾⅞]?|[⅛¼⅓⅜½⅝⅔¾⅞])';
+    const match = String(value || '').trim().match(new RegExp(`^(${token})\\s*[–—-]\\s*(${token})$`));
+    if (!match) return null;
+    const values = match.slice(1).map(parseDisplayQuantityToken);
+    return values.every(Number.isFinite) ? { low:values[0], high:values[1] } : null;
+  }
+
+  function parseDisplayQuantityToken(value) {
+    const glyphs={'⅛':.125,'¼':.25,'⅓':1/3,'⅜':.375,'½':.5,'⅝':.625,'⅔':2/3,'¾':.75,'⅞':.875};
+    const compact=String(value).trim().match(/^(\d+)?([⅛¼⅓⅜½⅝⅔¾⅞])$/);
+    if (compact) return Number(compact[1] || 0) + glyphs[compact[2]];
+    return parseQuantity(String(value).trim());
+  }
+
+  function scaleDisplayQuantityRange(range, scale) { return `${formatFraction(range.low * scale)}–${formatFraction(range.high * scale)}`; }
+  function ingredientShouldScale(ingredient) { return ingredient?.scalable !== false || Boolean(parseDisplayQuantityRange(ingredient?.displayQuantity)); }
 
   function formatPracticalMeasurement(value, unit = '') {
     const normalized = String(unit).toLowerCase().replace(/\./g, '');
@@ -2695,7 +2715,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.8');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.9');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3592,8 +3612,10 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function plannerIngredientQuantity(ingredient, scale) {
     let amount = '';
-    if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
-    else if (typeof ingredient.quantity === 'number') amount = formatFraction(ingredient.scalable === false ? ingredient.quantity : ingredient.quantity * scale);
+    const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
+    if (displayRange) amount = scaleDisplayQuantityRange(displayRange, scale);
+    else if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
+    else if (typeof ingredient.quantity === 'number') amount = formatFraction(ingredientShouldScale(ingredient) ? ingredient.quantity * scale : ingredient.quantity);
     return [amount, ingredient.unit].filter(Boolean).join(' ').trim();
   }
 
@@ -3712,7 +3734,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const embedded=extractEmbeddedShoppingQuantity(ingredient?.item||'');const wantedName=cleanShoppingName(embedded.name);
     const pantry=state.pantryItems.find(item=>pantryIngredientMatchKey(item.name)===pantryIngredientMatchKey(wantedName));
     if(!pantry||Number(pantry.quantity)<=0)return 'red';
-    const requested=typeof ingredient?.quantity==='number'?ingredient.quantity*(ingredient.scalable===false?1:scale):pantryNumber(ingredient?.displayQuantity);
+    const requested=typeof ingredient?.quantity==='number'?ingredient.quantity*(ingredientShouldScale(ingredient)?scale:1):pantryNumber(ingredient?.displayQuantity);
     if(!requested)return 'yellow';
     const have=pantryComparableAmount(pantry.quantity,pantry.unit);const need=pantryComparableAmount(requested,ingredient.unit);
     if(have.family!==need.family)return 'yellow';
@@ -3845,7 +3867,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function openUsePantryDialog(recipe) {
     const choices=document.querySelector('#usePantryChoices');choices.innerHTML='';
-    (recipe.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).forEach(ingredient=>{const name=cleanShoppingName(extractEmbeddedShoppingQuantity(ingredient.item).name);const item=state.pantryItems.find(entry=>pantryIngredientMatchKey(entry.name)===pantryIngredientMatchKey(name));if(!item)return;const recipeUnit=normalizePantryUnit(ingredient.unit);const compatible=!recipeUnit||!item.unit||recipeUnit===normalizePantryUnit(item.unit);const amount=typeof ingredient.quantity==='number'?(ingredient.scalable===false?ingredient.quantity:ingredient.quantity*activeScale):1;const row=document.createElement('label');row.className='pantry-use-row';row.innerHTML=`<input type="checkbox" data-pantry-use="${escapeHtml(item.id)}" ${compatible?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><small>Have ${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}${compatible?'':` · Recipe uses ${escapeHtml(recipeUnit||'another unit')}`}</small></span><input class="pantry-use-amount" type="number" min="0" step="any" value="${compatible?amount:0}" aria-label="Amount of ${escapeHtml(item.name)} used"><b>${escapeHtml(item.unit)}</b>`;choices.append(row);});
+    (recipe.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).forEach(ingredient=>{const name=cleanShoppingName(extractEmbeddedShoppingQuantity(ingredient.item).name);const item=state.pantryItems.find(entry=>pantryIngredientMatchKey(entry.name)===pantryIngredientMatchKey(name));if(!item)return;const recipeUnit=normalizePantryUnit(ingredient.unit);const compatible=!recipeUnit||!item.unit||recipeUnit===normalizePantryUnit(item.unit);const amount=typeof ingredient.quantity==='number'?(ingredientShouldScale(ingredient)?ingredient.quantity*activeScale:ingredient.quantity):1;const row=document.createElement('label');row.className='pantry-use-row';row.innerHTML=`<input type="checkbox" data-pantry-use="${escapeHtml(item.id)}" ${compatible?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><small>Have ${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}${compatible?'':` · Recipe uses ${escapeHtml(recipeUnit||'another unit')}`}</small></span><input class="pantry-use-amount" type="number" min="0" step="any" value="${compatible?amount:0}" aria-label="Amount of ${escapeHtml(item.name)} used"><b>${escapeHtml(item.unit)}</b>`;choices.append(row);});
     document.querySelector('#usePantryStatus').textContent=choices.children.length?'':'No recipe ingredients matched items in Pantry.';document.querySelector('#confirmUsePantry').disabled=!choices.children.length;document.querySelector('#usePantryDialog').showModal();
   }
 
@@ -4162,8 +4184,10 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function ingredientQuantityLabel(ingredient) {
     let amount='';
-    if (ingredient.displayQuantity && ingredient.scalable === false) amount=ingredient.displayQuantity;
-    else if (typeof ingredient.quantity === 'number') amount=formatFraction(ingredient.scalable === false ? ingredient.quantity : ingredient.quantity * activeScale);
+    const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
+    if (displayRange) amount=scaleDisplayQuantityRange(displayRange, activeScale);
+    else if (ingredient.displayQuantity && ingredient.scalable === false) amount=ingredient.displayQuantity;
+    else if (typeof ingredient.quantity === 'number') amount=formatFraction(ingredientShouldScale(ingredient) ? ingredient.quantity * activeScale : ingredient.quantity);
     return [amount, ingredient.unit].filter(Boolean).join(' ').trim();
   }
   function cleanShoppingName(item) { return normalizeShoppingName(item); }
