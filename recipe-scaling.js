@@ -47,7 +47,29 @@
     return range.suffix ? `${result} ${range.suffix}` : result;
   }
 
+  function parseIngredientText(value) {
+    const parsed = parseRange(value);
+    if (!parsed || !parsed.suffix) return null;
+    const match = parsed.suffix.match(/^(\S+)(?:\s+(.*))?$/);
+    if (!match) return null;
+    const candidate = match[1].replace(/[.,]$/, '');
+    const units = new Set(['cup','cups','tbsp','tablespoon','tablespoons','tsp','teaspoon','teaspoons','oz','ounce','ounces','lb','lbs','pound','pounds','g','gram','grams','kg','ml','mL','l','L','liter','liters','clove','cloves','can','cans','package','packages','packet','packets','stick','sticks','slice','slices','piece','pieces']);
+    const hasUnit = units.has(candidate);
+    return {
+      range:{ low:parsed.low, high:parsed.high, suffix:'' },
+      unit:hasUnit ? candidate : '',
+      item:hasUnit ? (match[2] || candidate) : parsed.suffix
+    };
+  }
+
+  function parseIngredientRange(ingredient) {
+    if (!ingredient || typeof ingredient !== 'object') return null;
+    // Prefer a complete range preserved in the ingredient text. Legacy URL,
+    // OCR, and text imports may also carry a calculated midpoint in quantity.
+    return parseIngredientText(ingredient.item);
+  }
+
   function shouldScale(ingredient) { return ingredient?.scalable !== false || Boolean(parseRange(ingredient?.displayQuantity)); }
 
-  return Object.freeze({ parseRange, scaleRange, shouldScale });
+  return Object.freeze({ parseRange, parseIngredientText, parseIngredientRange, scaleRange, shouldScale });
 });

@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.10';
+  const ENGINE_VERSION = '0.21.12';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1112,7 +1112,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.10').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.12').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2213,14 +2213,17 @@
 
   function formatIngredient(ingredient) {
     let amount = '';
+    const legacyRange = legacyRangeIngredient(ingredient);
     const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
-    if (displayRange) amount = scaleDisplayQuantityRange(displayRange, activeScale);
+    if (legacyRange) amount = scaleDisplayQuantityRange(legacyRange.range, activeScale);
+    else if (displayRange) amount = scaleDisplayQuantityRange(displayRange, activeScale);
     else if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
     else if (typeof ingredient.quantity === 'number') amount = formatPracticalMeasurement(ingredientShouldScale(ingredient) ? ingredient.quantity * activeScale : ingredient.quantity, ingredient.unit);
     const optional = ingredient.optional ? ' (optional)' : '';
     const metric = state.settings.metricHelpers ? metricHelper(ingredient, activeScale) : '';
-    const unit = amount.includes('tablespoon') || amount.includes('teaspoon') || amount.includes(' cup') ? '' : ingredient.unit;
-    return escapeHtml([amount, unit, ingredient.item].filter(Boolean).join(' ') + optional + metric);
+    const unit = legacyRange?.unit || (amount.includes('tablespoon') || amount.includes('teaspoon') || amount.includes(' cup') ? '' : ingredient.unit);
+    const item = legacyRange?.item || ingredient.item;
+    return escapeHtml([amount, unit, item].filter(Boolean).join(' ') + optional + metric);
   }
 
   function metricHelper(ingredient, scale) {
@@ -2249,6 +2252,16 @@
 
   function scaleDisplayQuantityRange(range, scale) { return SKRecipeScaling.scaleRange(range, scale); }
   function ingredientShouldScale(ingredient) { return SKRecipeScaling.shouldScale(ingredient); }
+  function legacyRangeIngredient(ingredient) {
+    // Some older imports kept a calculated midpoint in `quantity` while also
+    // preserving the complete range at the start of `item` (for example,
+    // quantity: 5, item: "4–6 cups beef broth").  The text range is the
+    // authoritative display value and must be detected even when the midpoint
+    // or a duplicate displayQuantity field is present.
+    return SKRecipeScaling.parseIngredientRange(ingredient);
+  }
+  function effectiveIngredientItem(ingredient) { return legacyRangeIngredient(ingredient)?.item || ingredient?.item || ''; }
+  function effectiveIngredientUnit(ingredient) { return legacyRangeIngredient(ingredient)?.unit || ingredient?.unit || ''; }
 
   function formatPracticalMeasurement(value, unit = '') {
     const normalized = String(unit).toLowerCase().replace(/\./g, '');
@@ -2704,7 +2717,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.10');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.12');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3601,11 +3614,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function plannerIngredientQuantity(ingredient, scale) {
     let amount = '';
+    const legacyRange = legacyRangeIngredient(ingredient);
     const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
-    if (displayRange) amount = scaleDisplayQuantityRange(displayRange, scale);
+    if (legacyRange) amount = scaleDisplayQuantityRange(legacyRange.range, scale);
+    else if (displayRange) amount = scaleDisplayQuantityRange(displayRange, scale);
     else if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
     else if (typeof ingredient.quantity === 'number') amount = formatFraction(ingredientShouldScale(ingredient) ? ingredient.quantity * scale : ingredient.quantity);
-    return [amount, ingredient.unit].filter(Boolean).join(' ').trim();
+    return [amount, effectiveIngredientUnit(ingredient)].filter(Boolean).join(' ').trim();
   }
 
   function addMealPlanToShoppingList() {
@@ -3623,7 +3638,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (!recipe) return;
       recipesAdded += 1;
       (recipe.ingredientGroups || []).forEach(group => (group.ingredients || []).forEach(ingredient => {
-        const embedded = extractEmbeddedShoppingQuantity(ingredient.item);
+        const embedded = extractEmbeddedShoppingQuantity(effectiveIngredientItem(ingredient));
         const name = cleanShoppingName(embedded.name);
         const quantity = plannerIngredientQuantity(ingredient, Number(slot.scale) || 1) || embedded.quantity;
         addShoppingEntry({ name, quantity, source:`Meal plan · ${KCMealPlanner.DAYS[day]} ${meal} · ${recipe.name}`, recipeKey:recipe.key });
@@ -3720,12 +3735,12 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
   function ingredientPantryReadiness(ingredient, scale=1) {
-    const embedded=extractEmbeddedShoppingQuantity(ingredient?.item||'');const wantedName=cleanShoppingName(embedded.name);
+    const legacyRange=legacyRangeIngredient(ingredient);const embedded=extractEmbeddedShoppingQuantity(effectiveIngredientItem(ingredient));const wantedName=cleanShoppingName(embedded.name);
     const pantry=state.pantryItems.find(item=>pantryIngredientMatchKey(item.name)===pantryIngredientMatchKey(wantedName));
     if(!pantry||Number(pantry.quantity)<=0)return 'red';
-    const requested=typeof ingredient?.quantity==='number'?ingredient.quantity*(ingredientShouldScale(ingredient)?scale:1):pantryNumber(ingredient?.displayQuantity);
+    const requested=legacyRange?legacyRange.range.low*scale:typeof ingredient?.quantity==='number'?ingredient.quantity*(ingredientShouldScale(ingredient)?scale:1):pantryNumber(ingredient?.displayQuantity);
     if(!requested)return 'yellow';
-    const have=pantryComparableAmount(pantry.quantity,pantry.unit);const need=pantryComparableAmount(requested,ingredient.unit);
+    const have=pantryComparableAmount(pantry.quantity,pantry.unit);const need=pantryComparableAmount(requested,effectiveIngredientUnit(ingredient));
     if(have.family!==need.family)return 'yellow';
     const ratio=have.amount/need.amount;
     if(pantry.estimated||/\b(head|clove)s?\b/i.test(`${pantry.unit} ${ingredient.unit}`))return ratio<.75?'red':'yellow';
@@ -3856,7 +3871,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function openUsePantryDialog(recipe) {
     const choices=document.querySelector('#usePantryChoices');choices.innerHTML='';
-    (recipe.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).forEach(ingredient=>{const name=cleanShoppingName(extractEmbeddedShoppingQuantity(ingredient.item).name);const item=state.pantryItems.find(entry=>pantryIngredientMatchKey(entry.name)===pantryIngredientMatchKey(name));if(!item)return;const recipeUnit=normalizePantryUnit(ingredient.unit);const compatible=!recipeUnit||!item.unit||recipeUnit===normalizePantryUnit(item.unit);const amount=typeof ingredient.quantity==='number'?(ingredientShouldScale(ingredient)?ingredient.quantity*activeScale:ingredient.quantity):1;const row=document.createElement('label');row.className='pantry-use-row';row.innerHTML=`<input type="checkbox" data-pantry-use="${escapeHtml(item.id)}" ${compatible?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><small>Have ${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}${compatible?'':` · Recipe uses ${escapeHtml(recipeUnit||'another unit')}`}</small></span><input class="pantry-use-amount" type="number" min="0" step="any" value="${compatible?amount:0}" aria-label="Amount of ${escapeHtml(item.name)} used"><b>${escapeHtml(item.unit)}</b>`;choices.append(row);});
+    (recipe.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).forEach(ingredient=>{const legacyRange=legacyRangeIngredient(ingredient);const name=cleanShoppingName(extractEmbeddedShoppingQuantity(effectiveIngredientItem(ingredient)).name);const item=state.pantryItems.find(entry=>pantryIngredientMatchKey(entry.name)===pantryIngredientMatchKey(name));if(!item)return;const recipeUnit=normalizePantryUnit(effectiveIngredientUnit(ingredient));const compatible=!recipeUnit||!item.unit||recipeUnit===normalizePantryUnit(item.unit);const amount=legacyRange?legacyRange.range.low*activeScale:typeof ingredient.quantity==='number'?(ingredientShouldScale(ingredient)?ingredient.quantity*activeScale:ingredient.quantity):1;const row=document.createElement('label');row.className='pantry-use-row';row.innerHTML=`<input type="checkbox" data-pantry-use="${escapeHtml(item.id)}" ${compatible?'checked':''}><span><strong>${escapeHtml(item.name)}</strong><small>Have ${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}${compatible?'':` · Recipe uses ${escapeHtml(recipeUnit||'another unit')}`}</small></span><input class="pantry-use-amount" type="number" min="0" step="any" value="${compatible?amount:0}" aria-label="Amount of ${escapeHtml(item.name)} used"><b>${escapeHtml(item.unit)}</b>`;choices.append(row);});
     document.querySelector('#usePantryStatus').textContent=choices.children.length?'':'No recipe ingredients matched items in Pantry.';document.querySelector('#confirmUsePantry').disabled=!choices.children.length;document.querySelector('#usePantryDialog').showModal();
   }
 
@@ -4173,11 +4188,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function ingredientQuantityLabel(ingredient) {
     let amount='';
+    const legacyRange = legacyRangeIngredient(ingredient);
     const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
-    if (displayRange) amount=scaleDisplayQuantityRange(displayRange, activeScale);
+    if (legacyRange) amount=scaleDisplayQuantityRange(legacyRange.range, activeScale);
+    else if (displayRange) amount=scaleDisplayQuantityRange(displayRange, activeScale);
     else if (ingredient.displayQuantity && ingredient.scalable === false) amount=ingredient.displayQuantity;
     else if (typeof ingredient.quantity === 'number') amount=formatFraction(ingredientShouldScale(ingredient) ? ingredient.quantity * activeScale : ingredient.quantity);
-    return [amount, ingredient.unit].filter(Boolean).join(' ').trim();
+    return [amount, effectiveIngredientUnit(ingredient)].filter(Boolean).join(' ').trim();
   }
   function cleanShoppingName(item) { return normalizeShoppingName(item); }
   function openIngredientShopping(recipe){
@@ -4186,7 +4203,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if(group.name&&group.name!=='Main'){const h=document.createElement('h3');h.textContent=group.name;els.ingredientShoppingChoices.append(h)}
       ;(group.ingredients||[]).forEach(ing=>{
         const label=document.createElement('label');label.className='ingredient-choice';
-        const embedded=extractEmbeddedShoppingQuantity(ing.item);
+        const embedded=extractEmbeddedShoppingQuantity(effectiveIngredientItem(ing));
         const name=cleanShoppingName(embedded.name); const quantity=ingredientQuantityLabel(ing) || embedded.quantity;
         label.innerHTML=`<input type="checkbox" data-item="${escapeHtml(name)}" data-quantity="${escapeHtml(quantity)}" checked><span>${formatIngredient(ing)}</span>`;
         els.ingredientShoppingChoices.append(label)
