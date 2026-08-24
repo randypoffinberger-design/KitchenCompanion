@@ -32,6 +32,14 @@
     return { low, high, suffix:(match[3] || '').trim() };
   }
 
+  function parseQuantity(value) {
+    const match = String(value || '').trim().match(new RegExp(`^(${TOKEN})(?:\\s+(.*))?$`));
+    if (!match) return null;
+    const amount = parseToken(match[1]);
+    if (!Number.isFinite(amount)) return null;
+    return { amount, suffix:(match[2] || '').trim() };
+  }
+
   function formatNumber(value) {
     const whole = Math.floor(value + 1e-8);
     const fraction = value - whole;
@@ -45,6 +53,11 @@
   function scaleRange(range, scale) {
     const result = `${formatNumber(range.low * scale)}–${formatNumber(range.high * scale)}`;
     return range.suffix ? `${result} ${range.suffix}` : result;
+  }
+
+  function scaleQuantity(quantity, scale) {
+    const result = formatNumber(quantity.amount * scale);
+    return quantity.suffix ? `${result} ${quantity.suffix}` : result;
   }
 
   function parseIngredientText(value) {
@@ -69,7 +82,9 @@
     return parseIngredientText(ingredient.item);
   }
 
-  function shouldScale(ingredient) { return ingredient?.scalable !== false || Boolean(parseRange(ingredient?.displayQuantity)); }
+  function shouldScale(ingredient) {
+    return ingredient?.scalable !== false || Boolean(parseRange(ingredient?.displayQuantity)) || Boolean(parseQuantity(ingredient?.displayQuantity));
+  }
 
-  return Object.freeze({ parseRange, parseIngredientText, parseIngredientRange, scaleRange, shouldScale });
+  return Object.freeze({ parseRange, parseQuantity, parseIngredientText, parseIngredientRange, scaleRange, scaleQuantity, shouldScale });
 });
