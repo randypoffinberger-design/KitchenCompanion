@@ -543,12 +543,42 @@
         let repaired = step;
         if (halfCupOil && /\b(?:olive\s+)?oil\b/i.test(repaired)) repaired = repaired.replace(/\babout\s+2\s+cups?\b/i, 'about 1/2 cup');
         repaired = repaired.replace(/\b(Add the soft butter,\s*)2\s+tsp\s+salt\b/i, (match, prefix) => `${prefix}1/2 tsp salt`);
-        return repaired;
+        return repaired
+          .replace(/\s+\d{1,2}:\d{2}[\s\S]*$/i, '')
+          .replace(/([.!?])\1+/g, '$1')
+          .trim();
       });
       result.description = description.join(' ').replace(/\bflavorpacked\b/gi, 'flavor-packed').replace(/\btomatobasil\b/gi, 'tomato-basil').trim();
-      if (equipment.length) notes.push(`Equipment:\n${equipment.map(value => `- ${value}`).join('\n')}`);
-      if (nutrition.length) notes.push(`Nutrition:\n${nutrition.join('\n')}`);
-      result.notes = notes.join('\n').trim();
+      const recoveredTitle = splitRepeatedTitleLead(result.description);
+      if (result.name === 'Imported Recipe' && recoveredTitle.length > 1) {
+        result.name = recoveredTitle[0];
+        result.description = recoveredTitle.slice(1).join(' ');
+      }
+      result.description = result.description
+        .replace(/\s+(?:(?:®|©|Co)\s*)+$/i, '')
+        .trim();
+      for (let index = 0; index < result.tags.length - 1; index++) {
+        if (/\btomato\s+basil$/i.test(result.tags[index]) && /^pasta$/i.test(result.tags[index + 1])) {
+          result.tags.splice(index, 2, `${result.tags[index]} pasta`);
+          index--;
+        }
+      }
+      const equipmentNouns = /\b(?:saucepan|pan|pot|skillet|dish|spoon|bowl|press|knife|sheet|rack|whisk|blender|mixer|thermometer|scale|processor|oven|grill|tongs?|spatula|colander|strainer|peeler|board)\b/i;
+      const cleanEquipment = equipment.map(value => value
+        .replace(/^(?:e|oe|o|¢)\s+(?=[A-Z])/i, '')
+        .replace(/\s+/g, ' ')
+        .trim())
+        .filter(value => equipmentNouns.test(value) && !/\b(?:cost|calories?|reset|advertisement|sponsored)\b/i.test(value));
+      if (cleanEquipment.length) notes.push(`Equipment:\n${[...new Set(cleanEquipment)].map(value => `- ${value}`).join('\n')}`);
+      const cleanNutrition = nutrition.map(value => value
+        .replace(/\s+(?:https?:\/\/|Information from your device|A Raptive Partner Site)[\s\S]*$/i, '')
+        .trim())
+        .filter(value => value && !/https?:\/\/|^hp\s*[—-]?$|^Information from your device\b|^A Raptive Partner Site\b/i.test(value));
+      if (cleanNutrition.length) notes.push(`Nutrition:\n${cleanNutrition.join('\n')}`);
+      result.notes = notes.join('\n')
+        .replace(/Cost:\s*\$?(\d+)\s*[-–]\s*%?\$?(\d+)/gi, 'Cost: $$$1–$$$2')
+        .replace(/([.!?])\1+/g, '$1')
+        .trim();
       return result;
     }
   }

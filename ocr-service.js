@@ -219,6 +219,10 @@
       /^(?:how to reset your cortisol belly|eat these foods every day)$/i,
       /^(?:enjoy a lifetime of firsts|live connected[.]? live invested[.]?|discover a resident-owned community)/i,
       /^(?:do not sell or share my personal information|terms of content use)[.]?$/i,
+      /^.*https?:\/\/\S+.*$/i,
+      /^information from your device\b/i,
+      /^a raptive partner site\b/i,
+      /^hp\s*[—-]?$/i,
       /^\d{1,2}:\d{2}\b.*(?:wifi|5g|[0-9]{1,3})/i,
       /^(?:deck out your dorm|our best price on gig wifi is here)/i,
       /^(?:nexdoo|keystone|xfinity|amazon)\b/i,
@@ -274,6 +278,30 @@
     }
     const dedup=[]; for(const entry of joined){ const line=entry.line,key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({...entry,line,key}); }
     return dedup.map(x=>x.bullet?`- ${x.line}`:x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?|equipment|nutrition)\b)/gi,'\n\n');
+  }
+
+  const nutritionLabels = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated(?: Fat)?|Polyunsaturated(?: Fat)?|Monounsaturated(?: Fat)?|Trans(?: Fat)?|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/gi;
+  function extractNutritionText(text) {
+    let value=String(text||'').replace(/\r/g,'').trim();
+    const heading=value.search(/\bNutrition\b/i),calories=value.search(/\bCalories\b/i);
+    const start=heading>=0?heading:calories;
+    if(start<0)return '';
+    value=value.slice(start)
+      .replace(/^.*?\bNutrition\b\s*:?[ \t]*/i,'')
+      .replace(/\s+(?:https?:\/\/|Information from your device|A Raptive Partner Site|Do not sell or share my personal information|Terms of Content Use)[\s\S]*$/i,'')
+      .split(/\n/)
+      .map(normalizeLine)
+      .filter(line=>line&&!/^hp\s*[—-]?$/i.test(line))
+      .join('\n')
+      .trim();
+    return value?`Nutrition\n${value}`:'';
+  }
+  function nutritionTextScore(text) {
+    const value=extractNutritionText(text),labels=value.match(nutritionLabels)||[];
+    return new Set(labels.map(label=>label.toLowerCase())).size*100+(value.match(/\b\d+(?:[.]\d+)?\s*(?:kcal|cal|g|mg|mcg|iu|%)?\b/gi)||[]).length;
+  }
+  function chooseNutritionText(candidates) {
+    return (candidates||[]).map(extractNutritionText).filter(Boolean).sort((a,b)=>nutritionTextScore(b)-nutritionTextScore(a)||b.length-a.length)[0]||'';
   }
 
   function trimAuxiliarySections(page) {
@@ -431,7 +459,27 @@
         attempts.push({text,confidence,score:scoreText(text,confidence)+(recoveredEnding?300:45)});
       }
     }
-    attempts.sort((a,b)=>b.score-a.score); return attempts[0]||{text:'',confidence:0,score:0};
+    let nutritionSupplement='';
+    if(/\b(?:Nutrition|Calories|Carbohydrates)\b/i.test(layoutHints)){
+      const candidates=[...attempts.map(attempt=>attempt.text)],plans=[
+        {mode:'detail',region:{x:.02,y:.24,width:.96,height:.58},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
+        {mode:'threshold',region:{x:.02,y:.24,width:.96,height:.62},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
+        {mode:'detail',region:{x:.02,y:.30,width:.96,height:.54},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
+      ];
+      for(const plan of plans){const canvas=await makeCanvas(file,plan.mode,plan.region);try{
+        await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});
+        const result=await ocrWorker.recognize(canvas,{rotateAuto:false});
+        candidates.push(String(result.data?.text||''));
+      }finally{canvas.width=1;canvas.height=1;}}
+      nutritionSupplement=chooseNutritionText(candidates);
+    }
+    attempts.sort((a,b)=>b.score-a.score);
+    const selected=attempts[0]||{text:'',confidence:0,score:0};
+    if(nutritionSupplement){
+      const prefix=selected.text.replace(/\n?\s*Nutrition\b[\s\S]*$/i,'').trim();
+      selected.text=`${prefix}${prefix?'\n':''}${nutritionSupplement}`;
+    }
+    return selected;
   }
 
   async function readImages(event) {
@@ -446,5 +494,5 @@
   openPaste?.addEventListener('click',()=>{ document.querySelector('#imageRecipeDialog')?.close(); const paste=document.querySelector('#pasteRecipeDialog'); const textarea=document.querySelector('#pastedRecipeText'); if(output.value.trim())textarea.value=output.value; paste?.showModal(); textarea?.focus(); });
   output.addEventListener('input',event=>{if(event.isTrusted&&output.dataset.ocrQuality==='low')output.dataset.ocrQuality='edited';});
   button.addEventListener('click',readImages,{capture:true}); window.addEventListener('pagehide',()=>{worker?.terminate?.();worker=null;});
-  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText };
+  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText, extractNutritionText, nutritionTextScore, chooseNutritionText };
 })();

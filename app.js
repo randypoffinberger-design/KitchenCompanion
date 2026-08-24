@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.17';
+  const ENGINE_VERSION = '0.21.18';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -313,6 +313,11 @@
     els.menuBtn.addEventListener('click', () => toggleSidebar(true));
     els.scrim.addEventListener('click', () => toggleSidebar(false));
     els.searchInput.addEventListener('input', renderRecipeList);
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || !event.target?.matches?.('input[type="search"]')) return;
+      event.preventDefault();
+      event.target.blur();
+    });
     els.clearSearchBtn.addEventListener('click', () => { els.searchInput.value = ''; renderRecipeList(); els.searchInput.focus(); });
     els.moduleFilter.addEventListener('change', renderRecipeList);
     els.categoryFilter.addEventListener('change', renderRecipeList);
@@ -1112,7 +1117,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.17').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.18').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2756,7 +2761,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.17');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.18');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

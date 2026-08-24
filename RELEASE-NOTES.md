@@ -1,4 +1,11 @@
-# Serenity Kitchen v0.21.17
+# Serenity Kitchen v0.21.18
+
+## v0.21.18
+
+- Adds a dedicated Nutrition OCR pass and keeps the most complete nutrient block, including lower-page Fiber, vitamins, Calcium, and Iron values.
+- Recovers repeated titles from malformed imported descriptions and removes trademark, webpage footer, phone-status, and advertising debris.
+- Validates Equipment entries, joins wrapped tags, normalizes malformed cost ranges, and repairs repeated instruction punctuation.
+- Pressing Enter in any search field now keeps the results and dismisses the on-screen keyboard.
 
 ## v0.21.17
 
