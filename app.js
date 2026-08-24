@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.28';
+  const ENGINE_VERSION = '0.21.29';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -492,9 +492,12 @@
     document.querySelector('#pantrySelectAll')?.addEventListener('click', selectAllPantry);
     document.querySelector('#pantryBulkDelete')?.addEventListener('click', deleteSelectedPantryItems);
     document.querySelector('#pantryItemForm')?.addEventListener('submit', savePantryItem);
+    document.querySelector('#pantryLotForm')?.addEventListener('submit', savePantryLot);
     ['pantryItemName','pantryItemQuantity','pantryItemUnit','pantryConversionProfile'].forEach(id=>document.querySelector(`#${id}`)?.addEventListener('input', updatePantryConversionPreview));
     document.querySelector('#closePantryItem')?.addEventListener('click', () => document.querySelector('#pantryItemDialog')?.close());
     document.querySelector('#cancelPantryItem')?.addEventListener('click', () => document.querySelector('#pantryItemDialog')?.close());
+    document.querySelector('#closePantryLot')?.addEventListener('click', () => document.querySelector('#pantryLotDialog')?.close());
+    document.querySelector('#cancelPantryLot')?.addEventListener('click', () => document.querySelector('#pantryLotDialog')?.close());
     document.querySelector('#closeUsePantry')?.addEventListener('click', () => document.querySelector('#usePantryDialog')?.close());
     document.querySelector('#cancelUsePantry')?.addEventListener('click', () => document.querySelector('#usePantryDialog')?.close());
     document.querySelector('#confirmUsePantry')?.addEventListener('click', confirmUsePantryIngredients);
@@ -1097,7 +1100,9 @@
     const normalizedRegularItems = consolidateRegularItems(state.regularItems || []);
     if (normalizedRegularItems.length !== (state.regularItems || []).length || JSON.stringify(normalizedRegularItems) !== JSON.stringify(state.regularItems || [])) changed = true;
     state.regularItems = normalizedRegularItems;
-    state.pantryItems = (state.pantryItems || []).map(normalizePantryItem);
+    const normalizedPantryItems=(state.pantryItems||[]).map(normalizePantryItem);
+    if(JSON.stringify(normalizedPantryItems)!==JSON.stringify(state.pantryItems||[]))changed=true;
+    state.pantryItems=normalizedPantryItems;
     return changed;
   }
 
@@ -1122,7 +1127,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.28').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.29').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2881,7 +2886,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.28');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.29');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3929,15 +3934,46 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return `<span class="pantry-readiness pantry-readiness-${escapeHtml(status)} ${style==='outline'?'pantry-readiness-outline':''}" title="${labels[status]}" role="img" aria-label="${labels[status]}"></span>`;
   }
 
+  function pantryToday() {
+    const now=new Date(),offset=now.getTimezoneOffset()*60000;
+    return new Date(now.getTime()-offset).toISOString().slice(0,10);
+  }
+
+  function normalizePantryLot(lot={},unit='items') {
+    const purchasedAt=/^\d{4}-\d{2}-\d{2}$/.test(String(lot.purchasedAt||''))?String(lot.purchasedAt):'';
+    return {id:lot.id||pantryId(),quantity:Math.max(0,Number(lot.quantity)||0),unit:normalizePantryUnit(lot.unit||unit),purchasedAt,store:String(lot.store||'').trim(),source:String(lot.source||'').trim(),createdAt:lot.createdAt||new Date().toISOString()};
+  }
+
+  function pantryLotTotal(item) {return (item.lots||[]).reduce((sum,lot)=>sum+Math.max(0,Number(lot.quantity)||0),0);}
+
+  function sortPantryLots(lots=[]) {
+    return [...lots].sort((a,b)=>(a.purchasedAt||'0000-00-00').localeCompare(b.purchasedAt||'0000-00-00')||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+  }
+
+  function deductPantryLots(item,amount) {
+    let remaining=Math.max(0,Number(amount)||0);
+    item.lots=sortPantryLots(item.lots).map(lot=>{if(!remaining)return lot;const used=Math.min(remaining,Number(lot.quantity)||0);remaining-=used;return {...lot,quantity:Math.max(0,(Number(lot.quantity)||0)-used)};}).filter(lot=>Number(lot.quantity)>0);
+    item.quantity=pantryLotTotal(item);item.updatedAt=new Date().toISOString();
+  }
+
+  function reconcilePantryLots(item,targetQuantity,lotMeta={}) {
+    const target=Math.max(0,Number(targetQuantity)||0),current=pantryLotTotal(item);
+    if(target<current)deductPantryLots(item,current-target);
+    else if(target>current)item.lots.push(normalizePantryLot({quantity:target-current,purchasedAt:lotMeta.purchasedAt||'',store:lotMeta.store||'',source:lotMeta.source||'Inventory adjustment'},item.unit));
+    item.quantity=pantryLotTotal(item);
+  }
+
   function normalizePantryItem(item={}) {
     const name=displayShoppingName(item.name);
-    return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:Math.max(0,Number(item.quantity)||0),unit:normalizePantryUnit(item.unit||'items'),group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),conversionProfile:item.conversionProfile||detectPantryConversionProfile(name),estimated:!!item.estimated,sourceQuantity:Number(item.sourceQuantity)||0,sourceUnit:normalizePantryUnit(item.sourceUnit||''),autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),updatedAt:item.updatedAt||new Date().toISOString()};
+    const unit=normalizePantryUnit(item.unit||'items'),quantity=Math.max(0,Number(item.quantity)||0);
+    const lots=Array.isArray(item.lots)&&item.lots.length?item.lots.map(lot=>normalizePantryLot(lot,unit)).filter(lot=>lot.quantity>0):(quantity>0?[normalizePantryLot({quantity,unit,purchasedAt:item.purchasedAt||'',store:item.store||'',source:item.source||'Existing inventory'},unit)]:[]);
+    return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:lots.reduce((sum,lot)=>sum+lot.quantity,0),unit,group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),conversionProfile:item.conversionProfile||detectPantryConversionProfile(name),estimated:!!item.estimated,sourceQuantity:Number(item.sourceQuantity)||0,sourceUnit:normalizePantryUnit(item.sourceUnit||''),lots,autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),updatedAt:item.updatedAt||new Date().toISOString()};
   }
 
   function upsertPantryItem(source) {
     const incoming=normalizePantryItem(preparePantrySource(source));
     let item=state.pantryItems.find(entry=>shoppingNameKey(entry.normalizedName||entry.name)===incoming.normalizedName && normalizePantryUnit(entry.unit)===incoming.unit);
-    if(item){item.quantity=Math.max(0,(Number(item.quantity)||0)+incoming.quantity);item.group=incoming.group;item.estimated=!!(item.estimated||incoming.estimated);item.conversionProfile=item.conversionProfile||incoming.conversionProfile;item.updatedAt=new Date().toISOString();}
+    if(item){item.lots=[...(item.lots||[]),...(incoming.lots||[])];item.quantity=pantryLotTotal(item);item.group=incoming.group;item.estimated=!!(item.estimated||incoming.estimated);item.conversionProfile=item.conversionProfile||incoming.conversionProfile;item.updatedAt=new Date().toISOString();}
     else {item=incoming;state.pantryItems.push(item);}
     checkPantryRestock(item);
     return item;
@@ -3954,7 +3990,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if(!purchased.length)return showShoppingActionStatus('Check purchased items first, then move them to Pantry.');
     purchased.forEach(item=>{
       const entries=item.entries?.length?item.entries:[{quantity:'1 item'}];
-      entries.forEach(entry=>{const amount=parsePantryAmount(entry.quantity);upsertPantryItem({name:item.name,quantity:amount.quantity,unit:amount.unit,group:item.group});});
+      entries.forEach(entry=>{const amount=parsePantryAmount(entry.quantity);upsertPantryItem({name:item.name,quantity:amount.quantity,unit:amount.unit,group:item.group,purchasedAt:pantryToday(),store:item.store&&item.store!=='Unassigned'?item.store:'',source:'Shopping list purchase'});});
     });
     state.shoppingList=state.shoppingList.filter(item=>!item.checked);
     saveState();renderShoppingList();renderCounts();showShoppingActionStatus(`${purchased.length} purchased item${purchased.length===1?'':'s'} moved to Pantry.`);
@@ -3996,20 +4032,24 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';const groupCount=items.filter(entry=>entry.group===group).length;heading.innerHTML=`<span>${escapeHtml(group)}</span><small>${groupCount}</small>`;root.append(heading);}
       const low=Number(item.quantity)<=Number(item.threshold);const expanded=!pantrySelectionMode&&pantryExpandedId===item.id;const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${expanded?' pantry-expanded':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
       const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
-      row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${uiIcon(expanded?'chevron-up':'chevron-down')}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}</div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
+      const lotRows=sortPantryLots(item.lots).map(lot=>`<div class="pantry-lot-row" data-lot-id="${escapeHtml(lot.id)}"><div><strong>${escapeHtml(formatNumber(lot.quantity))} ${escapeHtml(item.unit)}</strong><small>${lot.purchasedAt?escapeHtml(new Date(`${lot.purchasedAt}T12:00:00`).toLocaleDateString()):'Date not recorded'} · ${escapeHtml(lot.store||'Store not recorded')}</small></div><div><button type="button" class="pantry-lot-edit">Edit</button><button type="button" class="pantry-lot-remove danger-text">Remove</button></div></div>`).join('');
+      row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${uiIcon(expanded?'chevron-up':'chevron-down')}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}<div class="pantry-lot-list"><div class="pantry-lot-heading"><b>Purchases</b><button type="button" class="pantry-add-lot">＋ Add purchase</button></div>${lotRows||'<small>No purchase records</small>'}</div></div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
       row.querySelector('.pantry-select-check')?.addEventListener('change',event=>{event.target.checked?pantrySelectedIds.add(item.id):pantrySelectedIds.delete(item.id);renderPantry();});
       const toggle=()=>{pantryExpandedId=pantryExpandedId===item.id?null:item.id;renderPantry();};
       row.querySelector('.pantry-name-toggle')?.addEventListener('click',toggle);row.querySelector('.pantry-detail-toggle')?.addEventListener('click',toggle);
       row.querySelector('.pantry-minus')?.addEventListener('click',()=>adjustPantryItem(item,-1));row.querySelector('.pantry-plus')?.addEventListener('click',()=>adjustPantryItem(item,1));
+      row.querySelector('.pantry-add-lot')?.addEventListener('click',()=>openPantryLotDialog(item));
+      row.querySelectorAll('.pantry-lot-row').forEach(lotRow=>{const lot=item.lots.find(entry=>entry.id===lotRow.dataset.lotId);lotRow.querySelector('.pantry-lot-edit')?.addEventListener('click',()=>openPantryLotDialog(item,lot));lotRow.querySelector('.pantry-lot-remove')?.addEventListener('click',()=>removePantryLot(item,lot));});
       row.querySelector('.pantry-edit')?.addEventListener('click',()=>openPantryItemDialog(item));row.querySelector('.pantry-remove')?.addEventListener('click',()=>{if(confirm(`Remove ${item.name} from Pantry?`)){state.pantryItems=state.pantryItems.filter(entry=>entry.id!==item.id);saveState();renderPantry();renderCounts();}});
       root.append(row);
     });
   }
 
-  function adjustPantryItem(item,change) {item.quantity=Math.max(0,Number(item.quantity)+change);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();renderPantry();renderCounts();}
+  function adjustPantryItem(item,change) {if(change<0)deductPantryLots(item,Math.abs(change));else reconcilePantryLots(item,Number(item.quantity)+change,{source:'Inventory adjustment'});item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();renderPantry();renderCounts();}
 
   function openPantryItemDialog(item=null) {
     const form=document.querySelector('#pantryItemForm');form.reset();document.querySelector('#pantryItemDialogTitle').textContent=item?'Edit pantry item':'Add pantry item';document.querySelector('#pantryItemId').value=item?.id||'';document.querySelector('#pantryItemName').value=item?.name||'';document.querySelector('#pantryItemQuantity').value=item?.quantity??1;document.querySelector('#pantryItemUnit').value=item?.unit||'items';
+    document.querySelector('#pantryInitialLotFields').hidden=!!item;document.querySelector('#pantryPurchaseDate').value=item?'':pantryToday();populatePantryStoreSelect(document.querySelector('#pantryPurchaseStore'),'');
     const profile=document.querySelector('#pantryConversionProfile');profile.innerHTML='<option value="">Automatic by item name</option>'+Object.entries(PANTRY_CONVERSION_PROFILES).map(([id,value])=>`<option value="${escapeHtml(id)}">${escapeHtml(value.label)}</option>`).join('');profile.value=item?.conversionProfile||'';
     const group=document.querySelector('#pantryItemGroup');group.innerHTML=SHOPPING_GROUPS.map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');group.value=item?.group||'Pantry';document.querySelector('#pantryAutoRestock').checked=!!item?.autoRestock;document.querySelector('#pantryItemThreshold').value=item?.threshold??0;document.querySelector('#pantryRestockQuantity').value=item?.restockQuantity||'';updatePantryConversionPreview();document.querySelector('#pantryItemDialog').showModal();
   }
@@ -4022,13 +4062,30 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   }
 
   function savePantryItem(event) {
-    event.preventDefault();const id=document.querySelector('#pantryItemId').value;const existing=state.pantryItems.find(item=>item.id===id);const enteredUnit=document.querySelector('#pantryItemUnit').value;const item=normalizePantryItem(preparePantrySource({id:id||pantryId(),name:document.querySelector('#pantryItemName').value,quantity:document.querySelector('#pantryItemQuantity').value,unit:enteredUnit,conversionProfile:document.querySelector('#pantryConversionProfile').value,group:document.querySelector('#pantryItemGroup').value,autoRestock:document.querySelector('#pantryAutoRestock').checked,threshold:document.querySelector('#pantryItemThreshold').value,restockQuantity:document.querySelector('#pantryRestockQuantity').value}));
+    event.preventDefault();const id=document.querySelector('#pantryItemId').value;const existing=state.pantryItems.find(item=>item.id===id);const enteredUnit=document.querySelector('#pantryItemUnit').value;const source={id:id||pantryId(),name:document.querySelector('#pantryItemName').value,quantity:document.querySelector('#pantryItemQuantity').value,unit:enteredUnit,conversionProfile:document.querySelector('#pantryConversionProfile').value,group:document.querySelector('#pantryItemGroup').value,autoRestock:document.querySelector('#pantryAutoRestock').checked,threshold:document.querySelector('#pantryItemThreshold').value,restockQuantity:document.querySelector('#pantryRestockQuantity').value,purchasedAt:document.querySelector('#pantryPurchaseDate').value,store:document.querySelector('#pantryPurchaseStore').value,source:'Manual pantry entry'};const item=normalizePantryItem(preparePantrySource(source));
     if(existing?.estimated&&normalizePantryUnit(enteredUnit)===existing.unit){item.estimated=true;item.sourceQuantity=existing.sourceQuantity;item.sourceUnit=existing.sourceUnit;}
-    if(existing)Object.assign(existing,item);else state.pantryItems.push(item);checkPantryRestock(existing||item);saveState();document.querySelector('#pantryItemDialog').close();renderPantry();renderCounts();
+    if(existing){const oldLots=existing.lots||[];Object.assign(existing,item,{lots:oldLots});reconcilePantryLots(existing,item.quantity,{source:'Inventory adjustment'});}else state.pantryItems.push(item);checkPantryRestock(existing||item);saveState();document.querySelector('#pantryItemDialog').close();renderPantry();renderCounts();
   }
 
-  function openBulkPantryDialog() {document.querySelector('#bulkPantryForm').reset();document.querySelector('#bulkPantryStatus').textContent='';document.querySelector('#bulkPantryDialog').showModal();}
-  function addBulkPantryItems(event) {event.preventDefault();const lines=parseBulkShoppingLines(document.querySelector('#bulkPantryText').value);lines.forEach(line=>{const parsed=extractBulkShoppingQuantity(line);const amount=parsePantryAmount(parsed.quantity);upsertPantryItem({name:parsed.name,quantity:amount.quantity,unit:amount.unit,group:classifyShoppingGroup(parsed.name)});});saveState();renderPantry();renderCounts();document.querySelector('#bulkPantryStatus').textContent=`${lines.length} entr${lines.length===1?'y':'ies'} added to Pantry.`;setTimeout(()=>document.querySelector('#bulkPantryDialog').close(),800);}
+  function populatePantryStoreSelect(select,value='') {
+    if(!select)return;const stores=[...new Set(['',...(state.stores||[]).filter(store=>store&&store!=='Unassigned'),value].filter((store,index)=>index===0||store))];
+    select.innerHTML=stores.map(store=>`<option value="${escapeHtml(store)}">${escapeHtml(store||'Store not recorded')}</option>`).join('');select.value=stores.includes(value)?value:'';
+  }
+
+  function openPantryLotDialog(item,lot=null) {
+    document.querySelector('#pantryLotForm').reset();document.querySelector('#pantryLotDialogTitle').textContent=lot?'Edit purchase':'Add purchase';document.querySelector('#pantryLotItemId').value=item.id;document.querySelector('#pantryLotId').value=lot?.id||'';document.querySelector('#pantryLotQuantity').value=lot?.quantity??1;document.querySelector('#pantryLotDate').value=lot?.purchasedAt||pantryToday();populatePantryStoreSelect(document.querySelector('#pantryLotStore'),lot?.store||'');document.querySelector('#pantryLotDialog').showModal();
+  }
+
+  function savePantryLot(event) {
+    event.preventDefault();const item=state.pantryItems.find(entry=>entry.id===document.querySelector('#pantryLotItemId').value);if(!item)return;
+    const lotId=document.querySelector('#pantryLotId').value,existing=item.lots.find(lot=>lot.id===lotId),lot=normalizePantryLot({id:lotId||pantryId(),quantity:document.querySelector('#pantryLotQuantity').value,unit:item.unit,purchasedAt:document.querySelector('#pantryLotDate').value,store:document.querySelector('#pantryLotStore').value,source:existing?.source||'Manual purchase record',createdAt:existing?.createdAt});
+    if(existing)Object.assign(existing,lot);else item.lots.push(lot);item.lots=item.lots.filter(entry=>entry.quantity>0);item.quantity=pantryLotTotal(item);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();document.querySelector('#pantryLotDialog').close();renderPantry();renderCounts();
+  }
+
+  function removePantryLot(item,lot) {if(!lot||!confirm(`Remove this purchase record from ${item.name}?`))return;item.lots=item.lots.filter(entry=>entry.id!==lot.id);item.quantity=pantryLotTotal(item);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();renderPantry();renderCounts();}
+
+  function openBulkPantryDialog() {document.querySelector('#bulkPantryForm').reset();document.querySelector('#bulkPantryPurchaseDate').value=pantryToday();populatePantryStoreSelect(document.querySelector('#bulkPantryPurchaseStore'),'');document.querySelector('#bulkPantryStatus').textContent='';document.querySelector('#bulkPantryDialog').showModal();}
+  function addBulkPantryItems(event) {event.preventDefault();const lines=parseBulkShoppingLines(document.querySelector('#bulkPantryText').value),purchasedAt=document.querySelector('#bulkPantryPurchaseDate').value,store=document.querySelector('#bulkPantryPurchaseStore').value;lines.forEach(line=>{const parsed=extractBulkShoppingQuantity(line);const amount=parsePantryAmount(parsed.quantity);upsertPantryItem({name:parsed.name,quantity:amount.quantity,unit:amount.unit,group:classifyShoppingGroup(parsed.name),purchasedAt,store,source:'Bulk pantry entry'});});saveState();renderPantry();renderCounts();document.querySelector('#bulkPantryStatus').textContent=`${lines.length} entr${lines.length===1?'y':'ies'} added to Pantry.`;setTimeout(()=>document.querySelector('#bulkPantryDialog').close(),800);}
   function togglePantryLowOnly() {const button=document.querySelector('#pantryLowOnly');const active=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active);renderPantry();}
   function beginPantrySelection(){pantrySelectionMode=true;pantryExpandedId=null;pantrySelectedIds.clear();renderPantry();}
   function cancelPantrySelection(){pantrySelectionMode=false;pantrySelectedIds.clear();renderPantry();}
@@ -4041,7 +4098,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     document.querySelector('#usePantryStatus').textContent=choices.children.length?'':'No recipe ingredients matched items in Pantry.';document.querySelector('#confirmUsePantry').disabled=!choices.children.length;document.querySelector('#usePantryDialog').showModal();
   }
 
-  function confirmUsePantryIngredients(){let used=0;document.querySelectorAll('[data-pantry-use]:checked').forEach(check=>{const item=state.pantryItems.find(entry=>entry.id===check.dataset.pantryUse);const amount=Math.max(0,Number(check.closest('.pantry-use-row').querySelector('.pantry-use-amount').value)||0);if(!item||!amount)return;item.quantity=Math.max(0,Number(item.quantity)-amount);item.updatedAt=new Date().toISOString();checkPantryRestock(item);used++;});saveState();renderCounts();document.querySelector('#usePantryStatus').textContent=`Updated ${used} pantry item${used===1?'':'s'}.`;setTimeout(()=>document.querySelector('#usePantryDialog').close(),700);}
+  function confirmUsePantryIngredients(){let used=0;document.querySelectorAll('[data-pantry-use]:checked').forEach(check=>{const item=state.pantryItems.find(entry=>entry.id===check.dataset.pantryUse);const amount=Math.max(0,Number(check.closest('.pantry-use-row').querySelector('.pantry-use-amount').value)||0);if(!item||!amount)return;deductPantryLots(item,amount);checkPantryRestock(item);used++;});saveState();renderCounts();document.querySelector('#usePantryStatus').textContent=`Updated ${used} pantry item${used===1?'':'s'}.`;setTimeout(()=>document.querySelector('#usePantryDialog').close(),700);}
 
   function showShopping() {
     closeShoppingMoreActions();

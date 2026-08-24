@@ -1,7 +1,12 @@
-# Serenity Kitchen v0.21.28
+# Serenity Kitchen v0.21.29
 
-## v0.21.28
+## v0.21.29
 
+- Tracks Pantry inventory as purchase lots with quantity, purchase date, and store while keeping one combined item card.
+- Records today and the selected store when checked Shopping List items move into Pantry.
+- Lets users add, edit, and remove purchase records independently in an expanded Pantry card.
+- Deducts the oldest recorded stock first when inventory is used or reduced.
+- Migrates existing Pantry quantities into safe `Date not recorded · Store not recorded` lots.
 - Prevents the generic pipe-symbol clutter filter from deleting valid Nutrition lines containing nutrient labels and measurements.
 - Adds the exact iPhone-recognized Garlic Butter Pasta Nutrition block as a parser regression test.
 - Detects an empty nutrient value even when unrelated OCR text follows the colon on the same line.
