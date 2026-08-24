@@ -1,7 +1,11 @@
-# Serenity Kitchen v0.21.26
+# Serenity Kitchen v0.21.27
 
-## v0.21.26
+## v0.21.27
 
+- Detects an empty nutrient value even when unrelated OCR text follows the colon on the same line.
+- Distinguishes a valid numeric value on the next line from a truly unfinished Nutrition field.
+- Accepts lower Nutrition recovery when only one nutrient label survives clearly but several numeric measurements are present.
+- Shows a short excerpt of the rejected lower OCR result when Nutrition remains incomplete.
 - Adds an explicit dark-screenshot inversion pass so dim lower Nutrition rows are presented to iPhone OCR as dark text on white.
 - Keeps an import visibly flagged when Nutrition still contains a label with no value after all recovery passes.
 - Detects an unfinished Nutrition value even when later screenshot text follows it in the combined OCR document.
