@@ -152,6 +152,7 @@
     return line
       .replace(/[ \t]+/g,' ')
       .replace(/^[•*▪◦«»+]+\s*/,'')
+      .replace(/^(?:e|¢|©)\s+(?=(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|small\b|salt\b|extra\b|fresh\b))/i,'')
       .replace(/^[.,]\s+(?=(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip)\b)/i,'')
       .replace(/\s+([,.;:!?])/g,'$1')
       .replace(/\bI\s*\/\s*2\b/gi,'1/2')
@@ -213,6 +214,13 @@
       /^(?:©|all rights reserved|privacy policy|terms of use)/i,
       /^(?:home|recipes|about|contact|menu)$/i,
       /^(?:open in app|download app|view comments|read more|show less)$/i,
+      /^(?:learn more|see the list|drveganblog[.]com)$/i,
+      /^(?:how to reset your cortisol belly|eat these foods every day)$/i,
+      /^(?:enjoy a lifetime of firsts|live connected[.]? live invested[.]?|discover a resident-owned community)/i,
+      /^(?:do not sell or share my personal information|terms of content use)$/i,
+      /^\d{1,2}:\d{2}\b.*(?:wifi|5g|[0-9]{1,3})/i,
+      /^(?:deck out your dorm|our best price on gig wifi is here)/i,
+      /^(?:nexdoo|keystone|xfinity|amazon)\b/i,
       /^(?:recipe\s+)?courtesy\s+of\b/i,
       /^(?:photo|photograph|image)\s+(?:by|courtesy|credit)\b/i,
       /^(?:written|posted|updated|published|reviewed)\s+by\b/i
@@ -226,13 +234,18 @@
       .replace(/^[ \t]*1?0[ \t]+PPI[ \t]+N[ \t]*G5?[ \t]*[:.]?[ \t]*$/gim,'\nTOPPING:\n');
     let lines=repairedHeadings
       .split(/\r?\n/)
-      .flatMap(line=>line.split(/\s+(?=(?:(?:prep(?:aration)?|active|cook(?:ing)?)(?:\s*time)?|total\s*time)\s*[:：-]|(?:yield|serves|servings|makes)\s*[:：-])/i))
-      .map(normalizeLine)
-      .filter(Boolean)
-      .filter(line=>!/^\d+[.)]?$/.test(line));
+      .flatMap(raw=>raw.split(/\s+(?=(?:(?:prep(?:aration)?|active|cook(?:ing)?)(?:\s*time)?|total\s*time)\s*[:：-]|(?:yield|serves|servings|makes)\s*[:：-])/i).map(part=>({
+        raw:part,
+        line:normalizeLine(part),
+        bullet:/^\s*(?:[-•*▪◦]|[e¢©]\s+(?=(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|small\b|salt\b|extra\b|fresh\b)))/i.test(part),
+        numbered:/^\s*\d{1,2}[.)]\s*/.test(part)
+      })))
+      .filter(entry=>entry.line)
+      .filter(entry=>!/^\d+[.)]?$/.test(entry.line));
     if(removeClutter){
       let dropAttributionContinuation=false;
-      lines=lines.filter(line=>{
+      lines=lines.filter(entry=>{
+        const line=entry.line;
         const isAttribution=junk.slice(-3).some(rx=>rx.test(line));
         if(isAttribution){dropAttributionContinuation=true;return false;}
         if(dropAttributionContinuation&&/^[A-Z][A-Z'’-]{2,24}$/.test(line)){dropAttributionContinuation=false;return false;}
@@ -240,12 +253,43 @@
         return !junk.some(rx=>rx.test(line));
       });
     }
-    const dedup=[]; for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({line,key}); }
+    let section='meta'; const joined=[];
+    const ingredientStart=/^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|small\s+handful|salt\b|extra\b)/i;
+    const sectionHeading=/^(?:ingredients?|instructions?|directions?|method|steps|notes?|for\s+.+|equipment|nutrition)\s*:?[.]?$/i;
+    for(const entry of lines){
+      const h=entry.line.toLowerCase().replace(/[:.]$/,'').trim();
+      if(/^ingredients?$/.test(h))section='ingredients';
+      else if(/^(?:instructions?|directions?|method|steps)$/.test(h))section='instructions';
+      else if(/^(?:equipment|nutrition)$/.test(h))section=h;
+      const previous=joined[joined.length-1];
+      const continuation=previous&&!sectionHeading.test(entry.line)&&(
+        (section==='ingredients'&&!entry.bullet&&!ingredientStart.test(entry.line))
+        ||(section==='instructions'&&!entry.bullet&&!entry.numbered)
+      );
+      if(continuation)previous.line=`${previous.line} ${entry.line}`.replace(/-\s+/,'');
+      else joined.push({line:entry.line});
+    }
+    const dedup=[]; for(const entry of joined){ const line=entry.line,key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({line,key}); }
     return dedup.map(x=>x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?)\b)/gi,'\n\n');
   }
 
+  function trimAuxiliarySections(page) {
+    const lines=String(page||'').split(/\r?\n/),index=lines.findIndex(line=>/^(?:equipment|nutrition)\s*:?[.]?$/i.test(line.trim()));
+    return (index<0?lines:lines.slice(0,index)).join('\n').trim();
+  }
+
+  function pageShouldBeIgnored(page, allPages=[]) {
+    const text=trimAuxiliarySections(page), hasCore=/^(?:ingredients?|instructions?|directions?|method|steps)\b/im.test(text);
+    if(!text)return true;
+    if(hasCore)return false;
+    const laterHasCore=allPages.some(candidate=>candidate!==page&&/^(?:ingredients?|instructions?|directions?|method|steps)\b/im.test(String(candidate||'')));
+    if(!laterHasCore)return false;
+    return /\b(?:privacy policy|terms of content use|do not sell|calories:.*carbohydrates:|learn more|sponsored)\b/i.test(text);
+  }
+
   function combinePages(pages) {
-    const result=[]; for(const page of pages){ const lines=page.split('\n').filter(Boolean); for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue;
+    const retained=pages.filter(page=>!pageShouldBeIgnored(page,pages)).map(trimAuxiliarySections).filter(Boolean);
+    const result=[]; for(const page of retained){ const lines=page.split('\n').filter(Boolean); for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue;
       const start=Math.max(0,result.length-20);
       const duplicateIndex=result.findIndex((x,index)=>index>=start&&(x.key===key||(Math.min(key.length,x.key.length)>24&&(x.key.includes(key)||key.includes(x.key)))));
       if(duplicateIndex<0) result.push({line,key});
@@ -275,7 +319,7 @@
     ];
     for(const plan of plans){const canvas=await makeCanvas(file,plan.mode);try{
       await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});const result=await ocrWorker.recognize(canvas,{rotateAuto:true});
-      const text=String(result.data?.text||'').trim(),confidence=Number(result.data?.confidence||0);attempts.push({text,confidence,score:scoreText(text,confidence)});
+      const text=String(result.data?.text||'').trim(),confidence=Number(result.data?.confidence||0),cleaned=cleanRecipeText(text,cleanupToggle?.checked!==false);attempts.push({text,confidence,score:scoreText(cleaned,confidence)});
     }finally{canvas.width=1;canvas.height=1;}}
     const layoutHints=attempts.map(attempt=>attempt.text).join('\n');
     if(/\b(?:cake|filling|topping)\s*[:.]?/i.test(layoutHints)){
@@ -400,5 +444,5 @@
   openPaste?.addEventListener('click',()=>{ document.querySelector('#imageRecipeDialog')?.close(); const paste=document.querySelector('#pasteRecipeDialog'); const textarea=document.querySelector('#pastedRecipeText'); if(output.value.trim())textarea.value=output.value; paste?.showModal(); textarea?.focus(); });
   output.addEventListener('input',event=>{if(event.isTrusted&&output.dataset.ocrQuality==='low')output.dataset.ocrQuality='edited';});
   button.addEventListener('click',readImages,{capture:true}); window.addEventListener('pagehide',()=>{worker?.terminate?.();worker=null;});
-  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, qualityMessage, scoreText };
+  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText };
 })();

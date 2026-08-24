@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.12';
+  const ENGINE_VERSION = '0.21.14';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1112,7 +1112,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.12').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.14').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2215,13 +2215,15 @@
     let amount = '';
     const legacyRange = legacyRangeIngredient(ingredient);
     const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
+    const displayQuantity = parseDisplayQuantity(ingredient.displayQuantity);
     if (legacyRange) amount = scaleDisplayQuantityRange(legacyRange.range, activeScale);
     else if (displayRange) amount = scaleDisplayQuantityRange(displayRange, activeScale);
+    else if (displayQuantity) amount = scaleDisplayQuantity(displayQuantity, activeScale);
     else if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
     else if (typeof ingredient.quantity === 'number') amount = formatPracticalMeasurement(ingredientShouldScale(ingredient) ? ingredient.quantity * activeScale : ingredient.quantity, ingredient.unit);
     const optional = ingredient.optional ? ' (optional)' : '';
     const metric = state.settings.metricHelpers ? metricHelper(ingredient, activeScale) : '';
-    const unit = legacyRange?.unit || (amount.includes('tablespoon') || amount.includes('teaspoon') || amount.includes(' cup') ? '' : ingredient.unit);
+    const unit = legacyRange?.unit || (displayQuantity?.suffix || amount.includes('tablespoon') || amount.includes('teaspoon') || amount.includes(' cup') ? '' : ingredient.unit);
     const item = legacyRange?.item || ingredient.item;
     return escapeHtml([amount, unit, item].filter(Boolean).join(' ') + optional + metric);
   }
@@ -2251,6 +2253,8 @@
   }
 
   function scaleDisplayQuantityRange(range, scale) { return SKRecipeScaling.scaleRange(range, scale); }
+  function parseDisplayQuantity(value) { return SKRecipeScaling.parseQuantity(value); }
+  function scaleDisplayQuantity(quantity, scale) { return SKRecipeScaling.scaleQuantity(quantity, scale); }
   function ingredientShouldScale(ingredient) { return SKRecipeScaling.shouldScale(ingredient); }
   function legacyRangeIngredient(ingredient) {
     // Some older imports kept a calculated midpoint in `quantity` while also
@@ -2717,7 +2721,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.12');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.14');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3616,11 +3620,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     let amount = '';
     const legacyRange = legacyRangeIngredient(ingredient);
     const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
+    const displayQuantity = parseDisplayQuantity(ingredient.displayQuantity);
     if (legacyRange) amount = scaleDisplayQuantityRange(legacyRange.range, scale);
     else if (displayRange) amount = scaleDisplayQuantityRange(displayRange, scale);
+    else if (displayQuantity) amount = scaleDisplayQuantity(displayQuantity, scale);
     else if (ingredient.displayQuantity && ingredient.scalable === false) amount = ingredient.displayQuantity;
     else if (typeof ingredient.quantity === 'number') amount = formatFraction(ingredientShouldScale(ingredient) ? ingredient.quantity * scale : ingredient.quantity);
-    return [amount, effectiveIngredientUnit(ingredient)].filter(Boolean).join(' ').trim();
+    return [amount, displayQuantity?.suffix ? '' : effectiveIngredientUnit(ingredient)].filter(Boolean).join(' ').trim();
   }
 
   function addMealPlanToShoppingList() {
@@ -4190,11 +4196,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     let amount='';
     const legacyRange = legacyRangeIngredient(ingredient);
     const displayRange = parseDisplayQuantityRange(ingredient.displayQuantity);
+    const displayQuantity = parseDisplayQuantity(ingredient.displayQuantity);
     if (legacyRange) amount=scaleDisplayQuantityRange(legacyRange.range, activeScale);
     else if (displayRange) amount=scaleDisplayQuantityRange(displayRange, activeScale);
+    else if (displayQuantity) amount=scaleDisplayQuantity(displayQuantity, activeScale);
     else if (ingredient.displayQuantity && ingredient.scalable === false) amount=ingredient.displayQuantity;
     else if (typeof ingredient.quantity === 'number') amount=formatFraction(ingredientShouldScale(ingredient) ? ingredient.quantity * activeScale : ingredient.quantity);
-    return [amount, effectiveIngredientUnit(ingredient)].filter(Boolean).join(' ').trim();
+    return [amount, displayQuantity?.suffix ? '' : effectiveIngredientUnit(ingredient)].filter(Boolean).join(' ').trim();
   }
   function cleanShoppingName(item) { return normalizeShoppingName(item); }
   function openIngredientShopping(recipe){
