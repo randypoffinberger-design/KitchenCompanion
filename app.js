@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.14';
+  const ENGINE_VERSION = '0.21.15';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1112,7 +1112,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.14').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.15').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1902,7 +1902,18 @@
 
   let crossLinkCache = { signature:'', index:null };
   function getCrossLinkIndex() {
-    const recipes = getAllRecipes();
+    const recipes = getAllRecipes().map(recipe => ({
+      ...recipe,
+      ingredientGroups:Array.isArray(recipe?.ingredientGroups)
+        ? recipe.ingredientGroups.filter(group => group && Array.isArray(group.ingredients)).map(group => ({
+            ...group,
+            ingredients:group.ingredients.filter(ingredient => ingredient && typeof ingredient.item === 'string')
+          }))
+        : [],
+      instructions:Array.isArray(recipe?.instructions)
+        ? recipe.instructions
+        : typeof recipe?.instructions === 'string' ? recipe.instructions.split(/\r?\n/).filter(Boolean) : []
+    }));
     const signature = JSON.stringify(recipes.map(recipe => [
       recipe.key,
       recipe.name,
@@ -2114,18 +2125,35 @@
   }
 
   function renderRecipeDetail() {
-    const recipe = getAllRecipes({ enabledOnly: false, includeOverridden: true }).find(r => r.key === selectedRecipeKey);
-    if (!recipe) return showList();
-    const crossLinkIndex = getCrossLinkIndex();
-    const combinedLinks = combinedCrossLinks(recipe.key, crossLinkIndex);
+    const storedRecipe = getAllRecipes({ enabledOnly: false, includeOverridden: true }).find(r => r.key === selectedRecipeKey);
+    if (!storedRecipe) return showList();
+    const recipe = {
+      ...storedRecipe,
+      ingredientGroups:Array.isArray(storedRecipe.ingredientGroups)
+        ? storedRecipe.ingredientGroups.filter(group => group && Array.isArray(group.ingredients)).map(group => ({
+            ...group,
+            ingredients:group.ingredients.filter(ingredient => ingredient && typeof ingredient.item === 'string')
+          }))
+        : [],
+      instructions:Array.isArray(storedRecipe.instructions)
+        ? storedRecipe.instructions
+        : typeof storedRecipe.instructions === 'string' ? storedRecipe.instructions.split(/\r?\n/).filter(Boolean) : []
+    };
+    els.recipeDetail.innerHTML = '<section class="recipe-section"><h2>Opening recipe…</h2></section>';
+    let crossLinkIndex = { outgoingByRecipe:new Map(), incomingByRecipe:new Map() };
+    try { crossLinkIndex = getCrossLinkIndex(); }
+    catch (error) { console.error('Cross-Link index skipped while opening recipe.', error); }
+    let combinedLinks = { outgoing:[], incoming:[] };
+    try { combinedLinks = combinedCrossLinks(recipe.key, crossLinkIndex); }
+    catch (error) { console.error('Recipe links skipped while opening recipe.', error); }
     const crossLinks = combinedLinks.outgoing;
     const incomingLinks = combinedLinks.incoming;
-    const favorite = state.favorites.includes(recipe.key);
+    const favorite = Array.isArray(state.favorites) && state.favorites.includes(recipe.key);
     const yieldText = recipe.yield ? `${formatNumber(recipe.yield.amount * activeScale)} ${recipe.yield.unit}` : '';
-    const guidedProgress = Number(state.guidedCookingProgress[recipe.key]?.stepIndex || 0);
+    const guidedProgress = Number(state.guidedCookingProgress?.[recipe.key]?.stepIndex || 0);
     const guidedResumeEntry = instructionEntries(recipe.instructions).filter(row => row.type === 'step')[guidedProgress];
 
-    els.recipeDetail.innerHTML = `
+    try { els.recipeDetail.innerHTML = `
       <section class="recipe-hero">
         <div class="recipe-hero-top">
           <div><div class="recipe-kicker">${escapeHtml(recipe.category || 'Uncategorized')}</div><h1>${escapeHtml(recipe.name)}</h1>${recipe.copiedFrom ? '<span class="modified-badge">Modified personal version</span>' : ''}</div>
@@ -2146,7 +2174,14 @@
         <section class="recipe-section"><h2>Instructions</h2>${renderInstructionList(recipe)}</section>
       </div>
       ${renderCrossLinkSection(recipe, crossLinks, incomingLinks)}
-      <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
+      <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes?.[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
+    } catch (error) {
+      console.error('Recipe detail rendering failed.', error);
+      els.recipeDetail.innerHTML = `<section class="recipe-hero recipe-render-recovery"><div class="recipe-kicker">${escapeHtml(recipe.category || 'Uncategorized')}</div><h1>${escapeHtml(recipe.name || 'Recipe')}</h1><p>This recipe could not be fully displayed, but its saved data is still present.</p><details><summary>Technical detail</summary><code>${escapeHtml(error?.message || String(error))}</code></details><div class="recipe-action-row"><button id="editRecipeBtn" class="button secondary">Edit and repair recipe</button>${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : ''}</div></section>`;
+      document.querySelector('#editRecipeBtn')?.addEventListener('click', () => openRecipeEditor(recipe));
+      document.querySelector('#deleteRecipeBtn')?.addEventListener('click', () => deletePersonalRecipe(recipe));
+      return;
+    }
 
     document.querySelector('#favoriteRecipeBtn').addEventListener('click', () => toggleFavorite(recipe.key));
     document.querySelector('#startGuidedCookingBtn').addEventListener('click', () => openGuidedCooking(recipe));
@@ -2721,7 +2756,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.14');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.15');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
