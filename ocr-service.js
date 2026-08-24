@@ -151,7 +151,7 @@
   function normalizeLine(line) {
     return line
       .replace(/[ \t]+/g,' ')
-      .replace(/^[•*▪◦«»+]+\s*/,'')
+      .replace(/^[-•*▪◦«»+]+\s*/,'')
       .replace(/^(?:e|¢|©)\s+(?=(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|small\b|salt\b|extra\b|fresh\b))/i,'')
       .replace(/^[.,]\s+(?=(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip)\b)/i,'')
       .replace(/\s+([,.;:!?])/g,'$1')
@@ -202,6 +202,7 @@
       .replace(/\ba?\s*9\s*x\s*(?:D?B|1\)|B)\s+pan\b/gi,'9 x 13 pan')
       .replace(/^\\?dd\b/i,'Add')
       .replace(/\b350\s+[1I|]\s+(?=(?:Grease|and)\b)/i,'350°F. ')
+      .replace(/\s+(?:Do not sell or share my personal information|Terms of Content Use)[\s\S]*$/i,'')
       .replace(/\s+[|)]\s*$/,'')
       .replace(/\s+-\s*$/,'')
       .trim();
@@ -217,7 +218,7 @@
       /^(?:learn more|see the list|drveganblog[.]com)$/i,
       /^(?:how to reset your cortisol belly|eat these foods every day)$/i,
       /^(?:enjoy a lifetime of firsts|live connected[.]? live invested[.]?|discover a resident-owned community)/i,
-      /^(?:do not sell or share my personal information|terms of content use)$/i,
+      /^(?:do not sell or share my personal information|terms of content use)[.]?$/i,
       /^\d{1,2}:\d{2}\b.*(?:wifi|5g|[0-9]{1,3})/i,
       /^(?:deck out your dorm|our best price on gig wifi is here)/i,
       /^(?:nexdoo|keystone|xfinity|amazon)\b/i,
@@ -253,35 +254,36 @@
         return !junk.some(rx=>rx.test(line));
       });
     }
-    let section='meta'; const joined=[];
+    let section='meta', dropEquipmentIngredientTail=false; const joined=[];
     const ingredientStart=/^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|small\s+handful|salt\b|extra\b)/i;
     const sectionHeading=/^(?:ingredients?|instructions?|directions?|method|steps|notes?|for\s+.+|equipment|nutrition)\s*:?[.]?$/i;
     for(const entry of lines){
       const h=entry.line.toLowerCase().replace(/[:.]$/,'').trim();
-      if(/^ingredients?$/.test(h))section='ingredients';
+      if(/^ingredients?$/.test(h)){section='ingredients';dropEquipmentIngredientTail=false;}
       else if(/^(?:instructions?|directions?|method|steps)$/.test(h))section='instructions';
       else if(/^(?:equipment|nutrition)$/.test(h))section=h;
+      if(section==='equipment'&&entry.bullet&&ingredientStart.test(entry.line)){dropEquipmentIngredientTail=true;continue;}
+      if(dropEquipmentIngredientTail&&section==='equipment')continue;
       const previous=joined[joined.length-1];
       const continuation=previous&&!sectionHeading.test(entry.line)&&(
         (section==='ingredients'&&!entry.bullet&&!ingredientStart.test(entry.line))
         ||(section==='instructions'&&!entry.bullet&&!entry.numbered)
       );
       if(continuation)previous.line=`${previous.line} ${entry.line}`.replace(/-\s+/,'');
-      else joined.push({line:entry.line});
+      else joined.push({line:entry.line,bullet:entry.bullet,numbered:entry.numbered});
     }
-    const dedup=[]; for(const entry of joined){ const line=entry.line,key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({line,key}); }
-    return dedup.map(x=>x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?)\b)/gi,'\n\n');
+    const dedup=[]; for(const entry of joined){ const line=entry.line,key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue; const recent=dedup.slice(-12).some(x=>x.key===key); if(!recent)dedup.push({...entry,line,key}); }
+    return dedup.map(x=>x.bullet?`- ${x.line}`:x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?|equipment|nutrition)\b)/gi,'\n\n');
   }
 
   function trimAuxiliarySections(page) {
-    const lines=String(page||'').split(/\r?\n/),index=lines.findIndex(line=>/^(?:equipment|nutrition)\s*:?[.]?$/i.test(line.trim()));
-    return (index<0?lines:lines.slice(0,index)).join('\n').trim();
+    return String(page||'').trim();
   }
 
   function pageShouldBeIgnored(page, allPages=[]) {
-    const text=trimAuxiliarySections(page), hasCore=/^(?:ingredients?|instructions?|directions?|method|steps)\b/im.test(text);
+    const text=trimAuxiliarySections(page), hasCore=/^(?:ingredients?|instructions?|directions?|method|steps)\b/im.test(text), hasAuxiliary=/^(?:equipment|nutrition)\b/im.test(text);
     if(!text)return true;
-    if(hasCore)return false;
+    if(hasCore||hasAuxiliary)return false;
     const laterHasCore=allPages.some(candidate=>candidate!==page&&/^(?:ingredients?|instructions?|directions?|method|steps)\b/im.test(String(candidate||'')));
     if(!laterHasCore)return false;
     return /\b(?:privacy policy|terms of content use|do not sell|calories:.*carbohydrates:|learn more|sponsored)\b/i.test(text);

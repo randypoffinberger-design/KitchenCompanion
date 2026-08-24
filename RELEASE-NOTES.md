@@ -1,4 +1,15 @@
-# Serenity Kitchen v0.21.16
+# Serenity Kitchen v0.21.17
+
+## v0.21.17
+
+- Recovers recipe titles when OCR separates a noisy rating/title line from a description beginning with the repeated title.
+- Preserves webpage bullet boundaries so one source bullet remains one cooking step even when it contains several sentences.
+- Converts numbered and unnumbered instruction-section labels into bracket headings, including headings merged onto the end of the preceding direction.
+- Preserves Equipment and Nutrition content in recipe Notes instead of discarding it.
+- Captures Cuisine as searchable tags and retains wrapped keyword lists across OCR line breaks.
+- Repairs the two lost half-fractions and the trailing phone-status debris reproduced by the supplied Garlic Butter Pasta scan.
+
+## v0.21.16
 
 ## v0.21.16
 

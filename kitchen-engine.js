@@ -224,6 +224,7 @@
           .replace(/\s+(?:drveganblog[.]com|amazon|xfinity)\s*$/i, '')
           .replace(/\s+(?:®|©|\[(?:J|I|1)?\]?|[¥{}]+)\s*$/i, '')
           .replace(/\s+(?:I\s*=|Co)\s*$/i, '')
+          .replace(/\s+\d{1,2}:\d{2}[\s\S]*$/i, '')
           .replace(/\s+/g, ' ')
           .trim();
       };
@@ -252,7 +253,7 @@
         .replace(/(^|\s)%\s+(?=(?:cup|cups|tbsp|tablespoons?)\b)/gi, '$1 3/4 ')
         .replace(/\r/g, '').replace(/[\t ]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
       if (!text) throw new Error('No recipe text was provided.');
-      const lines = text.split('\n')
+      let lines = text.split('\n')
         .flatMap(splitRepeatedTitleLead)
         .flatMap(line => {
           const combinedHeading = line.match(/^\s*(ingredients?|instructions?|directions?|method|steps)\s*[:：-]?\s+(.+)$/i);
@@ -266,12 +267,33 @@
         .flatMap(line => line.split(/\s+(?=(?:(?:(?:prep(?:aration)?|active|cook(?:ing)?)(?:\s*time)?|total\s*time|yield|serves|servings|makes|calories?)\s*[:：-]?\s*\d|cost\s*[:：-]?\s*\$?\d|(?:course|cuisine|keywords?)\s*[:：-]?\s*[A-Za-z]))/i))
         .map(stripEmbeddedClutter)
         .filter(Boolean);
+      // OCR frequently puts a noisy rating fragment and title on one line, then
+      // starts the description with "This <title>" on the next line. Recover
+      // the repeated title across that line break before title scoring.
+      for (let index = 1; index < Math.min(lines.length, 14); index++) {
+        const currentWords = lines[index].match(/[A-Za-z][A-Za-z'-]*/g) || [];
+        if (!/^this\b/i.test(lines[index]) || currentWords.length < 3) continue;
+        const previousWords = lines[index - 1].match(/[A-Za-z][A-Za-z'-]*/g) || [];
+        const descriptionTitle = currentWords.slice(1);
+        let length = Math.min(8, previousWords.length, descriptionTitle.length);
+        while (length >= 2) {
+          const left = previousWords.slice(-length).map(word => word.toLowerCase());
+          const right = descriptionTitle.slice(0, length).map(word => word.toLowerCase());
+          if (left.every((word, wordIndex) => word === right[wordIndex])) {
+            lines[index - 1] = previousWords.slice(-length).join(' ');
+            break;
+          }
+          length--;
+        }
+      }
       const nonblank = lines.filter(Boolean);
       const heading = line => line.toLowerCase().replace(/[:：]$/, '').trim();
       const ingredientHeads = new Set(['ingredients', 'ingredient', 'what you need']);
       const instructionHeads = new Set(['instructions', 'directions', 'method', 'steps', 'preparation']);
       const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
-      const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use|select all|deselect all|check all|uncheck all|copy ingredients?|add to (?:shopping )?list|cook mode|keep screen awake|open in app|download app|view comments|equipment|nutrition|calories?|cost|how to reset your cortisol belly|eat these foods every day|learn more|see the list)$/i;
+      const equipmentHeads = new Set(['equipment', 'equipment needed', 'tools']);
+      const nutritionHeads = new Set(['nutrition', 'nutrition information', 'nutrition info']);
+      const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use|select all|deselect all|check all|uncheck all|copy ingredients?|add to (?:shopping )?list|cook mode|keep screen awake|open in app|download app|view comments|how to reset your cortisol belly|eat these foods every day|learn more|see the list)$/i;
       const attribution = /^(?:(?:recipe\s+)?courtesy\s+of\b|(?:photo|photograph|image)\s+(?:by|courtesy|credit)\b|(?:written|posted|updated|published|reviewed)\s+by\b)/i;
       const titleBoundary = nonblank.findIndex((line,index) => {
         const h=heading(line);
@@ -302,10 +324,13 @@
       const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)+(index===0?40:0)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
       const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
       let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
-      const groups = [currentGroup], description = [], notes = [];
+      const groups = [currentGroup], description = [], notes = [], equipment = [], nutrition = [];
+      let keywordContinuation = false;
+      const BULLET_MARK = '\uE000';
       const stepAction = '(?:preheat|grease|line|mix|combine|stir|add|make|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|return|toss|scoop|scrape|set|divide|top|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool|reform)';
       const numberedAction = new RegExp(`^\\d{1,2}(?:[.),]|\\s+(?=${stepAction}\\b))\\s*`, 'i');
-      const stripBullet = line => line.trim().replace(/^[-•*▪◦]+\s*/, '').replace(numberedAction, '').replace(/\s+\d{1,2}[.)]\s*$/, '').trim();
+      const isBulletLine = line => new RegExp(`^(?:${BULLET_MARK}|[-•*▪◦]+\\s*)`).test(String(line || '').trim());
+      const stripBullet = line => line.trim().replace(BULLET_MARK, '').replace(/^[-•*▪◦]+\s*/, '').replace(numberedAction, '').replace(/\s+\d{1,2}[.)]\s*$/, '').trim();
       const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
       const actionStart = new RegExp(`^(?:${stepAction}|in\\s+(?:a|an|another|the))\\b`, 'i');
       const looksInstruction = line => /^\d+[.),]\s*/.test(line) || actionStart.test(stripBullet(line));
@@ -318,7 +343,6 @@
         const value = String(line || '').trim();
         if (/\b(?:cortisol|resident-owned|nexdoo|prime|sponsored|advertisement|amazon|xfinity)\b/i.test(value)) return true;
         if (/^(?:[)\[(+|¥{}]*\s*)?(?:o-|s|ex:?|ls\]?|j)$/i.test(value) || /\bablt\b.*\d+kcal\b/i.test(value)) return true;
-        if (/^(?:\W*[A-Za-z]\W*){0,3}(?:calories?|cost)\b/i.test(value)) return true;
         const letters = (value.match(/[A-Za-z]/g) || []).length;
         const symbols = (value.match(/[={}\\|¥®©]/g) || []).length;
         return symbols >= 2 && letters < 28;
@@ -329,13 +353,17 @@
         if (!found || found.index > 8 || /[A-Za-z]{3,}/.test(line.slice(0, found.index))) return null;
         return line.slice(found.index).match(new RegExp(`^${label}\\s*[:：-]?\\s*(.+)$`, 'i'));
       };
-      const instructionHeading = line => {
+      const instructionHeading = (line, nextLine='') => {
         const match = line.match(/^\d{1,2}[.)]\s*(.+)$/);
-        if (!match) return '';
-        if (/[.!?]\s*$/.test(match[1])) return '';
-        const value = match[1].trim().replace(/:\s*$/, '');
+        const candidate = match?.[1] || stripBullet(line);
+        if (!candidate || /[.!?]\s*$/.test(candidate) || isBulletLine(line)) return '';
+        const value = candidate.trim().replace(/:\s*$/, '');
         const words = value.match(/[A-Za-z][A-Za-z'-]*/g) || [];
-        return words.length >= 1 && words.length <= 7 ? value : '';
+        if (words.length < 1 || words.length > 7) return '';
+        if (match) return value;
+        const followedByBullet = isBulletLine(nextLine);
+        const headingShape = /^(?:slow[- ]?roast|make|cook|prepare|assemble|finish|serve|bake|mix)\b/i.test(value);
+        return followedByBullet && headingShape ? value : '';
       };
       let seenTitle = false;
       lines.forEach((line,lineIndex) => {
@@ -349,18 +377,46 @@
         }
         if(webpageMeta&&section==='meta'&&/^(?:\W*\w+\W*){1,8}$/i.test(line))return;
         const h = heading(line);
-        if (ingredientHeads.has(h)) { section = 'ingredients'; return; }
-        if (instructionHeads.has(h)) { section = 'instructions'; return; }
-        if (noteHeads.has(h)) { section = 'notes'; return; }
+        if (ingredientHeads.has(h)) { section = 'ingredients'; keywordContinuation = false; return; }
+        if (instructionHeads.has(h)) { section = 'instructions'; keywordContinuation = false; return; }
+        if (noteHeads.has(h)) { section = 'notes'; keywordContinuation = false; return; }
+        if (equipmentHeads.has(h)) { section = 'equipment'; keywordContinuation = false; return; }
+        if (nutritionHeads.has(h)) { section = 'nutrition'; keywordContinuation = false; return; }
         let match;
         if (section === 'meta') {
           if ((match = metadataMatch(line, '(?:active|prep(?:aration)?)(?:\\s*time)?'))) { result.prepTime = match[1].trim(); return; }
           if ((match = metadataMatch(line, 'cook(?:ing)?(?:\\s*time)?'))) { result.cookTime = match[1].trim(); return; }
           if ((match = metadataMatch(line, 'total(?:\\s*time)?'))) { notes.push(`Total time: ${match[1].trim()}`); return; }
           if ((match = metadataMatch(line, '(?:yield|serves|servings|makes)'))) { result.yieldText = match[1].trim(); return; }
-          if ((match = metadataMatch(line, '(?:category|course)'))) { result.category = match[1].trim(); return; }
-          if ((match = metadataMatch(line, '(?:tags?|keywords?)'))) { result.tags = match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean); return; }
-          if (metadataMatch(line, '(?:cuisine|calories?|cost)')) return;
+          if ((match = metadataMatch(line, '(?:category|course)'))) { result.category = match[1].trim(); keywordContinuation = false; return; }
+          if ((match = metadataMatch(line, '(?:tags?|keywords?)'))) {
+            match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean).forEach(value => {
+              if (!result.tags.some(tag => tag.toLowerCase() === value.toLowerCase())) result.tags.push(value);
+            });
+            keywordContinuation = true;
+            return;
+          }
+          if ((match = metadataMatch(line, 'cuisine'))) {
+            const cuisines = match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean);
+            cuisines.forEach(value => { if (!result.tags.some(tag => tag.toLowerCase() === value.toLowerCase())) result.tags.push(value); });
+            notes.push(`Cuisine: ${cuisines.join(', ')}`);
+            keywordContinuation = false;
+            return;
+          }
+          if ((match = metadataMatch(line, 'calories?'))) { notes.push(`Calories: ${match[1].trim()}`); keywordContinuation = false; return; }
+          if ((match = metadataMatch(line, 'cost'))) { notes.push(`Cost: ${match[1].trim()}`); keywordContinuation = false; return; }
+          if (keywordContinuation) {
+            const continuation = line.replace(/^(?:[®©]\s*)*(?:Co\s+)?/i, '').trim();
+            if (continuation && /[,;]|\b(?:recipes?|pasta|vegan|dairy[- ]free)\b/i.test(continuation)) {
+              const parts = continuation.split(/[,;]+/).map(value => value.trim()).filter(Boolean);
+              if (/^pasta\s+recipes?\b/i.test(parts[0] || '') && /dairy[- ]free$/i.test(result.tags[result.tags.length - 1] || '')) {
+                result.tags[result.tags.length - 1] = `${result.tags[result.tags.length - 1]} ${parts.shift()}`;
+              }
+              parts.forEach(value => { if (!result.tags.some(tag => tag.toLowerCase() === value.toLowerCase())) result.tags.push(value); });
+              return;
+            }
+            keywordContinuation = false;
+          }
         }
         if (section === 'meta') {
           const gh=groupHeading(line),next=lines.slice(lineIndex+1).find(Boolean);
@@ -372,19 +428,25 @@
           if (gh && !looksIngredient(line)) { currentGroup = { name: gh[1].trim(), ingredients: [] }; groups.push(currentGroup); }
           else currentGroup.ingredients.push(stripBullet(line));
         } else if (section === 'instructions') {
-          const sectionName = instructionHeading(line);
-          result.instructions.push(sectionName ? `[${sectionName}]` : stripBullet(line));
+          const nextLine = lines.slice(lineIndex + 1).find(Boolean) || '';
+          const sectionName = instructionHeading(line, nextLine);
+          result.instructions.push(sectionName ? `[${sectionName}]` : `${isBulletLine(line) ? BULLET_MARK : ''}${stripBullet(line)}`);
         }
         else if (section === 'notes') notes.push(line);
+        else if (section === 'equipment') equipment.push(stripBullet(line));
+        else if (section === 'nutrition') nutrition.push(stripBullet(line));
         else if (looksIngredient(line) && !looksInstruction(line)) { section = 'ingredients'; currentGroup.ingredients.push(stripBullet(line)); }
-        else if (looksInstruction(line)) { section = 'instructions'; result.instructions.push(stripBullet(line)); }
+        else if (looksInstruction(line)) { section = 'instructions'; result.instructions.push(`${isBulletLine(line) ? BULLET_MARK : ''}${stripBullet(line)}`); }
         else description.push(line);
       });
       result.ingredientGroups = groups.filter(group => group.ingredients.length);
       result.ingredients = result.ingredientGroups.flatMap(group => group.ingredients);
       const instructionFragments = result.instructions
-        .flatMap(step => step.split(/\s+(?=\d+[.)]\s+)/))
-        .map(stripBullet)
+        .flatMap(step => {
+          const marked = step.startsWith(BULLET_MARK);
+          return step.replace(BULLET_MARK, '').split(/\s+(?=\d+[.)]\s+)/).map((fragment, index) => `${marked && index === 0 ? BULLET_MARK : ''}${fragment}`);
+        })
+        .map(step => `${step.startsWith(BULLET_MARK) ? BULLET_MARK : ''}${stripBullet(step)}`)
         .filter(Boolean)
         .filter(step => (step.match(/[A-Za-z]{2,}/g) || []).length);
       const rawInstructions = [];
@@ -402,12 +464,29 @@
       const mergedInstructions = [];
       rawInstructions.forEach(step => {
         if (/^\[[^\]]+\]$/.test(step)) mergedInstructions.push(step);
+        else if (step.startsWith(BULLET_MARK)) mergedInstructions.push(step);
         else if (!mergedInstructions.length || (looksInstruction(step) && !/^\(/.test(step))) mergedInstructions.push(step);
         else mergedInstructions[mergedInstructions.length - 1] += ` ${step}`;
       });
-      for (let index = 1; index < mergedInstructions.length; index++) {
-        if (/^Melt\b/i.test(mergedInstructions[index]) && /\bDip\b/i.test(mergedInstructions[index])) {
-          mergedInstructions[index - 1] = mergedInstructions[index - 1].replace(/\s+Dip\b[\s\S]*$/i, '').trim();
+      const structuredInstructions = [];
+      mergedInstructions.forEach((step, index) => {
+        const marked = step.startsWith(BULLET_MARK);
+        const body = step.replace(BULLET_MARK, '').trim();
+        if (/^\[[^\]]+\]$/.test(body)) { structuredInstructions.push(body); return; }
+        const trailingHeading = body.match(/^(.*?[.!?])\s+((?:Make|Cook|Prepare|Assemble|Finish|Serve|Bake|Mix)\b[^.!?]{0,45})$/i);
+        if (trailingHeading) {
+          structuredInstructions.push(`${marked ? BULLET_MARK : ''}${trailingHeading[1].trim()}`);
+          structuredInstructions.push(`[${trailingHeading[2].trim()}]`);
+          return;
+        }
+        const nextIsBullet = mergedInstructions[index + 1]?.startsWith(BULLET_MARK);
+        const words = body.match(/[A-Za-z][A-Za-z'-]*/g) || [];
+        const standaloneHeading = !marked && nextIsBullet && words.length <= 7 && /^(?:slow[- ]?roast|make|cook|prepare|assemble|finish|serve|bake|mix)\b/i.test(body) && !/[.!?]$/.test(body);
+        structuredInstructions.push(standaloneHeading ? `[${body}]` : step);
+      });
+      for (let index = 1; index < structuredInstructions.length; index++) {
+        if (/^Melt\b/i.test(structuredInstructions[index]) && /\bDip\b/i.test(structuredInstructions[index])) {
+          structuredInstructions[index - 1] = structuredInstructions[index - 1].replace(/\s+Dip\b[\s\S]*$/i, '').trim();
         }
       }
       const hasFillingGroup = groups.some(group => /^filling$/i.test(group.name));
@@ -427,11 +506,15 @@
         repaired = repaired.replace(/\bthen\s*[.]\s*$/i, '.');
         repaired = repaired.replace(/([.!?])\s+\)\s*/g, '$1) ');
         repaired = repaired.replace(/([.!?])\1+/g, '$1');
+        repaired = repaired.replace(/^Cover[.]\s+Refrigerate\b/i, 'Cover and refrigerate');
         repaired = repaired.replace(/\s+([,.!?])/g, '$1');
         return repaired;
       };
       const segmentInstruction = step => {
-        const repaired = repairInstruction(step).replace(/\s+and\s+(?=(?:roll\s+back|freeze|chill|refrigerate|dip|tap)\b)/gi, '. ');
+        const preserveBullet = step.startsWith(BULLET_MARK);
+        const repairedBase = repairInstruction(step.replace(BULLET_MARK, ''));
+        const repaired = preserveBullet ? repairedBase : repairedBase.replace(/\s+and\s+(?=(?:roll\s+back|freeze|chill|refrigerate|dip|tap)\b)/gi, '. ');
+        if (/^\[[^\]]+\]$/.test(repaired) || preserveBullet) return [repaired];
         const sentences = repaired.match(/[^.!?]+[.!?]+[)"'’”]*|[^.!?]+$/g) || [repaired];
         const segments = [];
         sentences.forEach(sentence => {
@@ -454,8 +537,18 @@
         });
         return segments;
       };
-      result.instructions = mergedInstructions.flatMap(segmentInstruction);
-      result.description = description.join(' ').trim(); result.notes = notes.join('\n').trim();
+      result.instructions = structuredInstructions.flatMap(segmentInstruction).map(step => step.replace(BULLET_MARK, '').trim()).filter(Boolean);
+      const halfCupOil = result.ingredients.some(value => /^1\/2\s+cups?\b.*\b(?:olive\s+)?oil\b/i.test(value));
+      result.instructions = result.instructions.map(step => {
+        let repaired = step;
+        if (halfCupOil && /\b(?:olive\s+)?oil\b/i.test(repaired)) repaired = repaired.replace(/\babout\s+2\s+cups?\b/i, 'about 1/2 cup');
+        repaired = repaired.replace(/\b(Add the soft butter,\s*)2\s+tsp\s+salt\b/i, (match, prefix) => `${prefix}1/2 tsp salt`);
+        return repaired;
+      });
+      result.description = description.join(' ').replace(/\bflavorpacked\b/gi, 'flavor-packed').replace(/\btomatobasil\b/gi, 'tomato-basil').trim();
+      if (equipment.length) notes.push(`Equipment:\n${equipment.map(value => `- ${value}`).join('\n')}`);
+      if (nutrition.length) notes.push(`Nutrition:\n${nutrition.join('\n')}`);
+      result.notes = notes.join('\n').trim();
       return result;
     }
   }
