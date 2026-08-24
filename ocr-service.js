@@ -320,6 +320,7 @@
   function combinePages(pages) {
     const retained=pages.filter(page=>!pageShouldBeIgnored(page,pages)).map(trimAuxiliarySections).filter(Boolean);
     const result=[]; for(const page of retained){ const lines=page.split('\n').filter(Boolean); for(const line of lines){ const key=line.toLowerCase().replace(/[^a-z0-9]/g,''); if(!key)continue;
+      if(/^(?:ingredients?|instructions?|directions?|method|steps|notes?|equipment|nutrition)\s*:?[.]?$/i.test(line.trim())){result.push({line,key:`section-${key}-${result.length}`});continue;}
       const start=Math.max(0,result.length-20);
       const duplicateIndex=result.findIndex((x,index)=>index>=start&&(x.key===key||(Math.min(key.length,x.key.length)>24&&(x.key.includes(key)||key.includes(x.key)))));
       if(duplicateIndex<0) result.push({line,key});
@@ -462,6 +463,8 @@
     let nutritionSupplement='';
     if(/\b(?:Nutrition|Calories|Carbohydrates)\b/i.test(layoutHints)){
       const candidates=[...attempts.map(attempt=>attempt.text)],plans=[
+        {mode:'detail',region:{x:.01,y:.39,width:.98,height:.27},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
+        {mode:'threshold',region:{x:.01,y:.38,width:.98,height:.30},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
         {mode:'detail',region:{x:.02,y:.24,width:.96,height:.58},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
         {mode:'threshold',region:{x:.02,y:.24,width:.96,height:.62},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
         {mode:'detail',region:{x:.02,y:.30,width:.96,height:.54},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}

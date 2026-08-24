@@ -1,4 +1,17 @@
-# Serenity Kitchen v0.21.18
+# Serenity Kitchen v0.21.20
+
+## v0.21.20
+
+- Splits recipe Equipment into Must have and Recommended groups on the recipe page.
+- Adds a dedicated Equipment editor where users can add, rename, remove, or reclassify each tool.
+- Automatically places OCR equipment marked optional under Recommended while leaving all classifications editable.
+
+## v0.21.19
+
+- Displays saved source Details, Equipment, Nutrition, and Notes directly on the recipe page instead of exposing them only through Edit or recipe export.
+- Preserves repeated Equipment and Nutrition headings across multi-screenshot OCR so entries cannot spill into the wrong section.
+- Recovers equipment-like lines that arrive inside a damaged Nutrition block, while excluding non-nutrient OCR debris from saved notes.
+- Uses tighter supplemental crops for lower-page Nutrition values and repairs the reproduced `90IU` and `1mg` OCR substitutions.
 
 ## v0.21.18
 

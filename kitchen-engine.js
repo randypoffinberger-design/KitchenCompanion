@@ -564,16 +564,31 @@
         }
       }
       const equipmentNouns = /\b(?:saucepan|pan|pot|skillet|dish|spoon|bowl|press|knife|sheet|rack|whisk|blender|mixer|thermometer|scale|processor|oven|grill|tongs?|spatula|colander|strainer|peeler|board)\b/i;
-      const cleanEquipment = equipment.map(value => value
+      const equipmentCandidates = [...equipment, ...nutrition.filter(value => equipmentNouns.test(value))];
+      const cleanEquipment = equipmentCandidates.map(value => value
         .replace(/^(?:e|oe|o|¢)\s+(?=[A-Z])/i, '')
         .replace(/\s+/g, ' ')
         .trim())
         .filter(value => equipmentNouns.test(value) && !/\b(?:cost|calories?|reset|advertisement|sponsored)\b/i.test(value));
-      if (cleanEquipment.length) notes.push(`Equipment:\n${[...new Set(cleanEquipment)].map(value => `- ${value}`).join('\n')}`);
-      const cleanNutrition = nutrition.map(value => value
+      if (cleanEquipment.length) {
+        const uniqueEquipment = [...new Set(cleanEquipment)];
+        const mustHave = uniqueEquipment.filter(value => !/\b(?:optional|recommended)\b/i.test(value));
+        const recommended = uniqueEquipment.filter(value => /\b(?:optional|recommended)\b/i.test(value));
+        const equipmentLines = ['Equipment:'];
+        if (mustHave.length) equipmentLines.push('Must have:', ...mustHave.map(value => `- ${value}`));
+        if (recommended.length) equipmentLines.push('Recommended:', ...recommended.map(value => `- ${value}`));
+        notes.push(equipmentLines.join('\n'));
+      }
+      const nutritionNouns = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated|Polyunsaturated|Monounsaturated|Trans|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i;
+      let cleanNutrition = nutrition.map(value => value
         .replace(/\s+(?:https?:\/\/|Information from your device|A Raptive Partner Site)[\s\S]*$/i, '')
+        .replace(/\bVitamin A:\s*9[Oo0](?:l|I|1)?I?U\b/i, 'Vitamin A: 90IU')
+        .replace(/\bVitamin C:\s*Img\b/i, 'Vitamin C: 1mg')
+        .replace(/\b(Calories|Carbohydrates?|Protein|Fat|Saturated Fat|Polyunsaturated Fat|Monounsaturated Fat|Trans Fat|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\s+(?=\d)/gi, '$1: ')
         .trim())
-        .filter(value => value && !/https?:\/\/|^hp\s*[—-]?$|^Information from your device\b|^A Raptive Partner Site\b/i.test(value));
+        .filter(value => value && nutritionNouns.test(value) && !equipmentNouns.test(value) && !/https?:\/\/|^hp\s*[—-]?$|^Information from your device\b|^A Raptive Partner Site\b/i.test(value));
+      const lastCalories = cleanNutrition.map(value => /\bCalories\b/i.test(value)).lastIndexOf(true);
+      if (lastCalories > 0) cleanNutrition = cleanNutrition.slice(lastCalories);
       if (cleanNutrition.length) notes.push(`Nutrition:\n${cleanNutrition.join('\n')}`);
       result.notes = notes.join('\n')
         .replace(/Cost:\s*\$?(\d+)\s*[-–]\s*%?\$?(\d+)/gi, 'Cost: $$$1–$$$2')

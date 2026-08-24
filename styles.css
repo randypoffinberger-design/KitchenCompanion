@@ -240,10 +240,13 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .recipe-editor > label, .form-grid label { display:grid; gap:6px; margin-top:14px; font-weight:700; }
 .recipe-editor small { color:var(--muted); font-weight:400; }
 .recipe-editor input, .recipe-editor textarea { width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); resize:vertical; }
+.equipment-editor{margin:14px 0 0;padding:14px;border:1px solid var(--border);border-radius:14px}.equipment-editor legend{font-weight:800;padding:0 6px}.equipment-editor>small{display:block;margin-bottom:10px}.equipment-editor-list{display:grid;gap:9px;margin-bottom:10px}.equipment-editor-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.42fr) auto;gap:8px;align-items:center}.equipment-editor-row select{min-width:0}.equipment-editor-row .button{padding:10px 12px}@media(max-width:560px){.equipment-editor-row{grid-template-columns:1fr auto}.equipment-editor-row select{grid-column:1}.equipment-editor-row .button{grid-column:2;grid-row:1/3}}
 .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .recipe-action-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
 .recipe-notes { margin-top:18px; }
 .recipe-notes textarea { width:100%; min-height:130px; padding:13px; border:1px solid var(--border); border-radius:12px; background:var(--bg); color:var(--text); resize:vertical; }
+.recipe-information{margin-top:18px}.recipe-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.recipe-info-block{padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--panel-2)}.recipe-info-block h3{margin:0 0 8px;color:var(--accent)}.recipe-info-block p,.recipe-info-block ul{margin:0;line-height:1.55}.recipe-info-block ul{padding-left:1.25rem}
+.recipe-info-block h4{margin:12px 0 5px;color:var(--text);font-size:.9rem;text-transform:uppercase;letter-spacing:.04em}.recipe-info-block h3+h4{margin-top:0}.recipe-info-block h4+ul{margin-bottom:10px}
 .save-note-status { min-height:1.2em; margin-top:6px; color:var(--muted); font-size:.82rem; }
 @media (max-width: 600px) {
   .form-grid { grid-template-columns:1fr; gap:0; }
