@@ -569,7 +569,7 @@
         .replace(/^(?:e|oe|o|¢)\s+(?=[A-Z])/i, '')
         .replace(/\s+/g, ' ')
         .trim())
-        .filter(value => equipmentNouns.test(value) && !/\b(?:cost|calories?|reset|advertisement|sponsored)\b/i.test(value));
+        .filter(value => equipmentNouns.test(value) && !/^0(?:\s|$)|\b(?:cost|calories?|reset|advertisement|sponsored)\b/i.test(value));
       if (cleanEquipment.length) {
         const uniqueEquipment = [...new Set(cleanEquipment)];
         const mustHave = uniqueEquipment.filter(value => !/\b(?:optional|recommended)\b/i.test(value));

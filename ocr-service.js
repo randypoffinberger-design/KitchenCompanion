@@ -76,6 +76,7 @@
   }
 
   function applyTreatment(ctx, width, height, mode) {
+    if(mode==='raw')return;
     const image=ctx.getImageData(0,0,width,height), d=image.data, gray=new Uint8Array(width*height);
     for(let p=0,i=0;i<d.length;i+=4,p++) gray[p]=Math.round(d[i]*.299+d[i+1]*.587+d[i+2]*.114);
     if(mode==='threshold'){
@@ -100,7 +101,7 @@
       x:autoBounds.x+Math.round(autoBounds.width*region.x),y:autoBounds.y+Math.round(autoBounds.height*region.y),
       width:Math.round(autoBounds.width*region.width),height:Math.round(autoBounds.height*region.height)
     }:autoBounds;
-    const targetMinWidth=mode==='detail'||mode==='threshold'?2400:1900;
+    const targetMinWidth=mode==='detail'||mode==='threshold'||mode==='raw'?2400:1900;
     let scale=Math.min(4, Math.max(1, targetMinWidth/base.width));
     const edgeScale=Math.min(MAX_CANVAS_EDGE/base.width,MAX_CANVAS_EDGE/base.height);
     const pixelScale=Math.sqrt(MAX_CANVAS_PIXELS/(base.width*base.height));
@@ -463,11 +464,10 @@
     let nutritionSupplement='';
     if(/\b(?:Nutrition|Calories|Carbohydrates)\b/i.test(layoutHints)){
       const candidates=[...attempts.map(attempt=>attempt.text)],plans=[
+        {mode:'raw',region:{x:.01,y:.37,width:.98,height:.32},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
         {mode:'detail',region:{x:.01,y:.39,width:.98,height:.27},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
         {mode:'threshold',region:{x:.01,y:.38,width:.98,height:.30},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
-        {mode:'detail',region:{x:.02,y:.24,width:.96,height:.58},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
-        {mode:'threshold',region:{x:.02,y:.24,width:.96,height:.62},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
-        {mode:'detail',region:{x:.02,y:.30,width:.96,height:.54},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
+        {mode:'raw',region:{x:.01,y:.30,width:.98,height:.42},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'}
       ];
       for(const plan of plans){const canvas=await makeCanvas(file,plan.mode,plan.region);try{
         await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});

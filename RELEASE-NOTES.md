@@ -1,4 +1,9 @@
-# Serenity Kitchen v0.21.20
+# Serenity Kitchen v0.21.21
+
+## v0.21.21
+
+- Adds an untouched high-resolution Nutrition OCR retry for iPhone screenshots whose gray lower lines are damaged by contrast preprocessing.
+- Rejects zero-prefixed OCR debris such as `0 dish` from Equipment.
 
 ## v0.21.20
 
