@@ -305,15 +305,25 @@
     return (candidates||[]).map(extractNutritionText).filter(Boolean).sort((a,b)=>nutritionTextScore(b)-nutritionTextScore(a)||b.length-a.length)[0]||'';
   }
   const lowerNutritionLabels = /\b(?:Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/gi;
+  function normalizeNutritionTailOcr(text) {
+    return String(text||'')
+      .replace(/\bF[i1l|][\s._-]*b[e3]r\b/gi,'Fiber')
+      .replace(/\bSug[\s._-]*ar\b/gi,'Sugar')
+      .replace(/\bVitam[i1l|]n\b/gi,'Vitamin')
+      .replace(/\bCalc[i1l|]um\b/gi,'Calcium')
+      .replace(/\b[lI|]ron\b/g,'Iron')
+      .replace(/\b9[O0]IU\b/gi,'90IU')
+      .replace(/\b[I|l]mg\b/g,'1mg');
+  }
   function extractNutritionTailText(text) {
-    let value=String(text||'').replace(/\r/g,'')
+    let value=normalizeNutritionTailOcr(String(text||'').replace(/\r/g,''))
       .replace(/\s+(?:https?:\/\/|httos?:\/\/|Information from your device|A Raptive Partner Site|Do not sell or share my personal information|Terms of Content Use)[\s\S]*$/i,'')
       .split(/\n/).map(normalizeLine).filter(Boolean).join('\n').trim();
-    const marker=value.match(/(?:\b\d+\s*mg\s*\|\s*)?\bFiber\b/i);
+    const marker=value.match(/(?:\b\d+(?:[.]\d+)?\s*(?:mg|g|mcg|iu)?\s*\|\s*)?\b(?:Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i);
     if(!marker)return '';
     value=value.slice(marker.index).trim();
     const labels=value.match(lowerNutritionLabels)||[];
-    return new Set(labels.map(label=>label.toLowerCase())).size>=3?value:'';
+    return new Set(labels.map(label=>label.toLowerCase())).size>=2?value:'';
   }
   function nutritionTailScore(text) {
     const value=extractNutritionTailText(text),labels=value.match(lowerNutritionLabels)||[];
@@ -326,6 +336,16 @@
     if(!head)return tail?`Nutrition\n${tail}`:'';
     if(!tail||/\bIron\b/i.test(head))return head;
     return `${head.trim()}\n${tail.trim()}`;
+  }
+  function nutritionLooksTruncated(text) {
+    const value=extractNutritionText(text);
+    return Boolean(value&&/\b(?:Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\s*:\s*$/i.test(value));
+  }
+  function mergeRecoveredNutritionTail(text,tail) {
+    if(!tail)return text;
+    const value=String(text||'').trim();
+    if(/\bIron\s*:/i.test(value))return value;
+    return `${value}\n${tail.trim()}`;
   }
 
   function trimAuxiliarySections(page) {
@@ -514,7 +534,25 @@
     event.preventDefault(); event.stopImmediatePropagation(); if(running)return; const files=[...fileInput.files]; if(!files.length)return alert('Choose at least one recipe image first.');
     running=true; pageCount=files.length; button.disabled=true; button.textContent='Reading…'; setStatus('Starting OCR…'); const pages=[],failures=[];
     try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { const result=await recognizeBest(ocrWorker,files[i]); result.text=cleanRecipeText(result.text,cleanupToggle?.checked!==false); if(result.text)pages.push(result);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
-      if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.'); const combined=combinePages(pages.map(page=>page.text)); output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const quality=qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; output.dataset.ocrWarning=quality.reason; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low); globalThis.KCImageImportUi?.setStage('ready');
+      if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.');
+      let combined=combinePages(pages.map(page=>page.text));
+      if(nutritionLooksTruncated(combined)){
+        setStatus('Recovering the bottom of the Nutrition panel…');
+        const tailCandidates=[];
+        const tailPlans=[
+          {mode:'raw',region:{x:.01,y:.45,width:.98,height:.25},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
+          {mode:'detail',region:{x:.01,y:.47,width:.98,height:.23},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
+          {mode:'threshold',region:{x:.01,y:.46,width:.98,height:.24},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
+          {mode:'raw',region:{x:.01,y:.50,width:.98,height:.18},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
+        ];
+        for(const file of files){for(const plan of tailPlans){const canvas=await makeCanvas(file,plan.mode,plan.region);try{
+          await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});
+          const result=await ocrWorker.recognize(canvas,{rotateAuto:false});
+          tailCandidates.push(String(result.data?.text||''));
+        }finally{canvas.width=1;canvas.height=1;}}}
+        combined=mergeRecoveredNutritionTail(combined,chooseNutritionTailText(tailCandidates));
+      }
+      output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const quality=qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; output.dataset.ocrWarning=quality.reason; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low); globalThis.KCImageImportUi?.setStage('ready');
     } catch(error){console.error(error); try{await worker?.terminate?.();}catch{} worker=null; globalThis.KCImageImportUi?.setStage('select'); setStatus(`Text recognition failed: ${error.message} You can retry, use tighter screenshots, or paste converted text instead.`,true);} finally {running=false;button.disabled=false;button.textContent='Read images';activePage=0;pageCount=0;}
   }
 
@@ -522,5 +560,5 @@
   openPaste?.addEventListener('click',()=>{ document.querySelector('#imageRecipeDialog')?.close(); const paste=document.querySelector('#pasteRecipeDialog'); const textarea=document.querySelector('#pastedRecipeText'); if(output.value.trim())textarea.value=output.value; paste?.showModal(); textarea?.focus(); });
   output.addEventListener('input',event=>{if(event.isTrusted&&output.dataset.ocrQuality==='low')output.dataset.ocrQuality='edited';});
   button.addEventListener('click',readImages,{capture:true}); window.addEventListener('pagehide',()=>{worker?.terminate?.();worker=null;});
-  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText, extractNutritionText, nutritionTextScore, chooseNutritionText, extractNutritionTailText, chooseNutritionTailText, mergeNutritionText };
+  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText, extractNutritionText, nutritionTextScore, chooseNutritionText, extractNutritionTailText, chooseNutritionTailText, mergeNutritionText, nutritionLooksTruncated, mergeRecoveredNutritionTail };
 })();

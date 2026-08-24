@@ -1,7 +1,10 @@
-# Serenity Kitchen v0.21.23
+# Serenity Kitchen v0.21.24
 
-## v0.21.23
+## v0.21.24
 
+- Detects a Nutrition panel that ends on an unfinished nutrient and rereads the lower screenshot before parsing the recipe.
+- Repairs common iPhone OCR substitutions in lower Nutrition rows, including Fiber, Vitamin, Calcium, Iron, `90IU`, and `1mg`.
+- Makes Enter dismiss every search keyboard while preserving the current results.
 - Stores Nutrition in its own recipe field instead of embedding it inside Notes.
 - Displays Nutrition in a dedicated card that disappears automatically when empty.
 - Adds an editable Nutrition field for personal and installed-module recipe copies.
