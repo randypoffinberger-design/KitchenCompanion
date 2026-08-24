@@ -1,7 +1,9 @@
-# Serenity Kitchen v0.21.25
+# Serenity Kitchen v0.21.26
 
-## v0.21.25
+## v0.21.26
 
+- Adds an explicit dark-screenshot inversion pass so dim lower Nutrition rows are presented to iPhone OCR as dark text on white.
+- Keeps an import visibly flagged when Nutrition still contains a label with no value after all recovery passes.
 - Detects an unfinished Nutrition value even when later screenshot text follows it in the combined OCR document.
 - Inserts the recovered lower Nutrition rows at the unfinished nutrient instead of appending them after unrelated page text.
 - Detects a Nutrition panel that ends on an unfinished nutrient and rereads the lower screenshot before parsing the recipe.

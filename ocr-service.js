@@ -79,7 +79,12 @@
     if(mode==='raw')return;
     const image=ctx.getImageData(0,0,width,height), d=image.data, gray=new Uint8Array(width*height);
     for(let p=0,i=0;i<d.length;i+=4,p++) gray[p]=Math.round(d[i]*.299+d[i+1]*.587+d[i+2]*.114);
-    if(mode==='threshold'){
+    if(mode==='invert'){
+      for(let p=0;p<gray.length;p++){
+        const inverted=255-gray[p], value=Math.max(0,Math.min(255,((inverted-128)*1.42)+128)),i=p*4;
+        d[i]=d[i+1]=d[i+2]=value;
+      }
+    } else if(mode==='threshold'){
       const radius=Math.max(8,Math.round(Math.min(width,height)/120)), integral=new Float64Array((width+1)*(height+1));
       for(let y=1;y<=height;y++){let row=0;for(let x=1;x<=width;x++){row+=gray[(y-1)*width+x-1];integral[y*(width+1)+x]=integral[(y-1)*(width+1)+x]+row;}}
       for(let y=0,p=0;y<height;y++)for(let x=0;x<width;x++,p++){
@@ -101,7 +106,7 @@
       x:autoBounds.x+Math.round(autoBounds.width*region.x),y:autoBounds.y+Math.round(autoBounds.height*region.y),
       width:Math.round(autoBounds.width*region.width),height:Math.round(autoBounds.height*region.height)
     }:autoBounds;
-    const targetMinWidth=mode==='detail'||mode==='threshold'||mode==='raw'?2400:1900;
+    const targetMinWidth=mode==='detail'||mode==='threshold'||mode==='raw'||mode==='invert'?2400:1900;
     let scale=Math.min(4, Math.max(1, targetMinWidth/base.width));
     const edgeScale=Math.min(MAX_CANVAS_EDGE/base.width,MAX_CANVAS_EDGE/base.height);
     const pixelScale=Math.sqrt(MAX_CANVAS_PIXELS/(base.width*base.height));
@@ -514,7 +519,9 @@
         {mode:'threshold',region:{x:.01,y:.38,width:.98,height:.30},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
         {mode:'raw',region:{x:.01,y:.30,width:.98,height:.42},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
         {mode:'raw',region:{x:.01,y:.48,width:.98,height:.19},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',tail:true},
-        {mode:'detail',region:{x:.01,y:.46,width:.98,height:.22},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',tail:true}
+        {mode:'detail',region:{x:.01,y:.46,width:.98,height:.22},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',tail:true},
+        {mode:'invert',region:{x:.01,y:.36,width:.98,height:.36},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
+        {mode:'invert',region:{x:.01,y:.45,width:.98,height:.26},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',tail:true}
       ];
       for(const plan of plans){const canvas=await makeCanvas(file,plan.mode,plan.region);try{
         await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});
@@ -545,7 +552,10 @@
           {mode:'raw',region:{x:.01,y:.45,width:.98,height:.25},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
           {mode:'detail',region:{x:.01,y:.47,width:.98,height:.23},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
           {mode:'threshold',region:{x:.01,y:.46,width:.98,height:.24},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
-          {mode:'raw',region:{x:.01,y:.50,width:.98,height:.18},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
+          {mode:'raw',region:{x:.01,y:.50,width:.98,height:.18},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'},
+          {mode:'invert',region:{x:.01,y:.36,width:.98,height:.36},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
+          {mode:'invert',region:{x:.01,y:.45,width:.98,height:.26},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
+          {mode:'invert',region:{x:.01,y:.49,width:.98,height:.20},psm:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'}
         ];
         for(const file of files){for(const plan of tailPlans){const canvas=await makeCanvas(file,plan.mode,plan.region);try{
           await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});
@@ -554,7 +564,7 @@
         }finally{canvas.width=1;canvas.height=1;}}}
         combined=mergeRecoveredNutritionTail(combined,chooseNutritionTailText(tailCandidates));
       }
-      output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const quality=qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; output.dataset.ocrWarning=quality.reason; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low); globalThis.KCImageImportUi?.setStage('ready');
+      output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const incompleteNutrition=nutritionLooksTruncated(combined); const quality=incompleteNutrition?{low:true,reason:'nutrition-truncated',message:'Nutrition is incomplete: an amount still has no value. Compare the Nutrition field with the screenshot before saving this recipe.'}:qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; output.dataset.ocrWarning=quality.reason; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low); globalThis.KCImageImportUi?.setStage('ready');
     } catch(error){console.error(error); try{await worker?.terminate?.();}catch{} worker=null; globalThis.KCImageImportUi?.setStage('select'); setStatus(`Text recognition failed: ${error.message} You can retry, use tighter screenshots, or paste converted text instead.`,true);} finally {running=false;button.disabled=false;button.textContent='Read images';activePage=0;pageCount=0;}
   }
 
