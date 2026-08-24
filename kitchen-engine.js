@@ -216,17 +216,62 @@
         .replace(/\bI\s*\/\s*2\b/gi, '1/2')
         .replace(/\bI\s*\/\s*4\b/gi, '1/4')
         .replace(/(\d)\s+([¼½¾⅓⅔⅛⅜⅝⅞])/g, '$1 $2');
-      const text = normalizeFractions(rawText).replace(/\r/g, '').replace(/[\t ]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+      const embeddedClutter = /\s+(?=(?:how to reset your cortisol belly|eat these foods every day|live connected[.]?\s+live invested|discover a resident-owned community|nexdoo\b|sponsored by\b|learn more\b|\$\d{2,4}\s*prime\b|\d{1,2}:\d{2}\s*(?:am|pm)?\b))/i;
+      const stripEmbeddedClutter = value => {
+        const line = String(value || '').trim();
+        const marker = line.search(embeddedClutter);
+        return (marker >= 0 ? line.slice(0, marker) : line)
+          .replace(/\s+(?:drveganblog[.]com|amazon|xfinity)\s*$/i, '')
+          .replace(/\s+(?:®|©|\[(?:J|I|1)?\]?|[¥{}]+)\s*$/i, '')
+          .replace(/\s+(?:I\s*=|Co)\s*$/i, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+      const splitRepeatedTitleLead = value => {
+        const line = stripEmbeddedClutter(value);
+        const thisMatch = line.match(/\bThis\b/i);
+        if (!thisMatch || thisMatch.index < 4) return [line];
+        const before = line.slice(0, thisMatch.index).trim();
+        const after = line.slice(thisMatch.index).trim();
+        const beforeWords = before.match(/[A-Za-z][A-Za-z'-]*/g) || [];
+        const afterWords = after.match(/[A-Za-z][A-Za-z'-]*/g) || [];
+        if (beforeWords.length < 2 || afterWords.length < 3) return [line];
+        const afterTitleWords = afterWords.slice(1);
+        let length = Math.min(8, beforeWords.length, afterTitleWords.length);
+        while (length >= 2) {
+          const left = beforeWords.slice(-length).map(word => word.toLowerCase());
+          const right = afterTitleWords.slice(0, length).map(word => word.toLowerCase());
+          if (left.every((word, index) => word === right[index])) {
+            return [beforeWords.slice(-length).join(' '), after];
+          }
+          length--;
+        }
+        return [line];
+      };
+      const text = normalizeFractions(rawText)
+        .replace(/(^|\s)%\s+(?=(?:cup|cups|tbsp|tablespoons?)\b)/gi, '$1 3/4 ')
+        .replace(/\r/g, '').replace(/[\t ]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
       if (!text) throw new Error('No recipe text was provided.');
       const lines = text.split('\n')
-        .flatMap(line => line.split(/\s+(?=(?:(?:prep(?:aration)?|active|cook(?:ing)?)(?:\s*time)?|total\s*time)\s*[:：-]|(?:yield|serves|servings|makes)\s*[:：-])/i))
-        .map(line => line.trim());
+        .flatMap(splitRepeatedTitleLead)
+        .flatMap(line => {
+          const combinedHeading = line.match(/^\s*(ingredients?|instructions?|directions?|method|steps)\s*[:：-]?\s+(.+)$/i);
+          if (!combinedHeading) return [line];
+          const tail = combinedHeading[2].trim();
+          const tailWords = tail.match(/[A-Za-z][A-Za-z'-]*/g) || [];
+          const isInstructionSection = /^(?:instructions?|directions?|method|steps)$/i.test(combinedHeading[1])
+            && tailWords.length <= 7 && !/[.!?]$/.test(tail);
+          return [combinedHeading[1], isInstructionSection ? `[${tail}]` : tail];
+        })
+        .flatMap(line => line.split(/\s+(?=(?:(?:(?:prep(?:aration)?|active|cook(?:ing)?)(?:\s*time)?|total\s*time|yield|serves|servings|makes|calories?)\s*[:：-]?\s*\d|cost\s*[:：-]?\s*\$?\d|(?:course|cuisine|keywords?)\s*[:：-]?\s*[A-Za-z]))/i))
+        .map(stripEmbeddedClutter)
+        .filter(Boolean);
       const nonblank = lines.filter(Boolean);
       const heading = line => line.toLowerCase().replace(/[:：]$/, '').trim();
       const ingredientHeads = new Set(['ingredients', 'ingredient', 'what you need']);
       const instructionHeads = new Set(['instructions', 'directions', 'method', 'steps', 'preparation']);
       const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
-      const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use|select all|deselect all|check all|uncheck all|copy ingredients?|add to (?:shopping )?list|cook mode|keep screen awake|open in app|download app|view comments)$/i;
+      const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use|select all|deselect all|check all|uncheck all|copy ingredients?|add to (?:shopping )?list|cook mode|keep screen awake|open in app|download app|view comments|equipment|nutrition|calories?|cost|how to reset your cortisol belly|eat these foods every day|learn more|see the list)$/i;
       const attribution = /^(?:(?:recipe\s+)?courtesy\s+of\b|(?:photo|photograph|image)\s+(?:by|courtesy|credit)\b|(?:written|posted|updated|published|reviewed)\s+by\b)/i;
       const titleBoundary = nonblank.findIndex((line,index) => {
         const h=heading(line);
@@ -258,16 +303,43 @@
       const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
       let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
       const groups = [currentGroup], description = [], notes = [];
-      const stepAction = '(?:preheat|grease|line|mix|combine|stir|add|make|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool|reform)';
+      const stepAction = '(?:preheat|grease|line|mix|combine|stir|add|make|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|return|toss|scoop|scrape|set|divide|top|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool|reform)';
       const numberedAction = new RegExp(`^\\d{1,2}(?:[.),]|\\s+(?=${stepAction}\\b))\\s*`, 'i');
       const stripBullet = line => line.trim().replace(/^[-•*▪◦]+\s*/, '').replace(numberedAction, '').replace(/\s+\d{1,2}[.)]\s*$/, '').trim();
       const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
       const actionStart = new RegExp(`^(?:${stepAction}|in\\s+(?:a|an|another|the))\\b`, 'i');
       const looksInstruction = line => /^\d+[.),]\s*/.test(line) || actionStart.test(stripBullet(line));
-      const groupHeading = line => line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i) || (/^[A-Z][A-Z &-]{2,30}:?$/.test(line) ? [line, line.replace(/:$/, '')] : null);
+      const groupHeading = line => {
+        const match = line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i);
+        if (match) return [match[0], match[1].replace(/^the\s+/i, '').trim()];
+        return /^[A-Z][A-Z &-]{2,30}:?$/.test(line) ? [line, line.replace(/:$/, '')] : null;
+      };
+      const garbageLine = line => {
+        const value = String(line || '').trim();
+        if (/\b(?:cortisol|resident-owned|nexdoo|prime|sponsored|advertisement|amazon|xfinity)\b/i.test(value)) return true;
+        if (/^(?:[)\[(+|¥{}]*\s*)?(?:o-|s|ex:?|ls\]?|j)$/i.test(value) || /\bablt\b.*\d+kcal\b/i.test(value)) return true;
+        if (/^(?:\W*[A-Za-z]\W*){0,3}(?:calories?|cost)\b/i.test(value)) return true;
+        const letters = (value.match(/[A-Za-z]/g) || []).length;
+        const symbols = (value.match(/[={}\\|¥®©]/g) || []).length;
+        return symbols >= 2 && letters < 28;
+      };
+      const metadataMatch = (line, label) => {
+        const labelPattern = new RegExp(label, 'i');
+        const found = labelPattern.exec(line);
+        if (!found || found.index > 8 || /[A-Za-z]{3,}/.test(line.slice(0, found.index))) return null;
+        return line.slice(found.index).match(new RegExp(`^${label}\\s*[:：-]?\\s*(.+)$`, 'i'));
+      };
+      const instructionHeading = line => {
+        const match = line.match(/^\d{1,2}[.)]\s*(.+)$/);
+        if (!match) return '';
+        if (/[.!?]\s*$/.test(match[1])) return '';
+        const value = match[1].trim().replace(/:\s*$/, '');
+        const words = value.match(/[A-Za-z][A-Za-z'-]*/g) || [];
+        return words.length >= 1 && words.length <= 7 ? value : '';
+      };
       let seenTitle = false;
       lines.forEach((line,lineIndex) => {
-        if (!line || clutter.test(line) || attribution.test(line) || /^\d+[.)]?$/.test(line)) return;
+        if (!line || clutter.test(line) || attribution.test(line) || garbageLine(line) || /^\d+[.)]?$/.test(line)) return;
         if (!seenTitle && line === result.name) { seenTitle = true; return; }
         const embeddedTotal=line.match(/\btotal(?:\s*time)?\s*[:：-]\s*(\d+(?:\s*(?:hours?|hrs?|minutes?|mins?))(?:\s*\d+\s*(?:minutes?|mins?))?)/i);
         const webpageMeta=(line.match(/\b(?:reviews?|ratings?|level|nutrition\s*info|calories?)\b/gi)||[]).length;
@@ -281,12 +353,15 @@
         if (instructionHeads.has(h)) { section = 'instructions'; return; }
         if (noteHeads.has(h)) { section = 'notes'; return; }
         let match;
-        if ((match = line.match(/^(?:active|prep(?:aration)?)(?:\s*time)?\s*[:：-]\s*(.+)$/i))) { result.prepTime = match[1].trim(); return; }
-        if ((match = line.match(/^cook(?:ing)?(?:\s*time)?\s*[:：-]\s*(.+)$/i))) { result.cookTime = match[1].trim(); return; }
-        if ((match = line.match(/^(?:total\s*time)\s*[:：-]\s*(.+)$/i))) { notes.push(`Total time: ${match[1].trim()}`); return; }
-        if ((match = line.match(/^(?:yield|serves|servings|makes)\s*[:：-]?\s*(.+)$/i))) { result.yieldText = match[1].trim(); return; }
-        if ((match = line.match(/^category\s*[:：-]\s*(.+)$/i))) { result.category = match[1].trim(); return; }
-        if ((match = line.match(/^tags?\s*[:：-]\s*(.+)$/i))) { result.tags = match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean); return; }
+        if (section === 'meta') {
+          if ((match = metadataMatch(line, '(?:active|prep(?:aration)?)(?:\\s*time)?'))) { result.prepTime = match[1].trim(); return; }
+          if ((match = metadataMatch(line, 'cook(?:ing)?(?:\\s*time)?'))) { result.cookTime = match[1].trim(); return; }
+          if ((match = metadataMatch(line, 'total(?:\\s*time)?'))) { notes.push(`Total time: ${match[1].trim()}`); return; }
+          if ((match = metadataMatch(line, '(?:yield|serves|servings|makes)'))) { result.yieldText = match[1].trim(); return; }
+          if ((match = metadataMatch(line, '(?:category|course)'))) { result.category = match[1].trim(); return; }
+          if ((match = metadataMatch(line, '(?:tags?|keywords?)'))) { result.tags = match[1].split(/[,;]+/).map(x => x.trim()).filter(Boolean); return; }
+          if (metadataMatch(line, '(?:cuisine|calories?|cost)')) return;
+        }
         if (section === 'meta') {
           const gh=groupHeading(line),next=lines.slice(lineIndex+1).find(Boolean);
           if(gh&&next&&looksIngredient(next)){section='ingredients';currentGroup={name:gh[1].trim(),ingredients:[]};groups.push(currentGroup);return;}
@@ -296,7 +371,10 @@
           const gh = groupHeading(line);
           if (gh && !looksIngredient(line)) { currentGroup = { name: gh[1].trim(), ingredients: [] }; groups.push(currentGroup); }
           else currentGroup.ingredients.push(stripBullet(line));
-        } else if (section === 'instructions') result.instructions.push(stripBullet(line));
+        } else if (section === 'instructions') {
+          const sectionName = instructionHeading(line);
+          result.instructions.push(sectionName ? `[${sectionName}]` : stripBullet(line));
+        }
         else if (section === 'notes') notes.push(line);
         else if (looksIngredient(line) && !looksInstruction(line)) { section = 'ingredients'; currentGroup.ingredients.push(stripBullet(line)); }
         else if (looksInstruction(line)) { section = 'instructions'; result.instructions.push(stripBullet(line)); }
@@ -323,7 +401,8 @@
       });
       const mergedInstructions = [];
       rawInstructions.forEach(step => {
-        if (!mergedInstructions.length || (looksInstruction(step) && !/^\(/.test(step))) mergedInstructions.push(step);
+        if (/^\[[^\]]+\]$/.test(step)) mergedInstructions.push(step);
+        else if (!mergedInstructions.length || (looksInstruction(step) && !/^\(/.test(step))) mergedInstructions.push(step);
         else mergedInstructions[mergedInstructions.length - 1] += ` ${step}`;
       });
       for (let index = 1; index < mergedInstructions.length; index++) {

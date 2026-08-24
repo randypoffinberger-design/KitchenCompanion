@@ -1,4 +1,17 @@
-# Serenity Kitchen v0.21.10
+# Serenity Kitchen v0.21.16
+
+## v0.21.16
+
+- Rebuilds image/paste recipe classification around the six-page Garlic Butter Pasta sample supplied by the user.
+- Separates a title from a description when OCR joins them, and reads icon-prefixed prep time, cook time, servings, course, and keywords as metadata.
+- Removes embedded advertisements, nutrition/cost fragments, phone status text, and OCR icon debris instead of saving them as ingredients or directions.
+- Preserves ingredient groups and converts numbered instruction sections into unnumbered bracket headings.
+- Prevents ordinary direction text such as “cook until” from being mistaken for recipe cook-time metadata.
+
+## v0.21.11
+
+- Corrected legacy/imported ingredients whose complete text was stored in `item`, such as `4–6 cups beef broth`, rather than in structured quantity fields.
+- Range-prefixed legacy ingredients now scale visibly, transfer the correct quantity to Shopping, and match Pantry using the ingredient name without its quantity and unit.
 
 ## v0.21.10
 
@@ -589,3 +602,25 @@
 - Uses permanent `moduleId:recipeId` identities instead of names for navigation.
 - Supports optional `crossLinkAliases` in RecipePack files for alternate names such as “marinara,” “red sauce,” or “pasta sauce.”
 - Keeps existing RecipePack v1 modules compatible without requiring editorial changes.
+# Serenity Kitchen v0.21.12
+
+- Fixed legacy ingredient ranges that retained a numeric midpoint while the full range remained embedded in the ingredient text.
+- `quantity: 5` plus `item: "4–6 cups beef broth"` now displays as `8–12 cups beef broth` at 2×.
+- Preserved normalized Pantry and Shopping List matching for the repaired ingredient name.
+# Serenity Kitchen v0.21.13
+
+- Fixed preserved standalone display quantities such as `1½ pounds` not scaling.
+- Standalone whole numbers, decimals, fractions, and mixed fractions now scale consistently across recipe display, Pantry use, Meal Planner, and Shopping List transfers.
+# Serenity Kitchen v0.21.14
+
+- Reworked multi-image OCR selection to score cleaned recipe text instead of rewarding readable advertisements.
+- Reassembles wrapped ingredient and instruction lines before recipe parsing.
+- Excludes Equipment-only, Nutrition/footer, advertising, domain, and phone-status content from multi-page recipe imports.
+- Prevents partial overlapping screenshots from creating duplicate or truncated ingredients.
+- Added a Garlic Butter Pasta regression based on a six-screenshot webpage import.
+# Serenity Kitchen v0.21.15
+
+- Prevents one malformed imported recipe from breaking the shared Cross-Link index and blanking every recipe detail screen.
+- Normalizes invalid ingredient and instruction collections at display time without changing the saved record.
+- Keeps recipe detail rendering available when Cross-Link analysis fails.
+- Adds a visible recovery panel with Edit and repair access instead of leaving a blank detail page.
