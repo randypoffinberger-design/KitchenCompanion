@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.29';
+  const ENGINE_VERSION = '0.21.30';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -95,7 +95,9 @@
 
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
+  const LIST_EXPANSION_MODES = new Set(['collapsed','stores-open','expanded']);
   state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
+  state.settings.listExpansionMode = LIST_EXPANSION_MODES.has(state.settings.listExpansionMode) ? state.settings.listExpansionMode : 'stores-open';
   let currentView = 'home';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -135,6 +137,7 @@
     menuImportModule: document.querySelector('#menuImportModule'), shoppingCount: document.querySelector('#shoppingCount'), shoppingGroups: document.querySelector('#shoppingGroups'), shoppingStoreFilter: document.querySelector('#shoppingStoreFilter'), addShoppingItemBtn: document.querySelector('#addShoppingItemBtn'), shareShoppingBtn: document.querySelector('#shareShoppingBtn'), shareShoppingDialog: document.querySelector('#shareShoppingDialog'), shareShoppingFileBtn: document.querySelector('#shareShoppingFileBtn'), copyShoppingMessageBtn: document.querySelector('#copyShoppingMessageBtn'), shoppingShareStatus: document.querySelector('#shoppingShareStatus'), importShoppingBtn: document.querySelector('#importShoppingBtn'), importShoppingDialog: document.querySelector('#importShoppingDialog'), chooseShoppingFileBtn: document.querySelector('#chooseShoppingFileBtn'), shoppingMessageText: document.querySelector('#shoppingMessageText'), shoppingPasteError: document.querySelector('#shoppingPasteError'), importPastedShoppingBtn: document.querySelector('#importPastedShoppingBtn'), shoppingImportFile: document.querySelector('#shoppingImportFile'), clearCheckedBtn: document.querySelector('#clearCheckedBtn'), regularItemsBtn: document.querySelector('#regularItemsBtn'), manageStoresBtn: document.querySelector('#manageStoresBtn'), ingredientShoppingDialog: document.querySelector('#ingredientShoppingDialog'), ingredientShoppingChoices: document.querySelector('#ingredientShoppingChoices'), ingredientStoreSelect: document.querySelector('#ingredientStoreSelect'), confirmIngredientAdd: document.querySelector('#confirmIngredientAdd'), shoppingItemDialog: document.querySelector('#shoppingItemDialog'), shoppingItemForm: document.querySelector('#shoppingItemForm'), shoppingItemStore: document.querySelector('#shoppingItemStore'), shoppingItemDialogTitle: document.querySelector('#shoppingItemDialogTitle'), shoppingItemEditId: document.querySelector('#shoppingItemEditId'), shoppingItemSubmitBtn: document.querySelector('#shoppingItemSubmitBtn'), regularItemsDialog: document.querySelector('#regularItemsDialog'), regularItemsList: document.querySelector('#regularItemsList'), catalogRefreshBtn: document.querySelector('#catalogRefreshBtn'), importOptionsDialog: document.querySelector('#importOptionsDialog'), browseGithubBtn: document.querySelector('#browseGithubBtn'), importFileBtn: document.querySelector('#importFileBtn'), forceUpdateBtn: document.querySelector('#forceUpdateBtn'), recipeCreateDialog: document.querySelector('#recipeCreateDialog'), manualRecipeBtn: document.querySelector('#manualRecipeBtn'), pasteRecipeBtn: document.querySelector('#pasteRecipeBtn'), imageRecipeBtn: document.querySelector('#imageRecipeBtn'), urlRecipeBtn: document.querySelector('#urlRecipeBtn'), pasteRecipeDialog: document.querySelector('#pasteRecipeDialog'), pasteRecipeForm: document.querySelector('#pasteRecipeForm'), pastedRecipeText: document.querySelector('#pastedRecipeText'), urlRecipeDialog: document.querySelector('#urlRecipeDialog'), urlRecipeForm: document.querySelector('#urlRecipeForm'), recipeUrl: document.querySelector('#recipeUrl'), urlImportStatus: document.querySelector('#urlImportStatus'), importRecipeUrl: document.querySelector('#importRecipeUrl'), imageRecipeDialog: document.querySelector('#imageRecipeDialog'), imageRecipeForm: document.querySelector('#imageRecipeForm'), recipeImageFiles: document.querySelector('#recipeImageFiles'), recipeImagePreviews: document.querySelector('#recipeImagePreviews'), recognizedRecipeText: document.querySelector('#recognizedRecipeText'), recognizeRecipeImages: document.querySelector('#recognizeRecipeImages'), parseRecognizedRecipe: document.querySelector('#parseRecognizedRecipe'), ocrStatus: document.querySelector('#ocrStatus'), recipeImportFile: document.querySelector('#recipeImportFile'), backupRestoreFile: document.querySelector('#backupRestoreFile'), createBackupBtn: document.querySelector('#createBackupBtn'), restoreBackupBtn: document.querySelector('#restoreBackupBtn'), exportPersonalRecipesBtn: document.querySelector('#exportPersonalRecipesBtn'), importRecipeBtn: document.querySelector('#importRecipeBtn'), shareRecipeDialog: document.querySelector('#shareRecipeDialog'), shareRecipeName: document.querySelector('#shareRecipeName'), shareIncludeNotes: document.querySelector('#shareIncludeNotes'), shareRecipeJsonBtn: document.querySelector('#shareRecipeJsonBtn'), shareRecipeTextBtn: document.querySelector('#shareRecipeTextBtn'), restoreBackupDialog: document.querySelector('#restoreBackupDialog'), restoreBackupForm: document.querySelector('#restoreBackupForm'), backupSummary: document.querySelector('#backupSummary'), cancelRestoreBackup: document.querySelector('#cancelRestoreBackup'), hiddenRecipesBtn: document.querySelector('#hiddenRecipesBtn'), hiddenRecipesDialog: document.querySelector('#hiddenRecipesDialog'), hiddenRecipesList: document.querySelector('#hiddenRecipesList'), restoreAllHiddenBtn: document.querySelector('#restoreAllHiddenBtn'), wakeLockMode: document.querySelector('#wakeLockMode'), wakeLockStatus: document.querySelector('#wakeLockStatus'), alarmSoundToggle: document.querySelector('#alarmSoundToggle'), alarmToneSelect: document.querySelector('#alarmToneSelect'), alarmVolume: document.querySelector('#alarmVolume'), testBellBtn: document.querySelector('#testBellBtn'), alarmPreviewStatus: document.querySelector('#alarmPreviewStatus'), activeProfileName: document.querySelector('#activeProfileName'), manageProfilesBtn: document.querySelector('#manageProfilesBtn'), profilesDialog: document.querySelector('#profilesDialog'), profilesList: document.querySelector('#profilesList'), addProfileBtn: document.querySelector('#addProfileBtn'), addKitchenProfileBtn: document.querySelector('#addKitchenProfileBtn'), profileSetupDialog: document.querySelector('#profileSetupDialog'), profileSetupForm: document.querySelector('#profileSetupForm'), profileSetupName: document.querySelector('#profileSetupName'), importProfileBtn: document.querySelector('#importProfileBtn'), profileImportFile: document.querySelector('#profileImportFile'), profileStorageSummary: document.querySelector('#profileStorageSummary'), headerProfileBtn: document.querySelector('#headerProfileBtn'), headerProfileAvatar: document.querySelector('#headerProfileAvatar'), headerProfileName: document.querySelector('#headerProfileName'), profileQuickMenu: document.querySelector('#profileQuickMenu'), profileEditDialog: document.querySelector('#profileEditDialog'), profileEditForm: document.querySelector('#profileEditForm'), profileEditName: document.querySelector('#profileEditName'), profileEditEmoji: document.querySelector('#profileEditEmoji'), profileEditImage: document.querySelector('#profileEditImage'), profileEditImageInput: document.querySelector('#profileEditImageInput'), profileEditImageBtn: document.querySelector('#profileEditImageBtn'), profileEditRemoveImageBtn: document.querySelector('#profileEditRemoveImageBtn'), profileEditPreview: document.querySelector('#profileEditPreview'), profileEditColorChoices: document.querySelector('#profileEditColorChoices'), cancelProfileEdit: document.querySelector('#cancelProfileEdit'), safeguardStatus: document.querySelector('#safeguardStatus'), safetyBackupList: document.querySelector('#safetyBackupList'), createSafetyBackupBtn: document.querySelector('#createSafetyBackupBtn'), runDiagnosticsBtn: document.querySelector('#runDiagnosticsBtn'), optimizeStorageBtn: document.querySelector('#optimizeStorageBtn'), diagnosticsOutput: document.querySelector('#diagnosticsOutput'), offlineOcrStatus: document.querySelector('#offlineOcrStatus'), repairOfflineOcrBtn: document.querySelector('#repairOfflineOcrBtn')
   };
   Object.assign(els, {
+    listExpansionMode:document.querySelector('#listExpansionMode'),
     mealPlannerPane:document.querySelector('#mealPlannerPane'), mealPlannerWeekLabel:document.querySelector('#mealPlannerWeekLabel'), mealPlannerDays:document.querySelector('#mealPlannerDays'), mealPlannerStatus:document.querySelector('#mealPlannerStatus'),
     mealPreviousWeek:document.querySelector('#mealPreviousWeek'), mealCurrentWeek:document.querySelector('#mealCurrentWeek'), mealNextWeek:document.querySelector('#mealNextWeek'), mealGenerateWeek:document.querySelector('#mealGenerateWeek'), mealFillEmpty:document.querySelector('#mealFillEmpty'), mealAddShopping:document.querySelector('#mealAddShopping'), mealPlannerSettings:document.querySelector('#mealPlannerSettings'),
     mealSlotDialog:document.querySelector('#mealSlotDialog'), mealSlotDialogTitle:document.querySelector('#mealSlotDialogTitle'), closeMealSlotDialog:document.querySelector('#closeMealSlotDialog'), cancelMealSlot:document.querySelector('#cancelMealSlot'), mealRecipeSearch:document.querySelector('#mealRecipeSearch'), mealRecipeChoices:document.querySelector('#mealRecipeChoices'),
@@ -369,6 +372,7 @@
     els.restoreAllHiddenBtn?.addEventListener('click', restoreAllHiddenRecipes);
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
+    els.listExpansionMode?.addEventListener('change', () => { state.settings.listExpansionMode = LIST_EXPANSION_MODES.has(els.listExpansionMode.value) ? els.listExpansionMode.value : 'stores-open'; shoppingStoreExpansion.clear(); shoppingCategoryExpansion.clear(); pantryGroupExpansion.clear(); saveState(); if(currentView==='shopping')renderShoppingList(); if(currentView==='pantry')renderPantry(); });
     els.wakeLockMode?.addEventListener('change', () => { state.settings.wakeLockMode = els.wakeLockMode.value; saveState(); updateWakeLock(); });
     els.alarmSoundToggle?.addEventListener('change', () => { state.settings.alarmSoundEnabled = els.alarmSoundToggle.checked; saveState(); if (state.settings.alarmSoundEnabled) updateAlarmLoop(); else stopBell(); });
     els.alarmVolume?.addEventListener('input', () => { state.settings.alarmVolume = Number(els.alarmVolume.value); if (bellAudio) bellAudio.volume = state.settings.alarmVolume; saveState(); });
@@ -486,6 +490,8 @@
     document.querySelector('#cancelBulkPantry')?.addEventListener('click', () => document.querySelector('#bulkPantryDialog')?.close());
     document.querySelector('#pantrySearch')?.addEventListener('input', renderPantry);
     document.querySelector('#pantryGroupFilter')?.addEventListener('change', renderPantry);
+    document.querySelector('#pantryDateFrom')?.addEventListener('change', renderPantry);
+    document.querySelector('#pantryDateTo')?.addEventListener('change', renderPantry);
     document.querySelector('#pantryLowOnly')?.addEventListener('click', togglePantryLowOnly);
     document.querySelector('#pantrySelectBtn')?.addEventListener('click', beginPantrySelection);
     document.querySelector('#pantrySelectionCancel')?.addEventListener('click', cancelPantrySelection);
@@ -1127,7 +1133,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.29').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.30').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1520,6 +1526,7 @@
     document.documentElement.dataset.theme = state.settings.darkMode ? 'dark' : 'light';
     els.darkModeToggle.checked = !!state.settings.darkMode;
     els.metricToggle.checked = !!state.settings.metricHelpers;
+    if (els.listExpansionMode) els.listExpansionMode.value = state.settings.listExpansionMode;
     if (els.wakeLockMode) els.wakeLockMode.value = state.settings.wakeLockMode || 'recipes-and-timers';
     if (els.alarmSoundToggle) els.alarmSoundToggle.checked = state.settings.alarmSoundEnabled !== false;
     if (els.alarmVolume) els.alarmVolume.value = String(state.settings.alarmVolume ?? 0.85);
@@ -2886,7 +2893,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.29');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.30');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3208,6 +3215,10 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
 
   let shoppingSelectionMode = false;
+  const shoppingStoreExpansion = new Map();
+  const shoppingCategoryExpansion = new Map();
+  const pantryGroupExpansion = new Map();
+  function listSectionExpanded(overrides,key,level){if(overrides.has(key))return overrides.get(key);const mode=state.settings.listExpansionMode;return mode==='expanded'||(mode==='stores-open'&&level==='store');}
   const shoppingSelectedIds = new Set();
   let shoppingUndoSnapshot = null;
   let shoppingUndoTimer = null;
@@ -4012,9 +4023,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function pantryVisibleItems() {
     const query=String(document.querySelector('#pantrySearch')?.value||'').trim().toLowerCase();
+    const dateFrom=document.querySelector('#pantryDateFrom')?.value||'';
+    const dateTo=document.querySelector('#pantryDateTo')?.value||'';
     const lowOnly=document.querySelector('#pantryLowOnly')?.getAttribute('aria-pressed')==='true';
     const group=document.querySelector('#pantryGroupFilter')?.value||'all';
-    return state.pantryItems.filter(item=>(!query || item.name.toLowerCase().includes(query)) && (group==='all'||item.group===group) && (!lowOnly || Number(item.quantity)<=Number(item.threshold))).sort((a,b)=>(SHOPPING_GROUP_ORDER.get(a.group)??999)-(SHOPPING_GROUP_ORDER.get(b.group)??999)||a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+    return state.pantryItems.filter(item=>{
+      const lots=(item.lots||[]).filter(lot=>Number(lot.quantity)>0);
+      const searchable=[item.name,item.group,...lots.flatMap(lot=>[lot.store,lot.purchasedAt,lot.purchasedAt?new Date(`${lot.purchasedAt}T12:00:00`).toLocaleDateString():''])].join(' ').toLowerCase();
+      const dateMatches=(!dateFrom&&!dateTo)||lots.some(lot=>lot.purchasedAt&&(!dateFrom||lot.purchasedAt>=dateFrom)&&(!dateTo||lot.purchasedAt<=dateTo));
+      return (!query||searchable.includes(query))&&dateMatches&&(group==='all'||item.group===group)&&(!lowOnly||Number(item.quantity)<=Number(item.threshold));
+    }).sort((a,b)=>(SHOPPING_GROUP_ORDER.get(a.group)??999)-(SHOPPING_GROUP_ORDER.get(b.group)??999)||a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
   }
 
   function updatePantryBulkBar() {
@@ -4028,8 +4046,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     state.pantryItems=state.pantryItems.map(normalizePantryItem);
     const root=document.querySelector('#pantryGroups');const items=pantryVisibleItems();root.innerHTML='';updatePantryBulkBar();
     if(!items.length){root.innerHTML='<div class="empty-state"><h2>No pantry items found</h2><p>Add items manually or move checked purchases from the shopping list.</p></div>';return;}
-    let group='';items.forEach(item=>{
-      if(item.group!==group){group=item.group;const heading=document.createElement('h2');heading.className='pantry-group-heading';const groupCount=items.filter(entry=>entry.group===group).length;heading.innerHTML=`<span>${escapeHtml(group)}</span><small>${groupCount}</small>`;root.append(heading);}
+    let group='',groupBox=null;items.forEach(item=>{
+      if(item.group!==group){group=item.group;const groupKey=group;const expanded=listSectionExpanded(pantryGroupExpansion,groupKey,'category');const section=document.createElement('section');section.className='pantry-category-section';const groupCount=items.filter(entry=>entry.group===groupKey).length;section.innerHTML=`<button type="button" class="pantry-group-heading list-section-toggle" aria-expanded="${expanded}"><span>${escapeHtml(groupKey)}</span><small>${groupCount} item${groupCount===1?'':'s'}</small><b class="list-section-chevron">${uiIcon(expanded?'chevron-up':'chevron-down')}</b></button><div class="pantry-category-items" ${expanded?'':'hidden'}></div>`;section.querySelector('button').addEventListener('click',()=>{pantryGroupExpansion.set(groupKey,!listSectionExpanded(pantryGroupExpansion,groupKey,'category'));renderPantry();});root.append(section);groupBox=section.querySelector('.pantry-category-items');}
       const low=Number(item.quantity)<=Number(item.threshold);const expanded=!pantrySelectionMode&&pantryExpandedId===item.id;const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${expanded?' pantry-expanded':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
       const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
       const lotRows=sortPantryLots(item.lots).map(lot=>`<div class="pantry-lot-row" data-lot-id="${escapeHtml(lot.id)}"><div><strong>${escapeHtml(formatNumber(lot.quantity))} ${escapeHtml(item.unit)}</strong><small>${lot.purchasedAt?escapeHtml(new Date(`${lot.purchasedAt}T12:00:00`).toLocaleDateString()):'Date not recorded'} · ${escapeHtml(lot.store||'Store not recorded')}</small></div><div><button type="button" class="pantry-lot-edit">Edit</button><button type="button" class="pantry-lot-remove danger-text">Remove</button></div></div>`).join('');
@@ -4041,7 +4059,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       row.querySelector('.pantry-add-lot')?.addEventListener('click',()=>openPantryLotDialog(item));
       row.querySelectorAll('.pantry-lot-row').forEach(lotRow=>{const lot=item.lots.find(entry=>entry.id===lotRow.dataset.lotId);lotRow.querySelector('.pantry-lot-edit')?.addEventListener('click',()=>openPantryLotDialog(item,lot));lotRow.querySelector('.pantry-lot-remove')?.addEventListener('click',()=>removePantryLot(item,lot));});
       row.querySelector('.pantry-edit')?.addEventListener('click',()=>openPantryItemDialog(item));row.querySelector('.pantry-remove')?.addEventListener('click',()=>{if(confirm(`Remove ${item.name} from Pantry?`)){state.pantryItems=state.pantryItems.filter(entry=>entry.id!==item.id);saveState();renderPantry();renderCounts();}});
-      root.append(row);
+      groupBox.append(row);
     });
   }
 
@@ -4153,13 +4171,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     renderCounts();
     updateShoppingBulkBar();
     const items=visibleShoppingItems();
+    if(highlightId){const highlighted=items.find(item=>item.id===highlightId);if(highlighted){const storeKey=normalizeStore(highlighted.store);const categoryKey=`${storeKey}|${highlighted.checked?'Checked':(SHOPPING_GROUPS.includes(highlighted.group)?highlighted.group:classifyShoppingGroup(highlighted.name))}`;shoppingStoreExpansion.set(storeKey,true);shoppingCategoryExpansion.set(categoryKey,true);}}
     els.shoppingGroups.innerHTML='';
     if(!items.length){els.shoppingGroups.innerHTML='<div class="empty-state"><h2>Your list is ready</h2><p>Add an item, choose from regular purchases, or pull ingredients from a recipe.</p></div>';return;}
     const groups={}; items.forEach(x=>(groups[normalizeStore(x.store)]??=[]).push(x));
     Object.entries(groups).forEach(([store,list])=>{
       const remaining=list.filter(x=>!x.checked).length;
+      const storeExpanded=listSectionExpanded(shoppingStoreExpansion,store,'store');
       const section=document.createElement('section');section.className='shopping-store-card';
-      section.innerHTML=`<div class="shopping-store-heading"><h2>${escapeHtml(displayStoreName(store))}</h2><span>${remaining} remaining</span></div><div class="shopping-items"></div>`;
+      section.innerHTML=`<button type="button" class="shopping-store-heading list-section-toggle" aria-expanded="${storeExpanded}"><h2>${escapeHtml(displayStoreName(store))}</h2><span>${list.length} item${list.length===1?'':'s'}${remaining!==list.length?` · ${remaining} remaining`:''}</span><b class="list-section-chevron">${uiIcon(storeExpanded?'chevron-up':'chevron-down')}</b></button><div class="shopping-items" ${storeExpanded?'':'hidden'}></div>`;
+      section.querySelector('.shopping-store-heading').addEventListener('click',()=>{shoppingStoreExpansion.set(store,!listSectionExpanded(shoppingStoreExpansion,store,'store'));renderShoppingList();});
       const box=section.querySelector('.shopping-items');
       let previousGroup = '';
       let checkedHeadingShown = false;
@@ -4225,6 +4246,11 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         row.querySelector('.edit-shopping').addEventListener('click',()=>openShoppingItemDialog(item));
         row.querySelector('.remove-shopping').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from the shopping list?`))return;state.shoppingList=state.shoppingList.filter(x=>x.id!==item.id);saveState();renderShoppingList();renderCounts()});
         box.append(row);
+      });
+      [...box.querySelectorAll('.shopping-group-heading')].forEach(heading=>{
+        const category=heading.textContent;const key=`${store}|${category}`;const rows=[];let sibling=heading.nextSibling;while(sibling&&!sibling.classList?.contains('shopping-group-heading')){const next=sibling.nextSibling;rows.push(sibling);sibling=next;}
+        const categoryExpanded=listSectionExpanded(shoppingCategoryExpansion,key,'category');const categoryBox=document.createElement('div');categoryBox.className='shopping-category-items';categoryBox.hidden=!categoryExpanded;rows.forEach(row=>categoryBox.append(row));
+        const count=rows.filter(row=>row.classList?.contains('shopping-row')).length;const toggle=document.createElement('button');toggle.type='button';toggle.className=`shopping-group-heading list-section-toggle${category==='Checked'?' shopping-checked-heading':''}`;toggle.setAttribute('aria-expanded',String(categoryExpanded));toggle.innerHTML=`<span>${escapeHtml(category)}</span><small>${count} item${count===1?'':'s'}</small><b class="list-section-chevron">${uiIcon(categoryExpanded?'chevron-up':'chevron-down')}</b>`;toggle.addEventListener('click',()=>{shoppingCategoryExpansion.set(key,!listSectionExpanded(shoppingCategoryExpansion,key,'category'));renderShoppingList();});heading.replaceWith(toggle);toggle.after(categoryBox);
       });
       els.shoppingGroups.append(section);
     });

@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.29">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.29">
+  <link rel="manifest" href="app.webmanifest?v=0.21.30">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.30">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.29">
+  <link rel="stylesheet" href="styles.css?v=0.21.30">
 </head>
 <body>
   <div class="app-shell">
@@ -57,7 +57,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.29</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.30</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -138,7 +138,7 @@
 
       <section id="pantryPane" class="pantry-pane" hidden>
         <div class="list-header page-heading"><span class="page-heading-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24"><path d="M4 3h16v18H4zM4 9h16M4 15h16M8 5v2M15 11v2M9 17v2"/></svg></span><div class="page-heading-copy"><h1>Pantry</h1><p id="pantryPageSummary">Track what is on hand and restock automatically.</p></div><div class="shopping-add-actions"><button id="addPantryItemBtn" class="button">＋ Add item</button><button id="addManyPantryItemsBtn" class="button secondary">＋ Several</button></div></div>
-        <div class="pantry-toolbar"><input id="pantrySearch" type="search" placeholder="Find an item…" aria-label="Search pantry items" autocomplete="off"><select id="pantryGroupFilter" aria-label="Filter pantry by category"><option value="all">All categories</option></select><button id="pantryLowOnly" type="button" class="button secondary" aria-pressed="false">Low stock only</button></div>
+        <div class="pantry-toolbar"><input id="pantrySearch" type="search" placeholder="Find item, store, or purchase date…" aria-label="Search pantry items, stores, and purchase dates" autocomplete="off"><select id="pantryGroupFilter" aria-label="Filter pantry by category"><option value="all">All categories</option></select><label class="pantry-date-filter"><span>Purchased from</span><input id="pantryDateFrom" type="date"></label><label class="pantry-date-filter"><span>Through</span><input id="pantryDateTo" type="date"></label><button id="pantryLowOnly" type="button" class="button secondary" aria-pressed="false">Low stock only</button></div>
         <div class="shopping-bulk-bar"><button id="pantrySelectBtn" type="button" class="shopping-bar-button">Select items</button><div id="pantryBulkActions" class="shopping-bulk-actions" hidden><button id="pantrySelectionCancel" type="button" class="shopping-bar-button">Cancel</button><strong id="pantrySelectedCount">0 selected</strong><button id="pantrySelectAll" type="button" class="shopping-bar-button">All</button><button id="pantryBulkDelete" type="button" class="shopping-bar-button danger-text" disabled>Remove</button></div></div>
         <p id="pantryStatus" class="shopping-action-status" aria-live="polite"></p>
         <div id="pantryGroups"></div>
@@ -251,7 +251,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.29</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.30</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -322,7 +322,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.29</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.30</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -353,6 +353,13 @@
               <button type="button" class="color-swatch" data-color="#15803D" style="--swatch:#15803D" aria-label="Green"></button>
               <button type="button" class="color-swatch" data-color="#BE123C" style="--swatch:#BE123C" aria-label="Rose"></button>
             </div><label class="custom-color-row"><span>Custom color</span><input id="accentColorInput" type="color" value="#7b3f00"></label></div>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary>Lists and organization</summary>
+          <div class="settings-section-content">
+            <label class="setting-column"><span>Pantry and Shopping List starting view</span><select id="listExpansionMode"><option value="collapsed">Everything collapsed</option><option value="stores-open">Stores expanded, categories collapsed</option><option value="expanded">Everything expanded</option></select></label>
+            <p class="setting-help">This controls the starting view. You can still open several stores and categories at the same time.</p>
           </div>
         </details>
         <details class="settings-section">
@@ -832,13 +839,13 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.29"></script>
-  <script src="recipe-scaling.js?v=0.21.29"></script>
-  <script src="profile-storage.js?v=0.21.29"></script>
-  <script src="url-recipe-import.js?v=0.21.29"></script>
-  <script src="meal-planner.js?v=0.21.29"></script>
-  <script src="sync-client.js?v=0.21.29"></script>
-  <script src="app.js?v=0.21.29"></script>
-  <script src="ocr-service.js?v=0.21.29"></script>
+  <script src="kitchen-engine.js?v=0.21.30"></script>
+  <script src="recipe-scaling.js?v=0.21.30"></script>
+  <script src="profile-storage.js?v=0.21.30"></script>
+  <script src="url-recipe-import.js?v=0.21.30"></script>
+  <script src="meal-planner.js?v=0.21.30"></script>
+  <script src="sync-client.js?v=0.21.30"></script>
+  <script src="app.js?v=0.21.30"></script>
+  <script src="ocr-service.js?v=0.21.30"></script>
 </body>
 </html>

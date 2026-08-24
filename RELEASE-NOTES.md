@@ -1,7 +1,13 @@
-# Serenity Kitchen v0.21.29
+# Serenity Kitchen v0.21.30
 
-## v0.21.29
+## v0.21.30
 
+- Makes Pantry categories collapsible with visible item counts.
+- Makes Shopping List stores and their nested categories independently collapsible with counts at both levels.
+- Allows several stores and categories to remain expanded simultaneously.
+- Adds saved starting-view choices: everything collapsed, stores expanded with categories collapsed, or everything expanded.
+- Expands Pantry search to match item names, categories, purchase stores, and recorded purchase dates.
+- Adds combinable Pantry purchase-date From and Through filters that work with search, category, and low-stock filters.
 - Tracks Pantry inventory as purchase lots with quantity, purchase date, and store while keeping one combined item card.
 - Records today and the selected store when checked Shopping List items move into Pantry.
 - Lets users add, edit, and remove purchase records independently in an expanded Pantry card.
