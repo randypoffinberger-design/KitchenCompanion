@@ -322,7 +322,7 @@
         return (/\b(?:recipe|cake|pancakes?|rolls?|bread|soup|salad|sauce|cookies?|pie|pies|chicken|beef|pork|pasta|cider)\b/i.test(line)?35:0)+(words.length<=6?8:0)-(/[=}{<>|]/.test(line)?30:0);
       };
       const selectedTitle=titleCandidates.slice(0,24).map((line,index)=>({line,index,score:titleScore(line)+(index===0?40:0)})).sort((a,b)=>b.score-a.score||a.index-b.index)[0];
-      const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], notes: '' };
+      const result = { name:selectedTitle?.score>0?selectedTitle.line:'Imported Recipe', category: '', description: '', prepTime: '', cookTime: '', yieldText: '', tags: [], ingredients: [], ingredientGroups: [], instructions: [], nutrition: '', notes: '' };
       let section = 'meta'; let currentGroup = { name: 'Main', ingredients: [] };
       const groups = [currentGroup], description = [], notes = [], equipment = [], nutrition = [];
       let keywordContinuation = false;
@@ -584,12 +584,13 @@
         .replace(/\s+(?:https?:\/\/|Information from your device|A Raptive Partner Site)[\s\S]*$/i, '')
         .replace(/\bVitamin A:\s*9[Oo0](?:l|I|1)?I?U\b/i, 'Vitamin A: 90IU')
         .replace(/\bVitamin C:\s*Img\b/i, 'Vitamin C: 1mg')
+        .replace(/\b(\d+)[¢©]g\b/g, '$1g')
         .replace(/\b(Calories|Carbohydrates?|Protein|Fat|Saturated Fat|Polyunsaturated Fat|Monounsaturated Fat|Trans Fat|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\s+(?=\d)/gi, '$1: ')
         .trim())
         .filter(value => value && nutritionNouns.test(value) && !equipmentNouns.test(value) && !/https?:\/\/|^hp\s*[—-]?$|^Information from your device\b|^A Raptive Partner Site\b/i.test(value));
       const lastCalories = cleanNutrition.map(value => /\bCalories\b/i.test(value)).lastIndexOf(true);
       if (lastCalories > 0) cleanNutrition = cleanNutrition.slice(lastCalories);
-      if (cleanNutrition.length) notes.push(`Nutrition:\n${cleanNutrition.join('\n')}`);
+      result.nutrition = cleanNutrition.join('\n');
       result.notes = notes.join('\n')
         .replace(/Cost:\s*\$?(\d+)\s*[-–]\s*%?\$?(\d+)/gi, 'Cost: $$$1–$$$2')
         .replace(/([.!?])\1+/g, '$1')

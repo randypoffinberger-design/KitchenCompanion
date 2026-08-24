@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.21';
+  const ENGINE_VERSION = '0.21.23';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1122,7 +1122,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.21').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.23').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2135,14 +2135,14 @@
   }
 
   function renderRecipeInformation(notes) {
-    const groups = { details:[], equipmentMustHave:[], equipmentRecommended:[], nutrition:[], notes:[] };
+    const groups = { details:[], equipmentMustHave:[], equipmentRecommended:[], notes:[] };
     let section = 'details', equipmentExplicitTier = false;
     String(notes || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean).forEach(line => {
-      const heading = line.match(/^(Equipment|Must have|Recommended|Nutrition|Notes?)\s*:\s*(.*)$/i);
+      const heading = line.match(/^(Equipment|Must have|Recommended|Notes?)\s*:\s*(.*)$/i);
       if (heading) {
         if (/^equipment$/i.test(heading[1])) equipmentExplicitTier = false;
         else if (/^(?:must have|recommended)$/i.test(heading[1])) equipmentExplicitTier = true;
-        section = /^(?:equipment|must have)$/i.test(heading[1]) ? 'equipmentMustHave' : /^recommended$/i.test(heading[1]) ? 'equipmentRecommended' : /^nutrition$/i.test(heading[1]) ? 'nutrition' : 'notes';
+        section = /^(?:equipment|must have)$/i.test(heading[1]) ? 'equipmentMustHave' : /^recommended$/i.test(heading[1]) ? 'equipmentRecommended' : 'notes';
         if (heading[2]) groups[section].push(heading[2]);
         return;
       }
@@ -2153,7 +2153,15 @@
     if (!Object.values(groups).some(values => values.length)) return '';
     const block = (title, values, kind='text') => values.length ? `<div class="recipe-info-block recipe-info-${kind}"><h3>${title}</h3>${kind === 'list' ? `<ul>${values.map(value => `<li>${escapeHtml(value)}</li>`).join('')}</ul>` : `<p>${values.map(escapeHtml).join('<br>')}</p>`}</div>` : '';
     const equipment = groups.equipmentMustHave.length || groups.equipmentRecommended.length ? `<div class="recipe-info-block recipe-info-list"><h3>Equipment</h3>${groups.equipmentMustHave.length ? `<h4>Must have</h4><ul>${groups.equipmentMustHave.map(value => `<li>${escapeHtml(value)}</li>`).join('')}</ul>` : ''}${groups.equipmentRecommended.length ? `<h4>Recommended</h4><ul>${groups.equipmentRecommended.map(value => `<li>${escapeHtml(value)}</li>`).join('')}</ul>` : ''}</div>` : '';
-    return `<section class="recipe-section recipe-information"><h2>Recipe information</h2><div class="recipe-info-grid">${block('Details', groups.details)}${equipment}${block('Nutrition', groups.nutrition)}${block('Notes', groups.notes)}</div></section>`;
+    return `<section class="recipe-section recipe-information"><h2>Recipe information</h2><div class="recipe-info-grid">${block('Details', groups.details)}${equipment}${block('Notes', groups.notes)}</div></section>`;
+  }
+
+  function renderNutritionSection(recipe) {
+    const legacy = splitNutritionFromNotes(recipe?.notes || '');
+    const value = String(recipe?.nutrition || legacy.nutrition || '').trim();
+    if (!value) return '';
+    const entries = value.split(/\r?\n|\s*\|\s*/).map(entry => entry.trim()).filter(Boolean);
+    return `<section class="recipe-section recipe-nutrition"><h2>Nutrition</h2><div class="nutrition-grid">${entries.map(entry => `<span>${escapeHtml(entry)}</span>`).join('')}</div></section>`;
   }
 
   function renderRecipeDetail() {
@@ -2205,7 +2213,8 @@
         <section class="recipe-section"><div class="section-title-row"><h2>Ingredients</h2><div class="pantry-readiness-legend" aria-label="Pantry ingredient status"><span>${pantryReadinessMarker('green')}Have</span><span>${pantryReadinessMarker('yellow')}Check</span><span>${pantryReadinessMarker('red')}Missing</span></div><button id="addIngredientsBtn" class="button secondary">Add to shopping list</button><button id="usePantryIngredientsBtn" class="button secondary">Use pantry ingredients</button></div>${renderIngredientGroups(recipe, crossLinks)}</section>
         <section class="recipe-section"><h2>Instructions</h2>${renderInstructionList(recipe)}</section>
       </div>
-      ${renderRecipeInformation(recipe.notes)}
+      ${renderNutritionSection(recipe)}
+      ${renderRecipeInformation(splitNutritionFromNotes(recipe.notes).notes)}
       ${renderCrossLinkSection(recipe, crossLinks, incomingLinks)}
       <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes?.[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
     } catch (error) {
@@ -2441,6 +2450,19 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return module;
   }
 
+  function splitNutritionFromNotes(notes) {
+    const remaining = [], nutrition = [];
+    let inNutrition = false;
+    String(notes || '').split(/\r?\n/).forEach(rawLine => {
+      const line = rawLine.trim(), heading = line.match(/^Nutrition\s*:\s*(.*)$/i);
+      if (heading) { inNutrition = true; if (heading[1]) nutrition.push(heading[1]); return; }
+      if (inNutrition && /^(?:Equipment|Notes?)\s*:/i.test(line)) inNutrition = false;
+      if (inNutrition) { if (line) nutrition.push(line.replace(/^[-•]\s*/, '')); }
+      else remaining.push(rawLine);
+    });
+    return { notes:remaining.join('\n').trim(), nutrition:nutrition.join('\n').trim() };
+  }
+
   function splitEquipmentFromNotes(notes) {
     const remaining = [], items = [];
     let inEquipment = false, tier = 'must', explicitTier = false;
@@ -2513,7 +2535,9 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     els.customCategoryInput.hidden = true; els.customCategoryInput.value = '';
     document.querySelector('#editDescription').value = recipe?.description || '';
     const equipmentData = splitEquipmentFromNotes(recipe?.notes || '');
-    document.querySelector('#editNotes').value = equipmentData.notes;
+    const nutritionData = splitNutritionFromNotes(equipmentData.notes);
+    document.querySelector('#editNotes').value = nutritionData.notes;
+    document.querySelector('#editNutrition').value = recipe?.nutrition || nutritionData.nutrition;
     setEquipmentEditor(equipmentData.items);
     document.querySelector('#editPrepTime').value = recipe?.prepTime || '';
     document.querySelector('#editCookTime').value = recipe?.cookTime || '';
@@ -2530,7 +2554,9 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if (parsed.category) populateCategorySelect(parsed.category);
     document.querySelector('#editDescription').value = parsed.description || '';
     const equipmentData = splitEquipmentFromNotes(parsed.notes || '');
-    document.querySelector('#editNotes').value = equipmentData.notes;
+    const nutritionData = splitNutritionFromNotes(equipmentData.notes);
+    document.querySelector('#editNotes').value = nutritionData.notes;
+    document.querySelector('#editNutrition').value = parsed.nutrition || nutritionData.nutrition;
     setEquipmentEditor(equipmentData.items);
     document.querySelector('#editPrepTime').value = parsed.prepTime || '';
     document.querySelector('#editCookTime').value = parsed.cookTime || '';
@@ -2657,6 +2683,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       id, name,
       category: getEditorCategory(),
       description: document.querySelector('#editDescription').value.trim(), notes: composeRecipeNotes(document.querySelector('#editNotes').value, readEquipmentEditor()),
+      nutrition: document.querySelector('#editNutrition').value.trim(),
       prepTime: document.querySelector('#editPrepTime').value.trim(), cookTime: document.querySelector('#editCookTime').value.trim(),
       yield: yieldParts ? { amount: Number(yieldParts[1]), unit: yieldParts[2] || 'servings' } : null,
       tags: document.querySelector('#editTags').value.split(',').map(x=>x.trim()).filter(Boolean),
@@ -2854,7 +2881,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.21');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.23');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

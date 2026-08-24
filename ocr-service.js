@@ -304,6 +304,29 @@
   function chooseNutritionText(candidates) {
     return (candidates||[]).map(extractNutritionText).filter(Boolean).sort((a,b)=>nutritionTextScore(b)-nutritionTextScore(a)||b.length-a.length)[0]||'';
   }
+  const lowerNutritionLabels = /\b(?:Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/gi;
+  function extractNutritionTailText(text) {
+    let value=String(text||'').replace(/\r/g,'')
+      .replace(/\s+(?:https?:\/\/|httos?:\/\/|Information from your device|A Raptive Partner Site|Do not sell or share my personal information|Terms of Content Use)[\s\S]*$/i,'')
+      .split(/\n/).map(normalizeLine).filter(Boolean).join('\n').trim();
+    const marker=value.match(/(?:\b\d+\s*mg\s*\|\s*)?\bFiber\b/i);
+    if(!marker)return '';
+    value=value.slice(marker.index).trim();
+    const labels=value.match(lowerNutritionLabels)||[];
+    return new Set(labels.map(label=>label.toLowerCase())).size>=3?value:'';
+  }
+  function nutritionTailScore(text) {
+    const value=extractNutritionTailText(text),labels=value.match(lowerNutritionLabels)||[];
+    return new Set(labels.map(label=>label.toLowerCase())).size*100+value.length;
+  }
+  function chooseNutritionTailText(candidates) {
+    return (candidates||[]).map(extractNutritionTailText).filter(Boolean).sort((a,b)=>nutritionTailScore(b)-nutritionTailScore(a)||b.length-a.length)[0]||'';
+  }
+  function mergeNutritionText(head,tail) {
+    if(!head)return tail?`Nutrition\n${tail}`:'';
+    if(!tail||/\bIron\b/i.test(head))return head;
+    return `${head.trim()}\n${tail.trim()}`;
+  }
 
   function trimAuxiliarySections(page) {
     return String(page||'').trim();
@@ -463,18 +486,20 @@
     }
     let nutritionSupplement='';
     if(/\b(?:Nutrition|Calories|Carbohydrates)\b/i.test(layoutHints)){
-      const candidates=[...attempts.map(attempt=>attempt.text)],plans=[
+      const candidates=[...attempts.map(attempt=>attempt.text)],tailCandidates=[],plans=[
         {mode:'raw',region:{x:.01,y:.37,width:.98,height:.32},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
         {mode:'detail',region:{x:.01,y:.39,width:.98,height:.27},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
         {mode:'threshold',region:{x:.01,y:.38,width:.98,height:.30},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'},
-        {mode:'raw',region:{x:.01,y:.30,width:.98,height:.42},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'}
+        {mode:'raw',region:{x:.01,y:.30,width:.98,height:.42},psm:globalThis.Tesseract.PSM?.SINGLE_COLUMN||'4'},
+        {mode:'raw',region:{x:.01,y:.48,width:.98,height:.19},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',tail:true},
+        {mode:'detail',region:{x:.01,y:.46,width:.98,height:.22},psm:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6',tail:true}
       ];
       for(const plan of plans){const canvas=await makeCanvas(file,plan.mode,plan.region);try{
         await ocrWorker.setParameters({tessedit_pageseg_mode:plan.psm});
         const result=await ocrWorker.recognize(canvas,{rotateAuto:false});
-        candidates.push(String(result.data?.text||''));
+        const text=String(result.data?.text||''); candidates.push(text); if(plan.tail)tailCandidates.push(text);
       }finally{canvas.width=1;canvas.height=1;}}
-      nutritionSupplement=chooseNutritionText(candidates);
+      nutritionSupplement=mergeNutritionText(chooseNutritionText(candidates),chooseNutritionTailText(tailCandidates));
     }
     attempts.sort((a,b)=>b.score-a.score);
     const selected=attempts[0]||{text:'',confidence:0,score:0};
@@ -497,5 +522,5 @@
   openPaste?.addEventListener('click',()=>{ document.querySelector('#imageRecipeDialog')?.close(); const paste=document.querySelector('#pasteRecipeDialog'); const textarea=document.querySelector('#pastedRecipeText'); if(output.value.trim())textarea.value=output.value; paste?.showModal(); textarea?.focus(); });
   output.addEventListener('input',event=>{if(event.isTrusted&&output.dataset.ocrQuality==='low')output.dataset.ocrQuality='edited';});
   button.addEventListener('click',readImages,{capture:true}); window.addEventListener('pagehide',()=>{worker?.terminate?.();worker=null;});
-  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText, extractNutritionText, nutritionTextScore, chooseNutritionText };
+  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText, extractNutritionText, nutritionTextScore, chooseNutritionText, extractNutritionTailText, chooseNutritionTailText, mergeNutritionText };
 })();

@@ -1,4 +1,16 @@
-# Serenity Kitchen v0.21.21
+# Serenity Kitchen v0.21.23
+
+## v0.21.23
+
+- Stores Nutrition in its own recipe field instead of embedding it inside Notes.
+- Displays Nutrition in a dedicated card that disappears automatically when empty.
+- Adds an editable Nutrition field for personal and installed-module recipe copies.
+- Migrates legacy Nutrition text out of Notes when an older recipe is opened in the editor.
+
+## v0.21.22
+
+- Reads the lower Nutrition rows in a separate iPhone OCR crop and merges them after the upper block, bypassing the repeated Potassium truncation.
+- Normalizes OCR output such as `15¢g` to `15g` in Nutrition values.
 
 ## v0.21.21
 

@@ -247,6 +247,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .recipe-notes textarea { width:100%; min-height:130px; padding:13px; border:1px solid var(--border); border-radius:12px; background:var(--bg); color:var(--text); resize:vertical; }
 .recipe-information{margin-top:18px}.recipe-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.recipe-info-block{padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--panel-2)}.recipe-info-block h3{margin:0 0 8px;color:var(--accent)}.recipe-info-block p,.recipe-info-block ul{margin:0;line-height:1.55}.recipe-info-block ul{padding-left:1.25rem}
 .recipe-info-block h4{margin:12px 0 5px;color:var(--text);font-size:.9rem;text-transform:uppercase;letter-spacing:.04em}.recipe-info-block h3+h4{margin-top:0}.recipe-info-block h4+ul{margin-bottom:10px}
+.recipe-nutrition{margin-top:18px}.nutrition-grid{display:flex;flex-wrap:wrap;gap:8px}.nutrition-grid span{padding:8px 11px;border:1px solid var(--border);border-radius:999px;background:var(--panel-2);line-height:1.25}
 .save-note-status { min-height:1.2em; margin-top:6px; color:var(--muted); font-size:.82rem; }
 @media (max-width: 600px) {
   .form-grid { grid-template-columns:1fr; gap:0; }
