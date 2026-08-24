@@ -339,12 +339,14 @@
   }
   function nutritionLooksTruncated(text) {
     const value=extractNutritionText(text);
-    return Boolean(value&&/\b(?:Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\s*:\s*$/i.test(value));
+    return Boolean(value&&/\b(?:Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\s*:\s*(?=\n|$)/i.test(value));
   }
   function mergeRecoveredNutritionTail(text,tail) {
     if(!tail)return text;
     const value=String(text||'').trim();
     if(/\bIron\s*:/i.test(value))return value;
+    const unfinished=/\b(?:Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\s*:\s*(?=\n|$)/i;
+    if(unfinished.test(value))return value.replace(unfinished,match=>`${match.trim()}\n${tail.trim()}\n`);
     return `${value}\n${tail.trim()}`;
   }
 

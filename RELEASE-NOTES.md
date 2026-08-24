@@ -1,7 +1,9 @@
-# Serenity Kitchen v0.21.24
+# Serenity Kitchen v0.21.25
 
-## v0.21.24
+## v0.21.25
 
+- Detects an unfinished Nutrition value even when later screenshot text follows it in the combined OCR document.
+- Inserts the recovered lower Nutrition rows at the unfinished nutrient instead of appending them after unrelated page text.
 - Detects a Nutrition panel that ends on an unfinished nutrient and rereads the lower screenshot before parsing the recipe.
 - Repairs common iPhone OCR substitutions in lower Nutrition rows, including Fiber, Vitamin, Calcium, Iron, `90IU`, and `1mg`.
 - Makes Enter dismiss every search keyboard while preserving the current results.
