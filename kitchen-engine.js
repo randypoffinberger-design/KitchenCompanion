@@ -341,6 +341,9 @@
       };
       const garbageLine = line => {
         const value = String(line || '').trim();
+        const nutrientEvidence = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated|Polyunsaturated|Monounsaturated|Trans|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i.test(value)
+          && /\b\d+(?:[.]\d+)?\s*(?:kcal|g|mg|mcg|iu|%)\b/i.test(value);
+        if (nutrientEvidence) return false;
         if (/\b(?:cortisol|resident-owned|nexdoo|prime|sponsored|advertisement|amazon|xfinity)\b/i.test(value)) return true;
         if (/^(?:[)\[(+|¥{}]*\s*)?(?:o-|s|ex:?|ls\]?|j)$/i.test(value) || /\bablt\b.*\d+kcal\b/i.test(value)) return true;
         const letters = (value.match(/[A-Za-z]/g) || []).length;

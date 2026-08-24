@@ -1,7 +1,9 @@
-# Serenity Kitchen v0.21.27
+# Serenity Kitchen v0.21.28
 
-## v0.21.27
+## v0.21.28
 
+- Prevents the generic pipe-symbol clutter filter from deleting valid Nutrition lines containing nutrient labels and measurements.
+- Adds the exact iPhone-recognized Garlic Butter Pasta Nutrition block as a parser regression test.
 - Detects an empty nutrient value even when unrelated OCR text follows the colon on the same line.
 - Distinguishes a valid numeric value on the next line from a truly unfinished Nutrition field.
 - Accepts lower Nutrition recovery when only one nutrient label survives clearly but several numeric measurements are present.
