@@ -1,7 +1,10 @@
-# Serenity Kitchen v0.21.30
+# Serenity Kitchen v0.21.31
 
-## v0.21.30
+## v0.21.31
 
+- Fixes Shopping and Pantry category panels remaining visibly painted after being collapsed on iPhone.
+- Adds independently collapsible, counted categories to Regular Items.
+- Applies the saved list starting-view preference to Regular Items as well as Pantry and Shopping List.
 - Makes Pantry categories collapsible with visible item counts.
 - Makes Shopping List stores and their nested categories independently collapsible with counts at both levels.
 - Allows several stores and categories to remain expanded simultaneously.

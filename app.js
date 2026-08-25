@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.30';
+  const ENGINE_VERSION = '0.21.31';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -372,7 +372,7 @@
     els.restoreAllHiddenBtn?.addEventListener('click', restoreAllHiddenRecipes);
     els.darkModeToggle.addEventListener('change', () => { state.settings.darkMode = els.darkModeToggle.checked; applySettings(); saveState(); });
     els.metricToggle.addEventListener('change', () => { state.settings.metricHelpers = els.metricToggle.checked; saveState(); if (selectedRecipeKey) renderRecipeDetail(); });
-    els.listExpansionMode?.addEventListener('change', () => { state.settings.listExpansionMode = LIST_EXPANSION_MODES.has(els.listExpansionMode.value) ? els.listExpansionMode.value : 'stores-open'; shoppingStoreExpansion.clear(); shoppingCategoryExpansion.clear(); pantryGroupExpansion.clear(); saveState(); if(currentView==='shopping')renderShoppingList(); if(currentView==='pantry')renderPantry(); });
+    els.listExpansionMode?.addEventListener('change', () => { state.settings.listExpansionMode = LIST_EXPANSION_MODES.has(els.listExpansionMode.value) ? els.listExpansionMode.value : 'stores-open'; shoppingStoreExpansion.clear(); shoppingCategoryExpansion.clear(); pantryGroupExpansion.clear(); regularCategoryExpansion.clear(); saveState(); if(currentView==='shopping')renderShoppingList(); if(currentView==='pantry')renderPantry(); if(els.regularItemsDialog?.open)showRegularItems(); });
     els.wakeLockMode?.addEventListener('change', () => { state.settings.wakeLockMode = els.wakeLockMode.value; saveState(); updateWakeLock(); });
     els.alarmSoundToggle?.addEventListener('change', () => { state.settings.alarmSoundEnabled = els.alarmSoundToggle.checked; saveState(); if (state.settings.alarmSoundEnabled) updateAlarmLoop(); else stopBell(); });
     els.alarmVolume?.addEventListener('input', () => { state.settings.alarmVolume = Number(els.alarmVolume.value); if (bellAudio) bellAudio.volume = state.settings.alarmVolume; saveState(); });
@@ -1133,7 +1133,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.30').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.31').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2893,7 +2893,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.30');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.31');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3218,6 +3218,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   const shoppingStoreExpansion = new Map();
   const shoppingCategoryExpansion = new Map();
   const pantryGroupExpansion = new Map();
+  const regularCategoryExpansion = new Map();
   function listSectionExpanded(overrides,key,level){if(overrides.has(key))return overrides.get(key);const mode=state.settings.listExpansionMode;return mode==='expanded'||(mode==='stores-open'&&level==='store');}
   const shoppingSelectedIds = new Set();
   let shoppingUndoSnapshot = null;
@@ -4417,20 +4418,20 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       return (SHOPPING_GROUP_ORDER.get(aGroup)??999)-(SHOPPING_GROUP_ORDER.get(bGroup)??999)
         || String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'});
     });
-    let visibleGroup='';
+    let visibleGroup='',groupBox=null;
     sortedItems.forEach(item=>{
       const group=SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(item.name);
       if(group!==visibleGroup){
         visibleGroup=group;
-        const heading=document.createElement('h3');heading.className='regular-item-group-heading';heading.textContent=group;
-        els.regularItemsList.append(heading);
+        const groupKey=group;const count=sortedItems.filter(entry=>(SHOPPING_GROUPS.includes(entry.group)?entry.group:classifyShoppingGroup(entry.name))===groupKey).length;const expanded=listSectionExpanded(regularCategoryExpansion,groupKey,'category');
+        const section=document.createElement('section');section.className='regular-category-section';section.innerHTML=`<button type="button" class="regular-item-group-heading list-section-toggle" aria-expanded="${expanded}"><span>${escapeHtml(groupKey)}</span><small>${count} item${count===1?'':'s'}</small><b class="list-section-chevron">${uiIcon(expanded?'chevron-up':'chevron-down')}</b></button><div class="regular-category-items" ${expanded?'':'hidden'}></div>`;section.querySelector('button').addEventListener('click',()=>{regularCategoryExpansion.set(groupKey,!listSectionExpanded(regularCategoryExpansion,groupKey,'category'));showRegularItems();});els.regularItemsList.append(section);groupBox=section.querySelector('.regular-category-items');
       }
       const row=document.createElement('div');row.className='regular-item-row';
       row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(displayStoreName(item.store))}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
       row.querySelector('.add-regular').addEventListener('click',e=>{const added=addShoppingEntry({name:item.name,quantity:item.quantity,store:item.store,group:item.group,aisle:item.aisle,source:'Regular item',learnStore:true});saveState();renderShoppingList(added.id);renderCounts();e.currentTarget.textContent='Added ✓';setTimeout(()=>e.currentTarget.textContent='Add',1000);});
       row.querySelector('.edit-regular').addEventListener('click',()=>{const name=prompt('Regular item name:',item.name);if(!name)return;const quantity=prompt('Default quantity or note:',item.quantity||'')??item.quantity;const store=prompt(`Default store:\n${state.stores.join('\n')}`,item.store||'Unassigned')||item.store;item.name=displayShoppingName(name);item.normalizedName=shoppingNameKey(name);item.quantity=quantity.trim();item.store=normalizeStore(store);saveState();showRegularItems();});
       row.querySelector('.remove-regular').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from regular items?`))return;state.regularItems=state.regularItems.filter(x=>x.id!==item.id);saveState();showRegularItems();});
-      els.regularItemsList.append(row)
+      groupBox.append(row)
     });
     if(!els.regularItemsDialog.open)els.regularItemsDialog.showModal();
   }
