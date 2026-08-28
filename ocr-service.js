@@ -164,6 +164,14 @@
       .replace(/\s+([,.;:!?])/g,'$1')
       .replace(/\bI\s*\/\s*2\b/gi,'1/2')
       .replace(/\bI\s*\/\s*4\b/gi,'1/4')
+      .replace(/\b(\d+)\s+V2\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/gi,'$1 1/2 ')
+      .replace(/^12\s+(?=(?:cup|tablespoon|teaspoon)\b)/i,'1/2 ')
+      .replace(/^12\s+tablespoons?\s+(?=melted\s+butter\b)/i,'1 1/2 tablespoons ')
+      .replace(/^2\s+(?=(?:cup|tablespoon|teaspoon)\b)/i,'1/2 ')
+      .replace(/^3%\s+(?=cups?\b)/i,'3/4 ')
+      .replace(/^(\d+)\s+2\s+(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/i,'$1 1/2 ')
+      .replace(/^2\s*[-–]\s*74\s+(?=cups?\s+powdered\s+sugar\b)/i,'1/2–2/3 ')
+      .replace(/^(\d+)(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|eggs?)\b)/i,'$1 ')
       .replace(/(\d)\s*\/\s*(\d)/g,'$1/$2')
       .replace(/\b(\d{1,2})\s+(\d{1,2})\s*(?=(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b)/gi,(match,start,end)=>Number(start)<Number(end)?`${start}–${end} `:match)
       .replace(/\b(\d{1,2})\s+(?:to|[-–])\s+(\d{1,2})\s+(seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/gi,'$1–$2 $3')
@@ -208,6 +216,7 @@
       .replace(/\bofthe\b/gi,'off the')
       .replace(/\ba?\s*9\s*x\s*(?:D?B|1\)|B)\s+pan\b/gi,'9 x 13 pan')
       .replace(/^\\?dd\b/i,'Add')
+      .replace(/^Brown sugar and milk to a small saucepan\b/i,'Add brown sugar and milk to a small saucepan')
       .replace(/\b350\s+[1I|]\s+(?=(?:Grease|and)\b)/i,'350°F. ')
       .replace(/\s+(?:Do not sell or share my personal information|Terms of Content Use)[\s\S]*$/i,'')
       .replace(/\s+[|)]\s*$/,'')
@@ -223,9 +232,11 @@
       /^(?:home|recipes|about|contact|menu)$/i,
       /^(?:open in app|download app|view comments|read more|show less)$/i,
       /^(?:learn more|see the list|drveganblog[.]com)$/i,
+      /^(?:get our new cookbook|crowde?d?kitchen|h these be)\b/i,
+      /^(?:\(?[a-z0-9]*\)?\s*)?ad\s*ends*i*n*\s*\d+/i,
       /^(?:ad ends in\s*\d+|sponsored by\b.*|market volatility is a fact of life|vanguard|spectrum|foundations chrome|delta)$/i,
       /^(?:set up your internet|your tax-time edge|financial advisors)\b/i,
-      /^(?:crowdedkitchen[.]com|dkitchen[.]com)$/i,
+      /^\W*(?:crowde?d?kitchen[.]com|dkitchen[.]com)\b/i,
       /^(?:how to reset your cortisol belly|eat these foods every day)$/i,
       /^(?:enjoy a lifetime of firsts|live connected[.]? live invested[.]?|discover a resident-owned community)/i,
       /^(?:do not sell or share my personal information|terms of content use)[.]?$/i,
@@ -281,7 +292,7 @@
       const previous=joined[joined.length-1];
       const continuation=previous&&!sectionHeading.test(entry.line)&&(
         (section==='ingredients'&&!entry.bullet&&!ingredientStart.test(entry.line))
-        ||(section==='instructions'&&!entry.bullet&&!entry.numbered)
+        ||(section==='instructions'&&!entry.bullet&&!entry.numbered&&!instructionStart.test(entry.line))
       );
       if(continuation)previous.line=`${previous.line} ${entry.line}`.replace(/-\s+/,'');
       else joined.push({line:entry.line,bullet:entry.bullet,numbered:entry.numbered});

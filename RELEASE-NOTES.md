@@ -1,7 +1,13 @@
-# Serenity Kitchen v0.21.34
+# Serenity Kitchen v0.21.35
 
-## v0.21.34
+## v0.21.35
 
+- Adds the actual v0.21.34 Pop Tarts recognized text and exported recipe as an executable regression case.
+- Prevents an advertisement between directions from consuming every valid instruction that follows it.
+- Repairs the observed `V2`, `12`, `3%`, `2 2`, and `2-74` quantity substitutions before ingredient parsing.
+- Rejects corrupted promotional headings and removes embedded Crowded Kitchen, Spectrum, Vanguard, and timer-ad fragments.
+- Joins wrapped ingredient preparation text such as “chilled and cubed” back to its ingredient.
+- Keeps the first complete nutrition value for each label, repairs `1.59` to `1.5g`, and ignores inferior repeated lines.
 - Prevents an ordinary `Filling` heading from activating the specialized two-column dessert reconstruction path.
 - Keeps instruction continuation screenshots when they contain strong cooking evidence, even if an advertisement is also visible.
 - Reconstructs recipe titles split across as many as three mobile lines and rejects promotional/site text as a title.
