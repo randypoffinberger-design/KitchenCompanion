@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.31';
+  const ENGINE_VERSION = '0.21.34';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -98,6 +98,7 @@
   const LIST_EXPANSION_MODES = new Set(['collapsed','stores-open','expanded']);
   state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
   state.settings.listExpansionMode = LIST_EXPANSION_MODES.has(state.settings.listExpansionMode) ? state.settings.listExpansionMode : 'stores-open';
+  state.nutritionEstimates = state.nutritionEstimates && typeof state.nutritionEstimates === 'object' && !Array.isArray(state.nutritionEstimates) ? state.nutritionEstimates : {};
   let currentView = 'home';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -118,6 +119,10 @@
   let guidedStepIndex = 0;
   let mealPlannerWeek = KCMealPlanner.startOfWeek();
   let editingMealSlotKey = '';
+  const nutritionEstimatePending = new Set();
+  const nutritionEstimateAttempted = new Set();
+  let nutritionEditorEstimateTimer = null;
+  let nutritionEditorEstimateRun = 0;
 
   const els = {
     sidebar: document.querySelector('#sidebar'), scrim: document.querySelector('#scrim'), menuBtn: document.querySelector('#menuBtn'),
@@ -437,6 +442,8 @@
     els.closeRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.cancelRecipeEditor.addEventListener('click', closeRecipeEditor);
     els.recipeEditorForm.addEventListener('submit', saveRecipeFromEditor);
+    document.querySelector('#editNutrition')?.addEventListener('input',event=>{if(event.target.value.trim())event.target.dataset.source='user-adjusted';else{delete event.target.dataset.source;delete event.target.dataset.meta;}updateNutritionEditorStatus();});
+    for(const id of ['editIngredients','editYield'])document.querySelector(`#${id}`)?.addEventListener('input',()=>{const field=document.querySelector('#editNutrition');if(!field.value.trim()||field.dataset.source==='estimated')scheduleNutritionEditorEstimate();});
     document.querySelector('#addEquipmentEditorItem')?.addEventListener('click', () => addEquipmentEditorRow());
     document.querySelector('#editEquipmentList')?.addEventListener('click', event => {
       const remove = event.target.closest('[data-remove-equipment]');
@@ -1133,7 +1140,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.31').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.34').then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2168,12 +2175,55 @@
     return `<section class="recipe-section recipe-information"><h2>Recipe information</h2><div class="recipe-info-grid">${block('Details', groups.details)}${equipment}${block('Notes', groups.notes)}</div></section>`;
   }
 
+  function nutritionRecipeSignature(recipe) {
+    return JSON.stringify({
+      yield:recipe?.yield || null,
+      ingredients:(recipe?.ingredientGroups || []).flatMap(group => (group.ingredients || []).map(item => ({
+        quantity:item.quantity ?? null, displayQuantity:item.displayQuantity ?? null,
+        unit:item.unit || '', item:item.item || '',
+        optional:!!item.optional || /optional/i.test(group.name || '')
+      })))
+    });
+  }
+  function nutritionServingInfo(recipe) {
+    const amount=Number(recipe?.yield?.amount), valid=Number.isFinite(amount)&&amount>0;
+    const unit=String(recipe?.yield?.unit||'servings').trim()||'servings', singular=unit.replace(/s$/i,'');
+    return {servings:valid?amount:1,label:valid?`Per ${singular} (1 of ${formatNumber(amount)})`:'Estimated for the entire recipe'};
+  }
+  function nutritionEstimatePayload(recipe) {
+    const serving=nutritionServingInfo(recipe);
+    return {
+      servings:serving.servings,
+      ingredients:(recipe?.ingredientGroups || []).flatMap(group => (group.ingredients || []).map(ingredient => ({
+        text:formatIngredientForEditor(ingredient),
+        quantity:Number.isFinite(Number(ingredient.quantity)) ? Number(ingredient.quantity) : null,
+        unit:ingredient.unit || '', item:ingredient.item || '',
+        optional:!!ingredient.optional || /optional/i.test(group.name || '')
+      })))
+    };
+  }
+  async function ensureRecipeNutritionEstimate(recipe) {
+    const legacy=splitNutritionFromNotes(recipe?.notes||'');
+    if(String(recipe?.nutrition||legacy.nutrition||'').trim()||!recipe?.key)return;
+    const signature=nutritionRecipeSignature(recipe),cached=state.nutritionEstimates[recipe.key];
+    if(cached?.signature===signature||nutritionEstimatePending.has(recipe.key)||nutritionEstimateAttempted.has(recipe.key)||!householdSync?.isSignedIn?.())return;
+    nutritionEstimatePending.add(recipe.key); nutritionEstimateAttempted.add(recipe.key);
+    try {
+      const result=await householdSync.estimateNutrition(nutritionEstimatePayload(recipe));
+      state.nutritionEstimates[recipe.key]={nutrition:result.nutrition,meta:{...result.meta,displayLabel:nutritionServingInfo(recipe).label},signature};
+      saveState();
+    } catch(error) {
+      console.warn('Automatic nutrition estimate unavailable',error);
+    } finally {
+      nutritionEstimatePending.delete(recipe.key);
+      if(selectedRecipeKey===recipe.key)renderRecipeDetail();
+    }
+  }
   function renderNutritionSection(recipe) {
-    const legacy = splitNutritionFromNotes(recipe?.notes || '');
-    const value = String(recipe?.nutrition || legacy.nutrition || '').trim();
-    if (!value) return '';
-    const entries = value.split(/\r?\n|\s*\|\s*/).map(entry => entry.trim()).filter(Boolean);
-    return `<section class="recipe-section recipe-nutrition"><h2>Nutrition</h2><div class="nutrition-grid">${entries.map(entry => `<span>${escapeHtml(entry)}</span>`).join('')}</div></section>`;
+    const legacy=splitNutritionFromNotes(recipe?.notes||'');const direct=String(recipe?.nutrition||legacy.nutrition||'').trim();const cached=state.nutritionEstimates[recipe?.key];const cacheCurrent=cached?.signature===nutritionRecipeSignature(recipe);const value=direct||(cacheCurrent?String(cached.nutrition||'').trim():'');const meta=direct?(recipe.nutritionMeta||{source:'source'}):(cacheCurrent?cached.meta:null);
+    if(!value){ensureRecipeNutritionEstimate(recipe);return nutritionEstimatePending.has(recipe?.key)?'<section class="recipe-section recipe-nutrition"><h2>Nutrition</h2><p class="muted">Calculating estimated nutrition…</p></section>':'';}
+    const entries=value.split(/\r?\n|\s*\|\s*/).map(entry=>entry.trim()).filter(Boolean);const estimated=meta?.source==='estimated'||meta?.source==='user-adjusted';const label=meta?`<div class="nutrition-estimate-label"><b>${meta.source==='user-adjusted'?'User-adjusted estimate':estimated?'Estimated nutrition':'Source nutrition'}</b><span>${escapeHtml(meta.displayLabel||(estimated?nutritionServingInfo(recipe).label:'Provided with the recipe'))}${meta.confidence?` · ${escapeHtml(meta.confidence)} confidence`:''}</span>${meta.unmatched?.length?`<span>· ${meta.unmatched.length} unmatched ingredient${meta.unmatched.length===1?'':'s'}</span>`:''}${estimated?'<span>Approximate values—review before relying on them.</span>':''}</div>`:'';
+    return `<section class="recipe-section recipe-nutrition"><h2>Nutrition</h2>${label}<div class="nutrition-grid">${entries.map(entry=>`<span>${escapeHtml(entry)}</span>`).join('')}</div></section>`;
   }
 
   function renderRecipeDetail() {
@@ -2536,7 +2586,80 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return `${base}${base?'\n':''}${equipmentText}`;
   }
 
-  function closeRecipeEditor() { els.recipeEditorDialog.close(); els.recipeEditorForm.reset(); setEquipmentEditor(); document.querySelector('#editRecipeKey').value = ''; }
+  function readNutritionEditorMeta() {
+    const field = document.querySelector('#editNutrition');
+    let details = {};
+    try { details = JSON.parse(field?.dataset.meta || '{}'); } catch {}
+    return field?.value.trim() ? { ...details, source:field.dataset.source || 'user-adjusted' } : null;
+  }
+
+  function setNutritionEditorValue(value = '', meta = null) {
+    const field = document.querySelector('#editNutrition');
+    if (!field) return;
+    field.value = String(value || '').trim();
+    if (field.value) {
+      field.dataset.source = meta?.source || 'source';
+      field.dataset.meta = JSON.stringify(meta || { source:'source' });
+    } else {
+      delete field.dataset.source;
+      delete field.dataset.meta;
+    }
+    updateNutritionEditorStatus();
+  }
+
+  function updateNutritionEditorStatus(message = '') {
+    const field = document.querySelector('#editNutrition'), status = document.querySelector('#nutritionEstimateStatus');
+    if (!field || !status) return;
+    if (message) { status.textContent = message; return; }
+    const source = field.dataset.source;
+    if (!field.value.trim()) status.textContent = 'An editable estimate will be calculated automatically when ingredients are available.';
+    else if (source === 'estimated') status.textContent = 'Estimated from the ingredients. Review and edit any value that needs correction.';
+    else if (source === 'user-adjusted') status.textContent = 'User-adjusted nutrition estimate.';
+    else status.textContent = 'Source-provided nutrition. Editing it will mark it as user-adjusted.';
+  }
+
+  function editorNutritionRecipe() {
+    const yieldParts = document.querySelector('#editYield').value.trim().match(/^([0-9.]+)\s*(.*)$/);
+    return {
+      yield:yieldParts ? { amount:Number(yieldParts[1]), unit:yieldParts[2] || 'servings' } : null,
+      ingredientGroups:parseIngredientGroups(document.querySelector('#editIngredients').value)
+    };
+  }
+
+  function scheduleNutritionEditorEstimate(delay = 700) {
+    clearTimeout(nutritionEditorEstimateTimer);
+    const field = document.querySelector('#editNutrition');
+    if (!els.recipeEditorDialog?.open || (field?.value.trim() && field.dataset.source !== 'estimated')) return;
+    nutritionEditorEstimateTimer = window.setTimeout(estimateNutritionForEditor, delay);
+  }
+
+  async function estimateNutritionForEditor() {
+    const field = document.querySelector('#editNutrition');
+    if (!els.recipeEditorDialog?.open || !field || (field.value.trim() && field.dataset.source !== 'estimated')) return;
+    const recipe = editorNutritionRecipe();
+    if (!recipe.ingredientGroups.some(group => group.ingredients.length)) { updateNutritionEditorStatus(); return; }
+    if (!householdSync?.isSignedIn?.()) { updateNutritionEditorStatus('Estimated nutrition is waiting for the private Serenity Kitchen server. You can still review, edit, and save this recipe.'); return; }
+    const run = ++nutritionEditorEstimateRun;
+    updateNutritionEditorStatus('Calculating an editable nutrition estimate…');
+    try {
+      const result = await householdSync.estimateNutrition(nutritionEstimatePayload(recipe));
+      if (run !== nutritionEditorEstimateRun || !els.recipeEditorDialog.open || (field.value.trim() && field.dataset.source !== 'estimated')) return;
+      const meta = { ...result.meta, source:'estimated', displayLabel:nutritionServingInfo(recipe).label };
+      setNutritionEditorValue(result.nutrition, meta);
+    } catch (error) {
+      if (run !== nutritionEditorEstimateRun || !els.recipeEditorDialog.open) return;
+      const message = error.status === 404
+        ? 'Automatic nutrition needs Serenity Kitchen Test Server v0.1.3. You can still edit and save the recipe.'
+        : `Nutrition estimate is unavailable right now. You can still edit and save the recipe${error.message ? `: ${error.message}` : '.'}`;
+      updateNutritionEditorStatus(message);
+    }
+  }
+
+  function closeRecipeEditor() {
+    clearTimeout(nutritionEditorEstimateTimer); nutritionEditorEstimateRun += 1;
+    els.recipeEditorDialog.close(); els.recipeEditorForm.reset(); setEquipmentEditor(); document.querySelector('#editRecipeKey').value = '';
+    setNutritionEditorValue();
+  }
 
   function openRecipeEditor(recipe = null) {
     els.recipeEditorForm.reset();
@@ -2549,7 +2672,9 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const equipmentData = splitEquipmentFromNotes(recipe?.notes || '');
     const nutritionData = splitNutritionFromNotes(equipmentData.notes);
     document.querySelector('#editNotes').value = nutritionData.notes;
-    document.querySelector('#editNutrition').value = recipe?.nutrition || nutritionData.nutrition;
+    const directNutrition = recipe?.nutrition || nutritionData.nutrition;
+    const cachedNutrition = recipe?.key && state.nutritionEstimates[recipe.key]?.signature === nutritionRecipeSignature(recipe) ? state.nutritionEstimates[recipe.key] : null;
+    setNutritionEditorValue(directNutrition || cachedNutrition?.nutrition || '', directNutrition ? (recipe?.nutritionMeta || { source:'source' }) : cachedNutrition?.meta);
     setEquipmentEditor(equipmentData.items);
     document.querySelector('#editPrepTime').value = recipe?.prepTime || '';
     document.querySelector('#editCookTime').value = recipe?.cookTime || '';
@@ -2558,6 +2683,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     document.querySelector('#editIngredients').value = (recipe?.ingredientGroups || []).flatMap(group => [group.name && group.name !== 'Main' ? `[${group.name}]` : '', ...(group.ingredients || []).map(formatIngredientForEditor)]).filter(Boolean).join('\n');
     document.querySelector('#editInstructions').value = (recipe?.instructions || []).join('\n');
     els.recipeEditorDialog.showModal();
+    if (!directNutrition && !cachedNutrition?.nutrition) scheduleNutritionEditorEstimate(150);
   }
 
   function fillRecipeEditorFromParsed(parsed) {
@@ -2568,7 +2694,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const equipmentData = splitEquipmentFromNotes(parsed.notes || '');
     const nutritionData = splitNutritionFromNotes(equipmentData.notes);
     document.querySelector('#editNotes').value = nutritionData.notes;
-    document.querySelector('#editNutrition').value = parsed.nutrition || nutritionData.nutrition;
+    const parsedNutrition = parsed.nutrition || nutritionData.nutrition;
+    setNutritionEditorValue(parsedNutrition, parsedNutrition ? (parsed.nutritionMeta || { source:'source' }) : null);
     setEquipmentEditor(equipmentData.items);
     document.querySelector('#editPrepTime').value = parsed.prepTime || '';
     document.querySelector('#editCookTime').value = parsed.cookTime || '';
@@ -2576,6 +2703,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     document.querySelector('#editTags').value = (parsed.tags || []).join(', ');
     document.querySelector('#editIngredients').value = (parsed.ingredientGroups || []).length ? parsed.ingredientGroups.flatMap(group => [group.name !== 'Main' ? `[${group.name}]` : '', ...group.ingredients]).filter(Boolean).join('\n') : (parsed.ingredients || []).join('\n');
     document.querySelector('#editInstructions').value = (parsed.instructions || []).join('\n');
+    if (!parsedNutrition) scheduleNutritionEditorEstimate(150);
   }
 
   function parsePastedRecipe(event) {
@@ -2606,9 +2734,19 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (!response.ok) throw new Error(`website returned ${response.status}`);
       return { html:await response.text(), finalUrl:response.url || url };
     } catch (directError) {
+      if (householdSync?.isSignedIn?.()) {
+        try {
+          const result = await householdSync.importRecipePage(url);
+          if (!result?.html) throw new Error('The private server returned an empty page.');
+          return { html:result.html, finalUrl:result.finalUrl || url };
+        } catch (serverError) {
+          if (serverError.status === 404) throw new Error('The private server needs Serenity Kitchen Test Server v0.1.2 before it can import blocked recipe websites.');
+          throw serverError;
+        }
+      }
       const endpoint = document.querySelector('meta[name="kc-url-import-endpoint"]')?.content?.trim();
       if (!endpoint) {
-        throw new Error('This website blocks direct recipe import. The Serenity Kitchen URL import service has not been connected yet.');
+        throw new Error('This website blocks direct recipe import. Sign in to the private Serenity Kitchen server, or use Paste recipe or Import from images.');
       }
       const response = await fetch(endpoint, {
         method:'POST',
@@ -2696,6 +2834,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       category: getEditorCategory(),
       description: document.querySelector('#editDescription').value.trim(), notes: composeRecipeNotes(document.querySelector('#editNotes').value, readEquipmentEditor()),
       nutrition: document.querySelector('#editNutrition').value.trim(),
+      nutritionMeta: readNutritionEditorMeta() || undefined,
       prepTime: document.querySelector('#editPrepTime').value.trim(), cookTime: document.querySelector('#editCookTime').value.trim(),
       yield: yieldParts ? { amount: Number(yieldParts[1]), unit: yieldParts[2] || 'servings' } : null,
       tags: document.querySelector('#editTags').value.split(',').map(x=>x.trim()).filter(Boolean),
@@ -2893,7 +3032,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.31');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.34');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3129,15 +3268,19 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function parseIngredientLine(line) {
     const normalized = line.replace(/^[-•]\s*/, '');
-    const match = normalized.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?|[⅛¼⅓⅜½⅝⅔¾⅞])\s+([^\s]+)?\s*(.*)$/);
+    const number = '(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:\\.\\d+)?[⅛¼⅓⅜½⅝⅔¾⅞]?|[⅛¼⅓⅜½⅝⅔¾⅞])';
+    const match = normalized.match(new RegExp(`^(${number})(?:\\s*([–—-])\\s*(${number}))?\\s+([^\\s]+)?\\s*(.*)$`));
     if (!match) return { quantity:null, unit:'', item:normalized, scalable:false };
-    const quantity = parseQuantity(match[1]), candidateUnit = (match[2] || '').replace(/[.,]$/, '');
-    const knownUnits = new Set(['cup','cups','tbsp','tablespoon','tablespoons','tsp','teaspoon','teaspoons','oz','ounce','ounces','lb','lbs','pound','pounds','g','gram','grams','kg','ml','l','liter','liters','clove','cloves','can','cans','package','packages','packet','packets','stick','sticks','slice','slices','piece','pieces','pinch','dash']);
+    const low = parseQuantity(match[1]), high = match[3] ? parseQuantity(match[3]) : null;
+    const quantity = Number.isFinite(high) ? (low + high) / 2 : low;
+    const displayQuantity = match[3] ? `${match[1]}${match[2] || '–'}${match[3]}` : undefined;
+    const candidateUnit = (match[4] || '').replace(/[.,]$/, '');
+    const knownUnits = new Set(['cup','cups','tbsp','tablespoon','tablespoons','tsp','teaspoon','teaspoons','oz','ounce','ounces','lb','lbs','pound','pounds','g','gram','grams','kg','ml','l','liter','liters','clove','cloves','can','cans','package','packages','packet','packets','stick','sticks','slice','slices','piece','pieces','pinch','dash','bunch','bunches','head','heads','stalk','stalks','sprig','sprigs']);
     const unit = knownUnits.has(candidateUnit.toLowerCase()) ? candidateUnit : '';
-    const item = unit ? (match[3] || unit) : [candidateUnit, match[3]].filter(Boolean).join(' ');
-    return { quantity, unit: item === unit ? '' : unit, item, scalable: Number.isFinite(quantity) };
+    const item = unit ? (match[5] || unit) : [candidateUnit, match[5]].filter(Boolean).join(' ');
+    return { quantity, ...(displayQuantity ? { displayQuantity } : {}), unit: item === unit ? '' : unit, item, scalable: Number.isFinite(quantity) };
   }
-  function parseQuantity(text) { const glyphs={'⅛':.125,'¼':.25,'⅓':1/3,'⅜':.375,'½':.5,'⅝':.625,'⅔':2/3,'¾':.75,'⅞':.875}; if(glyphs[text]) return glyphs[text]; if(text.includes(' ')){const [a,b]=text.split(' '); return Number(a)+parseQuantity(b);} if(text.includes('/')){const [a,b]=text.split('/').map(Number); return a/b;} return Number(text); }
+  function parseQuantity(text) { const glyphs={'⅛':.125,'¼':.25,'⅓':1/3,'⅜':.375,'½':.5,'⅝':.625,'⅔':2/3,'¾':.75,'⅞':.875}; if(glyphs[text]) return glyphs[text]; const attached=String(text).match(/^(\d+)([⅛¼⅓⅜½⅝⅔¾⅞])$/);if(attached)return Number(attached[1])+glyphs[attached[2]]; if(text.includes(' ')){const [a,b]=text.split(' '); return Number(a)+parseQuantity(b);} if(text.includes('/')){const [a,b]=text.split('/').map(Number); return a/b;} return Number(text); }
   function slugify(text) { return engine.slugify(text); }
   function uniqueRecipeId(base, recipes) { return engine.uniqueRecipeId(base, recipes); }
 
@@ -4973,7 +5116,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     for (const key of ['favorites','shoppingList','regularItems','pantryItems','stores','manualCrossLinks','mealPlanHistory']) {
       if (incoming[key] !== undefined && !Array.isArray(incoming[key])) throw new Error(`Backup field ${key} is damaged.`);
     }
-    for (const key of ['recipeNotes','settings','moduleSources','backupMeta','ratings','mealPlans','mealPlannerPreferences']) {
+    for (const key of ['recipeNotes','nutritionEstimates','settings','moduleSources','backupMeta','ratings','mealPlans','mealPlannerPreferences']) {
       if (incoming[key] !== undefined && (!incoming[key] || typeof incoming[key] !== 'object' || Array.isArray(incoming[key]))) throw new Error(`Backup field ${key} is damaged.`);
     }
     Object.entries(incoming.ratings || {}).forEach(([recipeKey, entry]) => {
@@ -4995,6 +5138,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function mergeBackupState(current, incoming) {
     const result=JSON.parse(JSON.stringify(current)); const incomingPersonal=incoming.modules.find(m=>m.moduleId==='my-recipes'); const personal=result.modules.find(m=>m.moduleId==='my-recipes') || ensurePersonalModule();
     if(incomingPersonal){ const byId=new Map(personal.recipes.map(r=>[r.id,r])); incomingPersonal.recipes.forEach(r=>byId.set(r.id,r)); personal.recipes=[...byId.values()]; }
+    result.nutritionEstimates={...(incoming.nutritionEstimates||{}),...(result.nutritionEstimates||{})};
     result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=consolidateRegularItems([...(result.regularItems||[]),...(incoming.regularItems||[])]); result.pantryItems=[...(result.pantryItems||[]),...(incoming.pantryItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; result.mealPlans={...(incoming.mealPlans||{}),...(result.mealPlans||{})}; result.mealPlannerPreferences={template:{...(incoming.mealPlannerPreferences?.template||{}),...(result.mealPlannerPreferences?.template||{})},recipes:{...(incoming.mealPlannerPreferences?.recipes||{}),...(result.mealPlannerPreferences?.recipes||{})}}; result.mealPlanHistory=[...(incoming.mealPlanHistory||[]),...(result.mealPlanHistory||[])].slice(-400); const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
   }
 
@@ -5030,7 +5174,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         learnedStorePreferences:JSON.parse(JSON.stringify(state.learnedStorePreferences || {})), learnedShoppingGroups:JSON.parse(JSON.stringify(state.learnedShoppingGroups || {})), learnedAisles:JSON.parse(JSON.stringify(state.learnedAisles || {}))
       },
       pantry:{ pantryItems:JSON.parse(JSON.stringify(state.pantryItems || [])) },
-      recipes:{ personalRecipes:JSON.parse(JSON.stringify(personal?.recipes || [])), favorites:JSON.parse(JSON.stringify(state.favorites || [])), recipeNotes:JSON.parse(JSON.stringify(state.recipeNotes || {})), hiddenRecipes:JSON.parse(JSON.stringify(state.hiddenRecipes || [])), customCategories:JSON.parse(JSON.stringify(state.customCategories || [])), ratings:JSON.parse(JSON.stringify(state.ratings || {})), manualCrossLinks:JSON.parse(JSON.stringify(state.manualCrossLinks || [])) },
+      recipes:{ personalRecipes:JSON.parse(JSON.stringify(personal?.recipes || [])), favorites:JSON.parse(JSON.stringify(state.favorites || [])), recipeNotes:JSON.parse(JSON.stringify(state.recipeNotes || {})), nutritionEstimates:JSON.parse(JSON.stringify(state.nutritionEstimates || {})), hiddenRecipes:JSON.parse(JSON.stringify(state.hiddenRecipes || [])), customCategories:JSON.parse(JSON.stringify(state.customCategories || [])), ratings:JSON.parse(JSON.stringify(state.ratings || {})), manualCrossLinks:JSON.parse(JSON.stringify(state.manualCrossLinks || [])) },
       'meal-plans':{ mealPlans:JSON.parse(JSON.stringify(state.mealPlans || {})), mealPlannerPreferences:JSON.parse(JSON.stringify(state.mealPlannerPreferences || {template:{},recipes:{}})), mealPlanHistory:JSON.parse(JSON.stringify(state.mealPlanHistory || [])) }
     };
   }
@@ -5049,7 +5193,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       const recipes = snapshot.recipes;
       if (recipes) {
         ensurePersonalModule().recipes = JSON.parse(JSON.stringify(recipes.personalRecipes || []));
-        ['favorites','recipeNotes','hiddenRecipes','customCategories','ratings','manualCrossLinks'].forEach(key => { if (recipes[key] !== undefined) state[key] = JSON.parse(JSON.stringify(recipes[key])); });
+        ['favorites','recipeNotes','nutritionEstimates','hiddenRecipes','customCategories','ratings','manualCrossLinks'].forEach(key => { if (recipes[key] !== undefined) state[key] = JSON.parse(JSON.stringify(recipes[key])); });
       }
       const meals = snapshot['meal-plans'];
       if (meals) ['mealPlans','mealPlannerPreferences','mealPlanHistory'].forEach(key => { if (meals[key] !== undefined) state[key] = JSON.parse(JSON.stringify(meals[key])); });

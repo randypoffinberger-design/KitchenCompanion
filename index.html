@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.31">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.31">
+  <link rel="manifest" href="app.webmanifest?v=0.21.34">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.34">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.31">
+  <link rel="stylesheet" href="styles.css?v=0.21.34">
 </head>
 <body>
   <div class="app-shell">
@@ -57,7 +57,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.31</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.34</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -251,7 +251,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.31</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.34</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -271,6 +271,10 @@
         <details class="manual-section" data-manual-section>
           <summary>Ingredient and instruction headings</summary>
           <div><p>In the recipe editor, put a heading on its own line inside square brackets.</p><ul><li><code>[Optional Pizza Toppings]</code> creates an ingredient-group heading.</li><li><code>[Prepare the sauce]</code> creates an instruction heading and continues numbering.</li><li><code>[Prepare the sauce | restart]</code> creates the heading and restarts that section at step 1.</li></ul><p>Instruction headings are not counted as cooking steps. The Equipment editor lets you add or remove tools and change each one between Must have and Recommended.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Nutrition information</summary>
+          <div><p>Serenity Kitchen preserves nutrition supplied by the recipe source. If none is supplied, the signed private server automatically creates an ingredient-based estimate—there is no separate button.</p><p>Nutrition is labeled Source, Estimated, or User-adjusted. Every value can be changed in the recipe editor. Estimates use the entered ingredient amounts and recipe yield, exclude optional or to-taste items, and identify confidence and unmatched ingredients. They are approximate and can differ by brand, preparation, substitution, and serving size.</p></div>
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Pantry availability colors</summary>
@@ -322,7 +326,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.31</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.34</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -645,7 +649,7 @@
       <label>Description<textarea id="editDescription" rows="2"></textarea></label>
       <label>Notes<textarea id="editNotes" rows="3" placeholder="Optional recipe notes"></textarea></label>
       <fieldset class="equipment-editor"><legend>Equipment</legend><small>Choose whether each tool is required or simply helpful.</small><div id="editEquipmentList" class="equipment-editor-list"></div><button type="button" id="addEquipmentEditorItem" class="button secondary">＋ Add equipment</button></fieldset>
-      <label>Nutrition <small>One or more nutrients per line, such as: Calories: 250kcal | Protein: 12g</small><textarea id="editNutrition" rows="4" placeholder="Optional nutrition information"></textarea></label>
+      <label>Nutrition <small>Source nutrition is preserved. When empty, Serenity Kitchen automatically creates an editable estimate.</small><textarea id="editNutrition" rows="4" placeholder="Estimated automatically when source nutrition is unavailable"></textarea><small id="nutritionEstimateStatus" class="nutrition-estimate-status" aria-live="polite"></small></label>
       <div class="form-grid"><label>Prep time<input id="editPrepTime" placeholder="15 minutes"></label><label>Cook time<input id="editCookTime" placeholder="30 minutes"></label></div>
       <label>Ingredients <small>One per line, such as: 1 1/2 cups flour</small><textarea id="editIngredients" rows="9" required></textarea></label>
       <label>Instructions <small>One step per line · [Heading] continues numbering · [Heading | restart] starts at 1</small><textarea id="editInstructions" rows="9" required></textarea></label>
@@ -839,13 +843,13 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.31"></script>
-  <script src="recipe-scaling.js?v=0.21.31"></script>
-  <script src="profile-storage.js?v=0.21.31"></script>
-  <script src="url-recipe-import.js?v=0.21.31"></script>
-  <script src="meal-planner.js?v=0.21.31"></script>
-  <script src="sync-client.js?v=0.21.31"></script>
-  <script src="app.js?v=0.21.31"></script>
-  <script src="ocr-service.js?v=0.21.31"></script>
+  <script src="kitchen-engine.js?v=0.21.34"></script>
+  <script src="recipe-scaling.js?v=0.21.34"></script>
+  <script src="profile-storage.js?v=0.21.34"></script>
+  <script src="url-recipe-import.js?v=0.21.34"></script>
+  <script src="meal-planner.js?v=0.21.34"></script>
+  <script src="sync-client.js?v=0.21.34"></script>
+  <script src="app.js?v=0.21.34"></script>
+  <script src="ocr-service.js?v=0.21.34"></script>
 </body>
 </html>

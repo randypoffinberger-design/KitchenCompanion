@@ -1,7 +1,28 @@
-# Serenity Kitchen v0.21.31
+# Serenity Kitchen v0.21.34
 
-## v0.21.31
+## v0.21.34
 
+- Prevents an ordinary `Filling` heading from activating the specialized two-column dessert reconstruction path.
+- Keeps instruction continuation screenshots when they contain strong cooking evidence, even if an advertisement is also visible.
+- Reconstructs recipe titles split across as many as three mobile lines and rejects promotional/site text as a title.
+- Recognizes Crust, Filling, Glaze, Topping, Dough, and Sauce as editable ingredient groups.
+- Repairs common mobile OCR fraction errors, including mixed numbers, three-quarter quantities, and half-to-two-thirds ranges.
+- Removes additional embedded mobile-ad fragments without discarding nearby recipe content.
+- Preserves Serving Size and separates, repairs, and deduplicates editable nutrition values.
+- Adds a complete ten-image Brown Sugar Cinnamon Pop Tarts regression case covering title, groups, fractions, directions, ads, and nutrition.
+- Automatically estimates nutrition from quantified ingredients when a recipe does not include source nutrition; no separate button is required.
+- Preserves source-provided nutrition instead of replacing it with an estimate.
+- Labels values as Source nutrition, Estimated nutrition, or User-adjusted estimate and keeps every nutrition field editable.
+- Calculates estimates through the signed private Serenity Kitchen Test Server v0.1.3 using USDA FoodData Central data.
+- Divides estimates by the recipe yield, identifies confidence and unmatched ingredients, and excludes optional/to-taste ingredients.
+- Caches completed estimates in the active profile and household recipe snapshot so they remain visible offline.
+- Allows recipe review and saving to continue when the server or nutrition service is unavailable.
+- Imports structured nutrition and serving-size information from recipe-page JSON-LD when the source supplies it.
+- Expands editable ingredient parsing to understand quantity ranges and attached fraction glyphs for more useful estimates.
+- Connects blocked URL recipe imports to the signed-in private Serenity Kitchen Test Server v0.1.2.
+- Keeps direct browser import for sites that permit it and retains Paste recipe and image OCR as fallbacks.
+- Shows a specific server-update message when an older private server does not yet provide URL retrieval.
+- Sends only the requested public recipe URL to the private server; imported recipes still open in the editable review screen before saving.
 - Fixes Shopping and Pantry category panels remaining visibly painted after being collapsed on iPhone.
 - Adds independently collapsible, counted categories to Regular Items.
 - Applies the saved list starting-view preference to Regular Items as well as Pantry and Shopping List.

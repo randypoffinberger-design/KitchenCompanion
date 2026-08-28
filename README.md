@@ -1,4 +1,15 @@
-# Serenity Kitchen™ v0.21.15
+# Serenity Kitchen™ v0.21.34
+
+## Automatic estimated nutrition
+
+- Preserves nutrition supplied by imported recipe pages, OCR, modules, and personal recipes.
+- When nutrition is missing, requests an automatic ingredient-based estimate from the signed private Serenity Kitchen Test Server v0.1.3.
+- Uses USDA FoodData Central matches, entered quantities, household measures, and recipe yield to calculate approximate per-serving values.
+- Labels values as Source nutrition, Estimated nutrition, or User-adjusted estimate and keeps the Nutrition field editable.
+- Shows estimate confidence and unmatched ingredients, excludes optional/to-taste items, and caches completed estimates for offline viewing.
+- Never blocks recipe review or saving when the private server or USDA service is unavailable.
+
+Estimates are not laboratory analysis and can vary with brands, substitutions, cooking losses, and actual serving size.
 
 ## Private account and household test
 

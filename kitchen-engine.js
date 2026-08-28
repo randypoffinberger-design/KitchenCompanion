@@ -216,12 +216,12 @@
         .replace(/\bI\s*\/\s*2\b/gi, '1/2')
         .replace(/\bI\s*\/\s*4\b/gi, '1/4')
         .replace(/(\d)\s+([¼½¾⅓⅔⅛⅜⅝⅞])/g, '$1 $2');
-      const embeddedClutter = /\s+(?=(?:how to reset your cortisol belly|eat these foods every day|live connected[.]?\s+live invested|discover a resident-owned community|nexdoo\b|sponsored by\b|learn more\b|\$\d{2,4}\s*prime\b|\d{1,2}:\d{2}\s*(?:am|pm)?\b))/i;
+      const embeddedClutter = /\s+(?=(?:how to reset your cortisol belly|eat these foods every day|live connected[.]?\s+live invested|discover a resident-owned community|nexdoo\b|sponsored by\b|learn more\b|ad ends in\s*\d+|market volatility is a fact of life|set up your internet|your tax-time edge|financial advisors|foundations chrome|vanguard|spectrum|delta|\$\d{2,4}\s*prime\b|\d{1,2}:\d{2}\s*(?:am|pm)?\b))/i;
       const stripEmbeddedClutter = value => {
         const line = String(value || '').trim();
         const marker = line.search(embeddedClutter);
         return (marker >= 0 ? line.slice(0, marker) : line)
-          .replace(/\s+(?:drveganblog[.]com|amazon|xfinity)\s*$/i, '')
+          .replace(/\s+(?:drveganblog[.]com|crowdedkitchen[.]com|dkitchen[.]com|amazon|xfinity|vanguard|spectrum|delta)\s*$/i, '')
           .replace(/\s+(?:®|©|\[(?:J|I|1)?\]?|[¥{}]+)\s*$/i, '')
           .replace(/\s+(?:I\s*=|Co)\s*$/i, '')
           .replace(/\s+\d{1,2}:\d{2}[\s\S]*$/i, '')
@@ -250,6 +250,12 @@
         return [line];
       };
       const text = normalizeFractions(rawText)
+        .replace(/\b(\d+)\s+%\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/gi, '$1 1/2 ')
+        .replace(/\b(\d+)\s+Y\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/g, '$1 1/2 ')
+        .replace(/\b(\d+)%\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/gi, '$1 1/2 ')
+        .replace(/(?:¥?Y2|Ye)\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/gi, '1/2 ')
+        .replace(/(^|\s)%4\s*(?=(?:cups?|tbsp|tablespoons?|tsp|teaspoons?)\b)/gi, '$1 3/4 ')
+        .replace(/(?:%e|Ye|Y2)\s*[-–*]+\s*(?:%?4|2[\/]?3)\s*(?=cups?\s+powdered\s+sugar\b)/gi, '1/2–2/3 ')
         .replace(/(^|\s)%\s+(?=(?:cup|cups|tbsp|tablespoons?)\b)/gi, '$1 3/4 ')
         .replace(/\r/g, '').replace(/[\t ]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
       if (!text) throw new Error('No recipe text was provided.');
@@ -293,7 +299,7 @@
       const noteHeads = new Set(['notes', 'note', 'tips', 'tip']);
       const equipmentHeads = new Set(['equipment', 'equipment needed', 'tools']);
       const nutritionHeads = new Set(['nutrition', 'nutrition information', 'nutrition info']);
-      const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|subscribe|sign up|log in|privacy policy|terms of use|select all|deselect all|check all|uncheck all|copy ingredients?|add to (?:shopping )?list|cook mode|keep screen awake|open in app|download app|view comments|how to reset your cortisol belly|eat these foods every day|learn more|see the list)$/i;
+      const clutter = /^(?:save|share|print|rate|reviews?|jump to recipe|advertisement|sponsored|sponsored by|subscribe|sign up|log in|privacy policy|terms of use|select all|deselect all|check all|uncheck all|copy ingredients?|add to (?:shopping )?list|cook mode|keep screen awake|open in app|download app|view comments|how to reset your cortisol belly|eat these foods every day|learn more|see the list|ad ends in\s*\d+|market volatility is a fact of life|vanguard|spectrum|delta|crowdedkitchen[.]com|dkitchen[.]com)$/i;
       const attribution = /^(?:(?:recipe\s+)?courtesy\s+of\b|(?:photo|photograph|image)\s+(?:by|courtesy|credit)\b|(?:written|posted|updated|published|reviewed)\s+by\b)/i;
       const titleBoundary = nonblank.findIndex((line,index) => {
         const h=heading(line);
@@ -304,17 +310,31 @@
           || (index>0 && /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+\S+/i.test(line));
       });
       const titlePool = titleBoundary===0 ? [] : titleBoundary>0 ? nonblank.slice(0,titleBoundary) : nonblank.slice(0,12);
-      const titleCandidates = titlePool.filter(line =>
+      const stitchedTitleCandidates=[];
+      for(let start=0;start<Math.min(5,titlePool.length);start++){
+        let combined='';
+        for(let count=1;count<=3&&start+count<=titlePool.length;count++){
+          const part=titlePool[start+count-1];
+          if(/^(?:ingredients?|instructions?|directions?|method|steps|crust|filling|glaze|topping)\b/i.test(part)||/\b(?:prep|cook|total)\s*time\b/i.test(part))break;
+          if(count>1&&/^(?:yield|serves|servings|makes|author|diet|course|cuisine|category)\s*[:：-]/i.test(part))break;
+          combined=`${combined} ${part}`.trim();
+          if(count>=2)stitchedTitleCandidates.push(combined);
+        }
+      }
+      stitchedTitleCandidates.sort((a,b)=>(b.match(/[A-Za-z]{2,}/g)||[]).length-(a.match(/[A-Za-z]{2,}/g)||[]).length);
+      const titleCandidates = [...stitchedTitleCandidates,...titlePool].filter(line =>
         !clutter.test(line)
         && !attribution.test(line)
         && !ingredientHeads.has(heading(line))
         && !instructionHeads.has(heading(line))
         && !/^(?:cake|filling|topping)\s*:?\s*$/i.test(line)
-        && !/^(?:active|prep|cook|total)\s*time\b/i.test(line)
+        && !/^(?:active|prep(?:aration)?|cook(?:ing)?|total)(?:\s*time)?\s*[:：-]/i.test(line)
+        && !/^(?:yield|serves|servings|makes|author|diet|course|cuisine|category)\s*[:：-]/i.test(line)
         && !/^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/.test(line)
         && !/^(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip)\b/i.test(line)
         && !/[.!?]\s*(?:preheat|mix|stir|add|bake|whip|fold|freeze|slice|cut|melt|dip)\b/i.test(line)
         && !/\b\d+\s*(?:seconds?|minutes?|hours?)\b/i.test(line)
+        && !/\b(?:get our new cookbook|crowdedkitchen|dkitchen[.]com)\b/i.test(line)
       );
       const titleScore = line => {
         const words=line.match(/[A-Za-z]{2,}/g)||[],letters=(line.match(/[A-Za-z]/g)||[]).length,visible=(line.match(/[A-Za-z0-9]/g)||[]).length;
@@ -327,16 +347,18 @@
       const groups = [currentGroup], description = [], notes = [], equipment = [], nutrition = [];
       let keywordContinuation = false;
       const BULLET_MARK = '\uE000';
-      const stepAction = '(?:preheat|grease|line|mix|combine|stir|add|make|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|return|toss|scoop|scrape|set|divide|top|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool|reform)';
+      const stepAction = '(?:preheat|grease|line|mix|combine|stir|add|make|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|return|toss|scoop|scrape|set|divide|top|let|chill|refrigerate|freeze|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|tap|cool|reform|while|move|spoon)';
       const numberedAction = new RegExp(`^\\d{1,2}(?:[.),]|\\s+(?=${stepAction}\\b))\\s*`, 'i');
       const isBulletLine = line => new RegExp(`^(?:${BULLET_MARK}|[-•*▪◦]+\\s*)`).test(String(line || '').trim());
       const stripBullet = line => line.trim().replace(BULLET_MARK, '').replace(/^[-•*▪◦]+\s*/, '').replace(numberedAction, '').replace(/\s+\d{1,2}[.)]\s*$/, '').trim();
-      const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
+      const looksIngredient = line => /^(?:\d+(?:\s+\d+\/\d+|[ ./%-]\d+|\s+Y\b)?|%\w*|¥?Y(?:e|2)?\b|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six)\b/i.test(line) || /\b(?:cup|cups|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash)\b/i.test(line);
       const actionStart = new RegExp(`^(?:${stepAction}|in\\s+(?:a|an|another|the))\\b`, 'i');
       const looksInstruction = line => /^\d+[.),]\s*/.test(line) || actionStart.test(stripBullet(line));
       const groupHeading = line => {
         const match = line.match(/^(?:for|to make)\s+(.+?)\s*:?$/i);
         if (match) return [match[0], match[1].replace(/^the\s+/i, '').trim()];
+        const known = line.match(/^(crust|filling|glaze|topping|dough|sauce)\s*:?$/i);
+        if (known) return [line, known[1][0].toUpperCase()+known[1].slice(1).toLowerCase()];
         return /^[A-Z][A-Z &-]{2,30}:?$/.test(line) ? [line, line.replace(/:$/, '')] : null;
       };
       const garbageLine = line => {
@@ -344,7 +366,7 @@
         const nutrientEvidence = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated|Polyunsaturated|Monounsaturated|Trans|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i.test(value)
           && /\b\d+(?:[.]\d+)?\s*(?:kcal|g|mg|mcg|iu|%)\b/i.test(value);
         if (nutrientEvidence) return false;
-        if (/\b(?:cortisol|resident-owned|nexdoo|prime|sponsored|advertisement|amazon|xfinity)\b/i.test(value)) return true;
+        if (/\b(?:cortisol|resident-owned|nexdoo|prime|sponsored|advertisement|amazon|xfinity|vanguard|spectrum|foundations chrome|tax-time|financial advisors)\b/i.test(value)) return true;
         if (/^(?:[)\[(+|¥{}]*\s*)?(?:o-|s|ex:?|ls\]?|j)$/i.test(value) || /\bablt\b.*\d+kcal\b/i.test(value)) return true;
         const letters = (value.match(/[A-Za-z]/g) || []).length;
         const symbols = (value.match(/[={}\\|¥®©]/g) || []).length;
@@ -582,17 +604,25 @@
         if (recommended.length) equipmentLines.push('Recommended:', ...recommended.map(value => `- ${value}`));
         notes.push(equipmentLines.join('\n'));
       }
-      const nutritionNouns = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated|Polyunsaturated|Monounsaturated|Trans|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i;
-      let cleanNutrition = nutrition.map(value => value
+      const nutritionNouns = /\b(?:Serving Size|Calories|Carbohydrates?|Protein|Fat|Saturated|Polyunsaturated|Monounsaturated|Trans|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i;
+      const nutritionLabel='(?:Serving Size|Calories|Carbohydrates?|Protein|Fat|Saturated Fat|Polyunsaturated Fat|Monounsaturated Fat|Trans Fat|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)';
+      const expandedNutrition=[];
+      nutrition.forEach(value=>String(value||'').replace(new RegExp(`\\s+(?=${nutritionLabel}\\s*:)`,'gi'),'\n').split('\n').forEach(part=>{
+        const clean=part.trim(); if(!clean)return;
+        if(/^\d+(?:[.]\d+)?\s*(?:kcal|cal|g|mg|mcg|iu|%)\b/i.test(clean)&&/:\s*$/.test(expandedNutrition[expandedNutrition.length-1]||'')) expandedNutrition[expandedNutrition.length-1]+=`\n${clean}`;
+        else expandedNutrition.push(clean);
+      }));
+      let cleanNutrition = expandedNutrition.map(value => value
         .replace(/\s+(?:https?:\/\/|Information from your device|A Raptive Partner Site)[\s\S]*$/i, '')
         .replace(/\bVitamin A:\s*9[Oo0](?:l|I|1)?I?U\b/i, 'Vitamin A: 90IU')
         .replace(/\bVitamin C:\s*Img\b/i, 'Vitamin C: 1mg')
-        .replace(/\b(\d+)[¢©]g\b/g, '$1g')
+        .replace(/\b(\d+)\s*[¢©]g\b/g, '$1g')
         .replace(/\b(Calories|Carbohydrates?|Protein|Fat|Saturated Fat|Polyunsaturated Fat|Monounsaturated Fat|Trans Fat|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\s+(?=\d)/gi, '$1: ')
         .trim())
         .filter(value => value && nutritionNouns.test(value) && !equipmentNouns.test(value) && !/https?:\/\/|^hp\s*[—-]?$|^Information from your device\b|^A Raptive Partner Site\b/i.test(value));
+      const seenNutrition=new Set(); cleanNutrition=cleanNutrition.filter(value=>{const match=value.match(new RegExp(`^(${nutritionLabel})\\s*:`,'i'));if(!match)return true;const key=match[1].toLowerCase();if(seenNutrition.has(key))return false;seenNutrition.add(key);return true;});
       const lastCalories = cleanNutrition.map(value => /\bCalories\b/i.test(value)).lastIndexOf(true);
-      if (lastCalories > 0) cleanNutrition = cleanNutrition.slice(lastCalories);
+      if (lastCalories > 0 && cleanNutrition.slice(0,lastCalories).some(value=>/\bCalories\b/i.test(value))) cleanNutrition = cleanNutrition.slice(lastCalories);
       result.nutrition = cleanNutrition.join('\n');
       result.notes = notes.join('\n')
         .replace(/Cost:\s*\$?(\d+)\s*[-–]\s*%?\$?(\d+)/gi, 'Cost: $$$1–$$$2')

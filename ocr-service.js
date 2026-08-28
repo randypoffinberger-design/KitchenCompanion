@@ -129,7 +129,7 @@
     await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300',tessedit_pageseg_mode:globalThis.Tesseract.PSM?.AUTO||'3'}); return worker;
   }
 
-  const instructionStart=/^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|store|take|melt|whip|grease|line|freeze|dip|unravel|roll)\b/i;
+  const instructionStart=/^(?:preheat|mix|combine|stir|add|place|bake|cook|heat|whisk|beat|fold|pour|serve|remove|let|chill|refrigerate|slice|cut|turn|knead|pat|brush|spread|sprinkle|bring|reduce|cover|drain|store|take|melt|whip|grease|line|freeze|dip|unravel|roll|while|move|spoon)\b/i;
   const ingredientUnits=/\b(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|kg|ml|cloves?|cans?|packages?|pinch|dash|eggs?|flour|sugar|butter|cream|chocolate|salt|vanilla|cocoa|coffee|oil)\b/i;
 
   function textEvidence(text) {
@@ -159,6 +159,7 @@
       .replace(/[ \t]+/g,' ')
       .replace(/^[-•*▪◦«»+]+\s*/,'')
       .replace(/^(?:e|¢|©)\s+(?=(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|small\b|salt\b|extra\b|fresh\b))/i,'')
+      .replace(/^(?:©|®|@|¢)\s*(?=(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip|while|move|spoon)\b)/i,'')
       .replace(/^[.,]\s+(?=(?:preheat|mix|combine|stir|add|place|put|take|bake|cook|heat|whisk|whip|beat|fold|pour|serve|remove|let|chill|refrigerate|freeze|slice|cut|spread|sprinkle|bring|reduce|cover|drain|dust|flip|roll|unroll|unravel|melt|dip)\b)/i,'')
       .replace(/\s+([,.;:!?])/g,'$1')
       .replace(/\bI\s*\/\s*2\b/gi,'1/2')
@@ -222,6 +223,9 @@
       /^(?:home|recipes|about|contact|menu)$/i,
       /^(?:open in app|download app|view comments|read more|show less)$/i,
       /^(?:learn more|see the list|drveganblog[.]com)$/i,
+      /^(?:ad ends in\s*\d+|sponsored by\b.*|market volatility is a fact of life|vanguard|spectrum|foundations chrome|delta)$/i,
+      /^(?:set up your internet|your tax-time edge|financial advisors)\b/i,
+      /^(?:crowdedkitchen[.]com|dkitchen[.]com)$/i,
       /^(?:how to reset your cortisol belly|eat these foods every day)$/i,
       /^(?:enjoy a lifetime of firsts|live connected[.]? live invested[.]?|discover a resident-owned community)/i,
       /^(?:do not sell or share my personal information|terms of content use)[.]?$/i,
@@ -265,8 +269,8 @@
       });
     }
     let section='meta', dropEquipmentIngredientTail=false; const joined=[];
-    const ingredientStart=/^(?:\d+(?:\s+\d+\/\d+|[ ./-]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|small\s+handful|salt\b|extra\b)/i;
-    const sectionHeading=/^(?:ingredients?|instructions?|directions?|method|steps|notes?|for\s+.+|equipment|nutrition)\s*:?[.]?$/i;
+    const ingredientStart=/^(?:\d+(?:\s+\d+\/\d+|[ ./%-]\d+|\s+Y\b)?|%\w*|¥?Y(?:e|2)?\b|[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five|six|small\s+handful|salt\b|extra\b)/i;
+    const sectionHeading=/^(?:ingredients?|instructions?|directions?|method|steps|notes?|for\s+.+|crust|filling|glaze|topping|dough|sauce|equipment|nutrition)\s*:?[.]?$/i;
     for(const entry of lines){
       const h=entry.line.toLowerCase().replace(/[:.]$/,'').trim();
       if(/^ingredients?$/.test(h)){section='ingredients';dropEquipmentIngredientTail=false;}
@@ -286,7 +290,19 @@
     return dedup.map(x=>x.bullet?`- ${x.line}`:x.line).join('\n').replace(/([a-z])-\n([a-z])/g,'$1$2').replace(/\n(?=(?:ingredients?|instructions?|directions?|method|steps|notes?|equipment|nutrition)\b)/gi,'\n\n');
   }
 
-  const nutritionLabels = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated(?: Fat)?|Polyunsaturated(?: Fat)?|Monounsaturated(?: Fat)?|Trans(?: Fat)?|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/gi;
+  const nutritionLabels = /\b(?:Serving Size|Calories|Carbohydrates?|Protein|Fat|Saturated(?: Fat)?|Polyunsaturated(?: Fat)?|Monounsaturated(?: Fat)?|Trans(?: Fat)?|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/gi;
+  function normalizeNutritionLines(text) {
+    const label='(?:Serving Size|Calories|Carbohydrates?|Protein|Fat|Saturated Fat|Polyunsaturated Fat|Monounsaturated Fat|Trans Fat|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)';
+    const seen=new Set();
+    return String(text||'')
+      .replace(new RegExp(`\\s+(?=${label}\\s*:)`,'gi'),'\n')
+      .replace(/\b(\d+)\s*[¢©]g\b/g,'$1g')
+      .split(/\n/).map(normalizeLine).filter(line=>{
+        const match=line.match(new RegExp(`^(${label})\\s*:`,'i'));
+        if(!match)return Boolean(line);
+        const key=match[1].toLowerCase(); if(seen.has(key))return false; seen.add(key); return true;
+      }).join('\n');
+  }
   function extractNutritionText(text) {
     let value=String(text||'').replace(/\r/g,'').trim();
     const heading=value.search(/\bNutrition\b/i),calories=value.search(/\bCalories\b/i);
@@ -300,11 +316,14 @@
       .filter(line=>line&&!/^hp\s*[—-]?$/i.test(line))
       .join('\n')
       .trim();
+    value=normalizeNutritionLines(value);
     return value?`Nutrition\n${value}`:'';
   }
   function nutritionTextScore(text) {
     const value=extractNutritionText(text),labels=value.match(nutritionLabels)||[];
-    return new Set(labels.map(label=>label.toLowerCase())).size*100+(value.match(/\b\d+(?:[.]\d+)?\s*(?:kcal|cal|g|mg|mcg|iu|%)?\b/gi)||[]).length;
+    const unique=new Set(labels.map(label=>label.toLowerCase())).size, measures=(value.match(/\b\d+(?:[.]\d+)?\s*(?:kcal|cal|g|mg|mcg|iu|%)?\b/gi)||[]).length;
+    const garbage=(value.match(/\b(?:sponsored|advertisement|learn more|vanguard|spectrum|amazon|crowdedkitchen)\b|[=}{<>]/gi)||[]).length;
+    return unique*100+measures*3+(/\bServing Size\b/i.test(value)?35:0)-garbage*80-(labels.length-unique)*20;
   }
   function chooseNutritionText(candidates) {
     return (candidates||[]).map(extractNutritionText).filter(Boolean).sort((a,b)=>nutritionTextScore(b)-nutritionTextScore(a)||b.length-a.length)[0]||'';
@@ -368,6 +387,8 @@
     if(hasCore||hasAuxiliary)return false;
     const laterHasCore=allPages.some(candidate=>candidate!==page&&/^(?:ingredients?|instructions?|directions?|method|steps)\b/im.test(String(candidate||'')));
     if(!laterHasCore)return false;
+    const cookingEvidence=(text.match(/\b(?:dough|flour|sugar|butter|bake|roll|filling|glaze|oven|saucepan|whisk|chill|refrigerate|egg|milk|cinnamon|stir|mix|place|remove|spoon)\b/gi)||[]).length;
+    if(cookingEvidence>=2||instructionStart.test(text.replace(/^\W+/m,'')))return false;
     return /\b(?:privacy policy|terms of content use|do not sell|calories:.*carbohydrates:|learn more|sponsored)\b/i.test(text);
   }
 
@@ -407,7 +428,15 @@
       const text=String(result.data?.text||'').trim(),confidence=Number(result.data?.confidence||0),cleaned=cleanRecipeText(text,cleanupToggle?.checked!==false);attempts.push({text,confidence,score:scoreText(cleaned,confidence)});
     }finally{canvas.width=1;canvas.height=1;}}
     const layoutHints=attempts.map(attempt=>attempt.text).join('\n');
-    if(/\b(?:cake|filling|topping)\s*[:.]?/i.test(layoutHints)){
+    if(/^(?:crust|filling|glaze|topping|dough|sauce)\s*:?\s*$/im.test(layoutHints)||(layoutHints.match(/^[□☐○]\s+/gm)||[]).length>=3){
+      const canvas=await makeCanvas(file,'detail');try{
+        await ocrWorker.setParameters({tessedit_pageseg_mode:globalThis.Tesseract.PSM?.SINGLE_BLOCK||'6'});
+        const result=await ocrWorker.recognize(canvas,{rotateAuto:false}),text=String(result.data?.text||'').trim(),confidence=Number(result.data?.confidence||0),cleaned=cleanRecipeText(text,cleanupToggle?.checked!==false);
+        attempts.push({text,confidence,score:scoreText(cleaned,confidence)});
+      }finally{canvas.width=1;canvas.height=1;}
+    }
+    const specialtyHeadings=new Set((layoutHints.match(/^\s*(?:cake|filling|topping)\s*[:.]?\s*$/gim)||[]).map(line=>line.toLowerCase().replace(/[^a-z]/g,'')));
+    if(specialtyHeadings.size>=2){
       const titleSources=attempts.flatMap(attempt=>attempt.text.split(/\r?\n/).slice(0,12));
       for(const angle of [-15,-10]){const titleCanvas=await makeCanvas(file,'threshold',{x:.14,y:0,width:.86,height:.22},angle);try{
           await ocrWorker.setParameters({tessedit_pageseg_mode:globalThis.Tesseract.PSM?.SPARSE_TEXT||'11'});

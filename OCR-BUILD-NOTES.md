@@ -19,4 +19,8 @@ Kitchen Companion uses Tesseract.js for browser-based OCR on iPhone, iPad, Andro
 
 ## Dependency note
 
-The Tesseract runtime, WebAssembly core, and English model are loaded from pinned jsDelivr URLs and require internet on the first OCR use.
+The pinned Tesseract runtime, compatible LSTM processing cores, and English
+`best_int` model are bundled inside `Vendor/tesseract-7.0.0/`. The service
+worker installs them into a dedicated cache that normal application-version
+cleanup preserves. Settings can verify and repair the six required runtime
+files and request persistent browser storage where supported.
