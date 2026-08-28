@@ -1,7 +1,14 @@
-# Serenity Kitchen v0.21.35
+# Serenity Kitchen v0.21.36
 
-## v0.21.35
+## v0.21.36
 
+- Reconciles ad-interrupted direction fragments before discarding the advertisement, preserving the recipe text on both sides.
+- Adds the complete second Pop Tarts recognized-text and export failures to the OCR regression case.
+- Repairs the missing food-processor lead-in, Pop Tarts oven temperature, fractional inch dimensions, and rectangle dimensions observed in that import.
+- Keeps decimal measurements intact while splitting directions into readable steps.
+- Rejoins instruction fragments ending in “when you” with the following action instead of creating two broken steps.
+- Removes remaining review glyphs, site fragments, ad remnants, and the stray `(QM` ingredient from saved fields.
+- Cleans numeric/site debris from descriptions and navigation/ad fragments from Notes while retaining real author and cuisine metadata.
 - Adds the actual v0.21.34 Pop Tarts recognized text and exported recipe as an executable regression case.
 - Prevents an advertisement between directions from consuming every valid instruction that follows it.
 - Repairs the observed `V2`, `12`, `3%`, `2 2`, and `2-74` quantity substitutions before ingredient parsing.

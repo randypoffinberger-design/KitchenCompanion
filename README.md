@@ -1,4 +1,4 @@
-# Serenity Kitchen™ v0.21.35
+# Serenity Kitchen™ v0.21.36
 
 ## Automatic estimated nutrition
 

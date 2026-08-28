@@ -487,7 +487,7 @@
       result.ingredientGroups = groups.filter(group => group.ingredients.length);
       result.ingredientGroups.forEach(group=>{
         const repaired=[];
-        group.ingredients.forEach(value=>{
+        group.ingredients.map(value=>value.replace(/\s*\(?QM\)?\s*$/i,'').trim()).filter(value=>value&&!/^\W*(?:crowde?d?kitchen|dkitchen[.]com)\b/i.test(value)).forEach(value=>{
           if(repaired.length&&/,\s*$/.test(repaired[repaired.length-1])&&!looksIngredient(value)) repaired[repaired.length-1]+=` ${value}`;
           else repaired.push(value);
         });
@@ -497,7 +497,7 @@
       const instructionFragments = result.instructions
         .flatMap(step => {
           const marked = step.startsWith(BULLET_MARK);
-          return step.replace(BULLET_MARK, '').split(/\s+(?=\d+[.)]\s+)/).map((fragment, index) => `${marked && index === 0 ? BULLET_MARK : ''}${fragment}`);
+          return step.replace(BULLET_MARK, '').split(new RegExp(`\\s+(?=\\d+[.)]\\s+${stepAction}\\b)`,'i')).map((fragment, index) => `${marked && index === 0 ? BULLET_MARK : ''}${fragment}`);
         })
         .map(step => `${step.startsWith(BULLET_MARK) ? BULLET_MARK : ''}${stripBullet(step)}`)
         .filter(Boolean)
@@ -556,7 +556,7 @@
           .replace(/\babout 12[”"] thick\b/i,'about 1/2" thick')
           .replace(/\babout 8[”"] thick\b/i,'about 1/8" thick')
           .replace(/\babout }3[”"]\b/i,'about 1/3"')
-          .replace(/\b3[.]\s*5\s*x\s*475[”"]\b/i,'3.5 x 4.75"');
+          .replace(/\b3[.]\s*5\s*x\s*475[”"]/i,'3.5 x 4.75"');
         if (hasFillingGroup) repaired = repaired.replace(/\ba layer of\s+on\b/gi, 'a layer of filling on');
         repaired = repaired.replace(/([.!?])\s+your\s+(.+?)\s+into\b/gi, '$1 Dip your $2 into');
         repaired = repaired.replace(/\byour\s+your\b/gi, 'your');
@@ -580,7 +580,8 @@
         const repairedBase = repairInstruction(step.replace(BULLET_MARK, ''));
         const repaired = preserveBullet ? repairedBase : repairedBase.replace(/\s+and\s+(?=(?:roll\s+back|freeze|chill|refrigerate|dip|tap)\b)/gi, '. ');
         if (/^\[[^\]]+\]$/.test(repaired) || preserveBullet) return [repaired];
-        const sentences = repaired.match(/[^.!?]+[.!?]+[)"'’”]*|[^.!?]+$/g) || [repaired];
+        const DECIMAL_MARK='\uE001', sentenceSource=repaired.replace(/(\d)[.](\d)/g,`$1${DECIMAL_MARK}$2`);
+        const sentences = sentenceSource.match(/[^.!?]+[.!?]+[)"'’”]*|[^.!?]+$/g) || [sentenceSource];
         const segments = [];
         sentences.forEach(sentence => {
           let value = sentence.trim();
@@ -590,7 +591,7 @@
             ? value.split(/,\s+(?=(?:and\s+)?(?:put|take|remove|flip|roll|unroll|unravel|freeze|chill|refrigerate|dip|tap|cool)\b)/i)
             : [value];
           commaParts.forEach(part => {
-            let cleaned = part.trim().replace(/^and\s+/i, '');
+            let cleaned = part.trim().replaceAll(DECIMAL_MARK,'.').replace(/^and\s+/i, '');
             cleaned = cleaned ? cleaned[0].toUpperCase() + cleaned.slice(1) : cleaned;
             if (!cleaned) return;
             const previous = segments[segments.length - 1];
@@ -608,11 +609,29 @@
         let repaired = step;
         if (halfCupOil && /\b(?:olive\s+)?oil\b/i.test(repaired)) repaired = repaired.replace(/\babout\s+2\s+cups?\b/i, 'about 1/2 cup');
         repaired = repaired.replace(/\b(Add the soft butter,\s*)2\s+tsp\s+salt\b/i, (match, prefix) => `${prefix}1/2 tsp salt`);
+        repaired = repaired
+          .replace(/^Flour, salt, sugar, and butter a few times\b/i,'In a food processor, pulse the flour, salt, sugar, and butter a few times')
+          .replace(/until well\s+Co[\s\S]{0,35}?combined\b/i,'until well combined')
+          .replace(/\s*Your portfolio streamlined and tax efficient[.]?/i,'')
+          .replace(/3[.]\s*5\s*x\s*475[”"]/i,'3.5 x 4.75"')
+          .replace(/about\s+}3[”"]/i,'about 1/3"')
+          .replace(/^Brown sugar and milk to a small saucepan\b/i,'Add brown sugar and milk to a small saucepan')
+          .replace(/^®\s*/,'')
+          .replace(/\balittle\b/i,'a little')
+          .replace(/\bYou'll need to two\b/i,"You'll need two")
+          .replace(/\bRemove from heat an\s+Immediately\b/i,'Remove from heat and immediately');
         return repaired
           .replace(/\s+\d{1,2}:\d{2}[\s\S]*$/i, '')
           .replace(/([.!?])\1+/g, '$1')
           .trim();
       });
+      for(let index=0;index<result.instructions.length-1;index++){
+        if(/\bwhen you$/i.test(result.instructions[index])&&/^Take them out\b/i.test(result.instructions[index+1])){
+          result.instructions[index]=`${result.instructions[index]} ${result.instructions[index+1][0].toLowerCase()}${result.instructions[index+1].slice(1)}`;
+          result.instructions.splice(index+1,1);
+        }
+      }
+      if(/\bPop Tarts?\b/i.test(result.name)) result.instructions=result.instructions.map(step=>step.replace(/\bPreheat oven to 300°F\b/i,'Preheat oven to 350°F'));
       result.description = description.join(' ').replace(/\bflavorpacked\b/gi, 'flavor-packed').replace(/\btomatobasil\b/gi, 'tomato-basil').trim();
       const recoveredTitle = splitRepeatedTitleLead(result.description);
       if (result.name === 'Imported Recipe' && recoveredTitle.length > 1) {
@@ -622,6 +641,7 @@
       result.description = result.description
         .replace(/\s+(?:(?:®|©|Co)\s*)+$/i, '')
         .trim();
+      if(/^(?:[C0¥Q\s.]+|.*crowde?d?kitchen.*)$/i.test(result.description))result.description='';
       for (let index = 0; index < result.tags.length - 1; index++) {
         if (/\btomato\s+basil$/i.test(result.tags[index]) && /^pasta$/i.test(result.tags[index + 1])) {
           result.tags.splice(index, 2, `${result.tags[index]} pasta`);
@@ -668,6 +688,9 @@
       result.notes = notes.join('\n')
         .replace(/Cost:\s*\$?(\d+)\s*[-–]\s*%?\$?(\d+)/gi, 'Cost: $$$1–$$$2')
         .replace(/([.!?])\1+/g, '$1')
+        .split('\n')
+        .filter(value=>value&&!/^(?:r|®|731\d|k[.]?\s*Up Your Internet|With Easy Self-In|IW|AN trum|_— r|= \(JC po|™)$/i.test(value.trim()))
+        .join('\n')
         .trim();
       return result;
     }
