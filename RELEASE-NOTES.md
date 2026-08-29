@@ -1,4 +1,9 @@
-# Serenity Kitchen v0.21.37
+# Serenity Kitchen v0.21.38
+
+## v0.21.38
+
+- Removes the last verified Pop Tarts OCR artifacts: a stray curly quote after an ingredient and a phone-status fragment in recipe notes.
+- Adds the user's fresh exported recipe as a regression case so these artifacts cannot return unnoticed.
 
 ## v0.21.37
 

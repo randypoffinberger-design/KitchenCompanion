@@ -379,6 +379,7 @@
         const nutrientEvidence = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated|Polyunsaturated|Monounsaturated|Trans|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i.test(value)
           && /\b\d+(?:[.]\d+)?\s*(?:kcal|g|mg|mcg|iu|%)\b/i.test(value);
         if (nutrientEvidence) return false;
+        if (/^\W*731\d[^A-Za-z]*[A-Z]{0,3}$/i.test(value)) return true;
         if (/^(?:get our new cookbook|crowd\w{0,5}kitchen|h these be)\b/i.test(value)) return true;
         if (/\b(?:cortisol|resident-owned|nexdoo|prime|sponsored|advertisement|amazon|xfinity|vanguard|spectrum|foundations chrome|tax-time|financial advisors|advisors can help)\b/i.test(value)) return true;
         if (/^(?:[)\[(+|¥{}]*\s*)?(?:o-|s|ex:?|ls\]?|j)$/i.test(value) || /\bablt\b.*\d+kcal\b/i.test(value)) return true;
@@ -487,7 +488,13 @@
       result.ingredientGroups = groups.filter(group => group.ingredients.length);
       result.ingredientGroups.forEach(group=>{
         const repaired=[];
-        group.ingredients.map(value=>value.replace(/\s*\(?QM\)?\s*$/i,'').trim()).filter(value=>value&&!/^\W*(?:crowde?d?kitchen|dkitchen[.]com)\b/i.test(value)).forEach(value=>{
+        group.ingredients.map(value=>value
+          .replace(/\s*\(?QM\)?\s*$/i,'')
+          // A curly closing quote after a word is common OCR debris in copied
+          // ingredient lists. Preserve straight/curly inch marks after numbers.
+          .replace(/([A-Za-z])[”]\s*$/,'$1')
+          .trim())
+          .filter(value=>value&&!/^\W*(?:crowde?d?kitchen|dkitchen[.]com)\b/i.test(value)).forEach(value=>{
           if(repaired.length&&/,\s*$/.test(repaired[repaired.length-1])&&!looksIngredient(value)) repaired[repaired.length-1]+=` ${value}`;
           else repaired.push(value);
         });
@@ -689,7 +696,7 @@
         .replace(/Cost:\s*\$?(\d+)\s*[-–]\s*%?\$?(\d+)/gi, 'Cost: $$$1–$$$2')
         .replace(/([.!?])\1+/g, '$1')
         .split('\n')
-        .filter(value=>value&&!/^(?:r|®|731\d|k[.]?\s*Up Your Internet|With Easy Self-In|IW|AN trum(?: com\/Advantage)?|_— r|= \(JC po|™)$/i.test(value.trim()))
+        .filter(value=>value&&!/^(?:r|®|\W*731\d[^A-Za-z]*[A-Z]{0,3}|k[.]?\s*Up Your Internet|With Easy Self-In|IW|AN trum(?: com\/Advantage)?|_— r|= \(JC po|™)$/i.test(value.trim()))
         .filter(value=>!/^[-•]?\s*Gluten free:\s*\\|^free flour, but it should work$|\b(?:Internet inUnder|Easy Self-In|trum com\/Advantage|Market volatility|Vanguard|Spectrum)\b/i.test(value.trim()))
         .join('\n')
         .trim();
