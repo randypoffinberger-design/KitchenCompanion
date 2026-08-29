@@ -1,7 +1,13 @@
-# Serenity Kitchen v0.21.36
+# Serenity Kitchen v0.21.37
 
-## v0.21.36
+## v0.21.37
 
+- Replaces the default raw recognition box with editable Cleaned recipe text that matches what Serenity Kitchen will parse.
+- Retains the unmodified recognition behind a collapsed Show raw OCR text troubleshooting panel.
+- Removes the remaining corrupted rating, site-name, timer, internet-ad, and navigation fragments from Description and Notes.
+- Drops incomplete OCR note fragments when too little source text survived to be useful.
+- Preserves real author, total-time, cuisine, ingredient, instruction, and nutrition content during the final metadata cleanup.
+- Adds a cleaned-preview round-trip regression proving that parsing the preview does not restore discarded clutter or alter the corrected Pop Tarts recipe.
 - Reconciles ad-interrupted direction fragments before discarding the advertisement, preserving the recipe text on both sides.
 - Adds the complete second Pop Tarts recognized-text and export failures to the OCR regression case.
 - Repairs the missing food-processor lead-in, Pop Tarts oven temperature, fractional inch dimensions, and rectangle dimensions observed in that import.

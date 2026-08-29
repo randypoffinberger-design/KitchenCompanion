@@ -4,6 +4,8 @@
   const button = document.querySelector('#recognizeRecipeImages');
   const fileInput = document.querySelector('#recipeImageFiles');
   const output = document.querySelector('#recognizedRecipeText');
+  const rawOutput = document.querySelector('#rawRecognizedRecipeText');
+  const rawDetails = document.querySelector('#rawOcrDetails');
   const status = document.querySelector('#ocrStatus');
   const cleanupToggle = document.querySelector('#ocrCleanupToggle');
   const fallbackActions = document.querySelector('#ocrFallbackActions');
@@ -428,6 +430,25 @@
     return {low:false,reason:'good',message:'Text recognition complete. Review the text, then choose Parse and review.'};
   }
 
+  function formatParsedRecipeText(parsed) {
+    const lines=[parsed.name||'Imported Recipe'];
+    if(parsed.category)lines.push(`Category: ${parsed.category}`);
+    if(parsed.prepTime)lines.push(`Prep Time: ${parsed.prepTime}`);
+    if(parsed.cookTime)lines.push(`Cook Time: ${parsed.cookTime}`);
+    if(parsed.yieldText)lines.push(`Yield: ${parsed.yieldText}`);
+    if(parsed.tags?.length)lines.push(`Tags: ${parsed.tags.join(', ')}`);
+    if(parsed.description)lines.push('',parsed.description);
+    lines.push('','Ingredients');
+    (parsed.ingredientGroups||[]).forEach(group=>{
+      if(group.name&&group.name!=='Main')lines.push(/^(?:crust|filling|glaze|topping|dough|sauce)$/i.test(group.name)?`${group.name}:`:`For ${group.name}:`);
+      lines.push(...(group.ingredients||[]));
+    });
+    lines.push('','Instructions',...(parsed.instructions||[]));
+    if(parsed.nutrition)lines.push('','Nutrition',...String(parsed.nutrition).split('\n'));
+    if(parsed.notes)lines.push('','Notes',...String(parsed.notes).split('\n'));
+    return lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  }
+
   async function recognizeBest(ocrWorker,file) {
     const attempts=[],plans=[
       {mode:'balanced',psm:globalThis.Tesseract.PSM?.AUTO||'3'},
@@ -585,7 +606,7 @@
   async function readImages(event) {
     event.preventDefault(); event.stopImmediatePropagation(); if(running)return; const files=[...fileInput.files]; if(!files.length)return alert('Choose at least one recipe image first.');
     running=true; pageCount=files.length; button.disabled=true; button.textContent='Reading…'; setStatus('Starting OCR…'); const pages=[],failures=[];
-    try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { const result=await recognizeBest(ocrWorker,files[i]); result.text=cleanRecipeText(result.text,cleanupToggle?.checked!==false); if(result.text)pages.push(result);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
+    try { const ocrWorker=await getWorker(); for(let i=0;i<files.length;i++){ activePage=i+1; setStatus(`Preparing image ${activePage} of ${pageCount}…`); try { const result=await recognizeBest(ocrWorker,files[i]); result.rawText=result.text; result.text=cleanRecipeText(result.text,cleanupToggle?.checked!==false); if(result.text)pages.push(result);else failures.push(`${files[i].name}: no text found`); } catch(error){console.error(error);failures.push(`${files[i].name}: ${error.message}`);} }
       if(!pages.length)throw new Error(failures.join('; ')||'No readable text was found.');
       let combined=combinePages(pages.map(page=>page.text)),tailDiagnostic='';
       if(nutritionLooksTruncated(combined)){
@@ -611,7 +632,8 @@
         }
         combined=mergeRecoveredNutritionTail(combined,recoveredTail);
       }
-      output.value=combined; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const incompleteNutrition=nutritionLooksTruncated(combined); const quality=incompleteNutrition?{low:true,reason:'nutrition-truncated',message:`Nutrition is incomplete: an amount still has no value. Lower OCR saw: “${tailDiagnostic||'no recovery candidate'}”. Compare the Nutrition field with the screenshot before saving this recipe.`}:qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; output.dataset.ocrWarning=quality.reason; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low); globalThis.KCImageImportUi?.setStage('ready');
+      const parsed=new globalThis.KitchenCompanionEngine().parseRecipeText(combined);
+      output.value=formatParsedRecipeText(parsed); if(rawOutput)rawOutput.value=pages.map((page,index)=>`Image ${index+1}\n${page.rawText||page.text}`).join('\n\n──────────\n\n'); if(rawDetails)rawDetails.hidden=false; output.focus(); const overallScore=Math.min(...pages.map(page=>page.score)); const incompleteNutrition=nutritionLooksTruncated(combined); const quality=incompleteNutrition?{low:true,reason:'nutrition-truncated',message:`Nutrition is incomplete: an amount still has no value. Lower OCR saw: “${tailDiagnostic||'no recovery candidate'}”. Compare the Nutrition field with the screenshot before saving this recipe.`}:qualityMessage(combined,overallScore); output.dataset.ocrQuality=quality.low?'low':'good'; output.dataset.ocrWarning=quality.reason; setStatus(`${quality.message}${failures.length?` ${failures.length} image warning${failures.length===1?'':'s'}.`:''}`,quality.low); globalThis.KCImageImportUi?.setStage('ready');
     } catch(error){console.error(error); try{await worker?.terminate?.();}catch{} worker=null; globalThis.KCImageImportUi?.setStage('select'); setStatus(`Text recognition failed: ${error.message} You can retry, use tighter screenshots, or paste converted text instead.`,true);} finally {running=false;button.disabled=false;button.textContent='Read images';activePage=0;pageCount=0;}
   }
 
@@ -619,5 +641,5 @@
   openPaste?.addEventListener('click',()=>{ document.querySelector('#imageRecipeDialog')?.close(); const paste=document.querySelector('#pasteRecipeDialog'); const textarea=document.querySelector('#pastedRecipeText'); if(output.value.trim())textarea.value=output.value; paste?.showModal(); textarea?.focus(); });
   output.addEventListener('input',event=>{if(event.isTrusted&&output.dataset.ocrQuality==='low')output.dataset.ocrQuality='edited';});
   button.addEventListener('click',readImages,{capture:true}); window.addEventListener('pagehide',()=>{worker?.terminate?.();worker=null;});
-  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText, extractNutritionText, nutritionTextScore, chooseNutritionText, extractNutritionTailText, chooseNutritionTailText, mergeNutritionText, nutritionLooksTruncated, mergeRecoveredNutritionTail };
+  globalThis.__KitchenCompanionOcrTest = { cleanRecipeText, combinePages, trimAuxiliarySections, pageShouldBeIgnored, qualityMessage, scoreText, extractNutritionText, nutritionTextScore, chooseNutritionText, extractNutritionTailText, chooseNutritionTailText, mergeNutritionText, nutritionLooksTruncated, mergeRecoveredNutritionTail, formatParsedRecipeText };
 })();

@@ -379,7 +379,7 @@
         const nutrientEvidence = /\b(?:Calories|Carbohydrates?|Protein|Fat|Saturated|Polyunsaturated|Monounsaturated|Trans|Cholesterol|Sodium|Potassium|Fiber|Sugar|Vitamin A|Vitamin C|Calcium|Iron)\b/i.test(value)
           && /\b\d+(?:[.]\d+)?\s*(?:kcal|g|mg|mcg|iu|%)\b/i.test(value);
         if (nutrientEvidence) return false;
-        if (/^(?:get our new cookbook|crowde?d?kitchen|h these be)\b/i.test(value)) return true;
+        if (/^(?:get our new cookbook|crowd\w{0,5}kitchen|h these be)\b/i.test(value)) return true;
         if (/\b(?:cortisol|resident-owned|nexdoo|prime|sponsored|advertisement|amazon|xfinity|vanguard|spectrum|foundations chrome|tax-time|financial advisors|advisors can help)\b/i.test(value)) return true;
         if (/^(?:[)\[(+|¥{}]*\s*)?(?:o-|s|ex:?|ls\]?|j)$/i.test(value) || /\bablt\b.*\d+kcal\b/i.test(value)) return true;
         const letters = (value.match(/[A-Za-z]/g) || []).length;
@@ -641,7 +641,7 @@
       result.description = result.description
         .replace(/\s+(?:(?:®|©|Co)\s*)+$/i, '')
         .trim();
-      if(/^(?:[C0¥Q\s.]+|.*crowde?d?kitchen.*)$/i.test(result.description))result.description='';
+      if(/^(?:[C0¥Q\s.]+|.*crowd\w{0,5}kitchen.*)$/i.test(result.description)||(/\d/.test(result.description)&&((result.description.match(/[A-Za-z]{2,}/g)||[]).length<3)))result.description='';
       for (let index = 0; index < result.tags.length - 1; index++) {
         if (/\btomato\s+basil$/i.test(result.tags[index]) && /^pasta$/i.test(result.tags[index + 1])) {
           result.tags.splice(index, 2, `${result.tags[index]} pasta`);
@@ -689,7 +689,8 @@
         .replace(/Cost:\s*\$?(\d+)\s*[-–]\s*%?\$?(\d+)/gi, 'Cost: $$$1–$$$2')
         .replace(/([.!?])\1+/g, '$1')
         .split('\n')
-        .filter(value=>value&&!/^(?:r|®|731\d|k[.]?\s*Up Your Internet|With Easy Self-In|IW|AN trum|_— r|= \(JC po|™)$/i.test(value.trim()))
+        .filter(value=>value&&!/^(?:r|®|731\d|k[.]?\s*Up Your Internet|With Easy Self-In|IW|AN trum(?: com\/Advantage)?|_— r|= \(JC po|™)$/i.test(value.trim()))
+        .filter(value=>!/^[-•]?\s*Gluten free:\s*\\|^free flour, but it should work$|\b(?:Internet inUnder|Easy Self-In|trum com\/Advantage|Market volatility|Vanguard|Spectrum)\b/i.test(value.trim()))
         .join('\n')
         .trim();
       return result;
