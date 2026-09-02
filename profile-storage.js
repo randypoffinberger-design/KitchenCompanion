@@ -11,7 +11,7 @@
   const MAX_AUTOMATIC_BACKUPS = 5;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.21.15';
+  const APP_VERSION = '0.21.39';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -34,7 +34,7 @@
         schemaVersion: 2,
         profileId,
         personalRecipes: [],
-        favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [],
+        favorites: [], recipeNotes: {}, nutritionEstimates: {}, hiddenRecipes: [], customCategories: [],
         shoppingList: [], regularItems: [], pantryItems: [], stores: ['Unassigned', 'Costco', 'Walmart'],
         settings: { darkMode:false, metricHelpers:false, accentColor:'#c80d3e', wakeLockMode:'recipes-and-timers', alarmVolume:0.85, alarmSoundEnabled:true, alarmTone:'bell' },
         ratings: {}, learnedStorePreferences: {}, learnedShoppingGroups: {}, learnedAisles: {}, manualCrossLinks: [],
@@ -391,6 +391,69 @@
       return true;
     }
 
+    initializeFreshBrowserStorage() {
+      if (!this.recoveryRequired) throw new Error('Serenity Kitchen is not waiting for storage recovery.');
+      const previous = this.collectStorageSnapshot({ includeModules:true });
+      try {
+        Object.keys(previous).forEach(key => localStorage.removeItem(key));
+        this.recoveryRequired = false;
+        this.freshInstallAllowed = false;
+        this.migrateLegacy();
+        if (!this.loadCurrentStorage()) throw new Error('The new browser kitchen could not be verified.');
+        return true;
+      } catch (error) {
+        Object.keys(this.collectStorageSnapshot({ includeModules:true })).forEach(key => localStorage.removeItem(key));
+        Object.entries(previous).forEach(([key, value]) => localStorage.setItem(key, value));
+        this.enterReadOnlyRecovery('Fresh setup failed, so the previous browser storage was kept.');
+        throw error;
+      }
+    }
+
+    restoreExternalBackup(payload) {
+      if (!this.recoveryRequired) throw new Error('Serenity Kitchen is not waiting for storage recovery.');
+      const incoming = payload?.state;
+      if (!incoming || typeof incoming !== 'object' || !Array.isArray(incoming.modules)) throw new Error('The backup state is missing or damaged.');
+      const previous = this.collectStorageSnapshot({ includeModules:true });
+      const previousRecovery = { required:this.recoveryRequired, reason:this.recoveryReason, fresh:this.freshInstallAllowed };
+      try {
+        const createdAt = now();
+        const sourceMeta = payload.activeProfile && typeof payload.activeProfile === 'object' ? payload.activeProfile : {};
+        const profileId = String(sourceMeta.profileId || '').trim() || uuid();
+        const displayName = String(sourceMeta.displayName || 'Restored Profile').trim() || 'Restored Profile';
+        const profileMeta = {
+          profileId,
+          displayName,
+          color:sourceMeta.color || '#0f766e',
+          kind:sourceMeta.kind || 'personal',
+          setupComplete:true,
+          createdAt:sourceMeta.createdAt || createdAt,
+          updatedAt:createdAt,
+          lastUsedAt:createdAt,
+          migrationStatus:'external-backup-recovery',
+          avatarType:['initials','emoji','image'].includes(sourceMeta.avatarType) ? sourceMeta.avatarType : 'initials',
+          avatarValue:sourceMeta.avatarValue == null ? '' : String(sourceMeta.avatarValue)
+        };
+        this.device = { schemaVersion:1, activeProfileId:profileId, profiles:[profileMeta], migration:{ id:'external-backup-recovery', migratedAt:createdAt } };
+        this.shared = this.defaultShared();
+        this.activeProfile = this.defaultProfileData(profileId);
+        this.recoveryRequired = false;
+        this.recoveryReason = '';
+        this.freshInstallAllowed = false;
+        this.saveCombinedState(incoming);
+        if (!this.loadCurrentStorage()) throw new Error('The restored profile could not be read back.');
+        try { this.createSafetyBackup('after-external-backup-recovery', { force:true }); }
+        catch (error) { console.warn('The restored backup was verified, but a second local checkpoint could not be created.', error); }
+        return true;
+      } catch (error) {
+        Object.keys(this.collectStorageSnapshot({ includeModules:true })).forEach(key => localStorage.removeItem(key));
+        Object.entries(previous).forEach(([key, value]) => localStorage.setItem(key, value));
+        this.recoveryRequired = previousRecovery.required;
+        this.recoveryReason = previousRecovery.reason;
+        this.freshInstallAllowed = previousRecovery.fresh;
+        throw new Error(`Backup recovery failed and the previous browser data was kept: ${error.message}`);
+      }
+    }
+
     normalizeProfileMetadata() {
       const palette = ['#7b3f00','#2563eb','#15803d','#7e22ce','#be123c','#0f766e'];
       let changed = false;
@@ -423,6 +486,7 @@
         });
       }
       normalized.ratings = normalizedRatings;
+      normalized.nutritionEstimates = normalized.nutritionEstimates && typeof normalized.nutritionEstimates === 'object' && !Array.isArray(normalized.nutritionEstimates) ? normalized.nutritionEstimates : {};
       normalized.manualCrossLinks = Array.isArray(normalized.manualCrossLinks)
         ? normalized.manualCrossLinks.filter(link => link?.id && link?.sourceKey && link?.targetKey && link.sourceKey !== link.targetKey && ['ingredient','pairing'].includes(link.type))
         : [];
@@ -460,7 +524,7 @@
         this.shared.timers = clone((legacy.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || profileId })));
         this.shared.backupMeta = clone(legacy.backupMeta || {});
         this.activeProfile.personalRecipes = clone(legacy.modules.find(module => module.moduleId === 'my-recipes')?.recipes || []);
-        for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','pantryItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
+        for (const key of ['favorites','recipeNotes','nutritionEstimates','hiddenRecipes','customCategories','shoppingList','regularItems','pantryItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
           if (legacy[key] !== undefined) this.activeProfile[key] = clone(legacy[key]);
         }
       }
@@ -502,6 +566,7 @@
         modules: [...clone(this.shared.modules || []), ...(personal ? [personal] : [])],
         favorites: clone(this.activeProfile.favorites || []),
         recipeNotes: clone(this.activeProfile.recipeNotes || {}),
+        nutritionEstimates: clone(this.activeProfile.nutritionEstimates || {}),
         hiddenRecipes: clone(this.activeProfile.hiddenRecipes || []),
         customCategories: clone(this.activeProfile.customCategories || []),
         timers: clone(this.shared.timers || []),
@@ -529,7 +594,7 @@
       this.shared.timers = clone((state.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || this.device.activeProfileId })));
       this.shared.backupMeta = clone(state.backupMeta || {});
       this.activeProfile.personalRecipes = clone((state.modules || []).find(module => module.moduleId === 'my-recipes')?.recipes || []);
-      for (const key of ['favorites','recipeNotes','hiddenRecipes','customCategories','shoppingList','regularItems','pantryItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
+      for (const key of ['favorites','recipeNotes','nutritionEstimates','hiddenRecipes','customCategories','shoppingList','regularItems','pantryItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
         this.activeProfile[key] = clone(state[key] ?? this.activeProfile[key]);
       }
       this.persistAll();

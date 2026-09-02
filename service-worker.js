@@ -1,8 +1,8 @@
-const CACHE_NAME = 'serenity-kitchen-v0.21.38';
+const CACHE_NAME = 'serenity-kitchen-v0.21.39';
 const OCR_CACHE_NAME = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.21.38', './kitchen-engine.js?v=0.21.38', './recipe-scaling.js?v=0.21.38', './profile-storage.js?v=0.21.38', './meal-planner.js?v=0.21.38', './sync-client.js?v=0.21.38', './app.js?v=0.21.38',
-  './url-recipe-import.js?v=0.21.38', './ocr-service.js?v=0.21.38', './alarm-bell.wav?v=0.21.38', './app.webmanifest?v=0.21.38', './icon-180.png?v=0.21.38', './icon-192.png?v=0.21.38', './icon-512.png?v=0.21.38', './serenity-kitchen-icon-1024.png?v=0.21.38', './serenity-kitchen-home.jpeg?v=0.21.38', './sk-watermark.png?v=0.21.38'
+  './', './index.html', './styles.css?v=0.21.39', './kitchen-engine.js?v=0.21.39', './recipe-scaling.js?v=0.21.39', './profile-storage.js?v=0.21.39', './meal-planner.js?v=0.21.39', './sync-client.js?v=0.21.39', './app.js?v=0.21.39',
+  './url-recipe-import.js?v=0.21.39', './ocr-service.js?v=0.21.39', './alarm-bell.wav?v=0.21.39', './app.webmanifest?v=0.21.39', './icon-180.png?v=0.21.39', './icon-192.png?v=0.21.39', './icon-512.png?v=0.21.39', './serenity-kitchen-icon-1024.png?v=0.21.39', './serenity-kitchen-home.jpeg?v=0.21.39', './sk-watermark.png?v=0.21.39'
 ];
 const OCR_ASSETS = [
   './Vendor/tesseract-7.0.0/tesseract.min.js',
@@ -68,8 +68,22 @@ self.addEventListener('fetch', event => {
     }
 
     if (event.request.mode === 'navigate') {
-      const cachedPage = await caches.match('./index.html') || await caches.match('./');
-      if (cachedPage) return cachedPage;
+      const cache = await caches.open(CACHE_NAME);
+      const canonicalPage = new Request(`${self.registration.scope}index.html`);
+      try {
+        const response = await fetch(event.request, { cache:'no-store' });
+        if (response?.ok) {
+          await cache.put(canonicalPage, response.clone());
+          return response;
+        }
+        const cachedPage = await cache.match(canonicalPage) || await cache.match('./') || await caches.match('./index.html');
+        if (cachedPage) return cachedPage;
+        return response;
+      } catch (error) {
+        const cachedPage = await cache.match(canonicalPage) || await cache.match('./') || await caches.match('./index.html');
+        if (cachedPage) return cachedPage;
+        throw error;
+      }
     }
 
     const cacheFirst = url.origin === self.location.origin;

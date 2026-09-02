@@ -1,6 +1,6 @@
-# Serenity Kitchen v0.21.38
+# Serenity Kitchen v0.21.39
 
-## v0.21.38
+## v0.21.39
 
 - Removes the last verified Pop Tarts OCR artifacts: a stray curly quote after an ingredient and a phone-status fragment in recipe notes.
 - Adds the user's fresh exported recipe as a regression case so these artifacts cannot return unnoticed.
@@ -738,9 +738,16 @@
 - Excludes Equipment-only, Nutrition/footer, advertising, domain, and phone-status content from multi-page recipe imports.
 - Prevents partial overlapping screenshots from creating duplicate or truncated ingredients.
 - Added a Garlic Butter Pasta regression based on a six-screenshot webpage import.
-# Serenity Kitchen v0.21.15
+# Serenity Kitchen v0.21.39
 
 - Prevents one malformed imported recipe from breaking the shared Cross-Link index and blanking every recipe detail screen.
 - Normalizes invalid ingredient and instruction collections at display time without changing the saved record.
 - Keeps recipe detail rendering available when Cross-Link analysis fails.
 - Adds a visible recovery panel with Edit and repair access instead of leaving a blank detail page.
+# Serenity Kitchen v0.21.39
+
+- Adds direct exported-backup restoration to the protected-storage recovery screen.
+- Adds a confirmed fresh-browser setup for Safari and other separate browser copies.
+- Changes app navigation to network-first with an offline cached fallback so installed apps can activate new releases reliably.
+- Waits for a discovered service-worker update to activate before reloading.
+- Keeps browser recovery actions isolated from other installed Home Screen copies.

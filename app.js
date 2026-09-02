@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.38';
+  const ENGINE_VERSION = '0.21.39';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -225,9 +225,34 @@
     blocker.id = 'storageRecoveryBlocker';
     blocker.className = 'storage-recovery-blocker';
     blocker.setAttribute('role', 'alert');
-    blocker.innerHTML = `<div class="storage-recovery-card"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z"/><path d="M9 12l2 2 4-5"/></svg><h1>Your saved kitchen is protected</h1><p id="storageRecoveryMessage">${escapeHtml(profileStore.storageRecoveryMessage?.() || 'Saved profile data is temporarily unavailable.')} Serenity Kitchen stopped before creating or overwriting a blank profile.</p><button type="button" class="button" id="storageRecoveryRetry">Retry recovery</button><small>Do not reinstall the app or clear website data. If recovery cannot complete, use your exported Serenity Kitchen backup after reconnecting.</small></div>`;
+    blocker.innerHTML = `<div class="storage-recovery-card"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z"/><path d="M9 12l2 2 4-5"/></svg><h1>Your saved kitchen is protected</h1><p id="storageRecoveryMessage">${escapeHtml(profileStore.storageRecoveryMessage?.() || 'Saved profile data is temporarily unavailable.')} Serenity Kitchen stopped before creating or overwriting a blank profile.</p><div class="storage-recovery-actions"><button type="button" class="button" id="storageRecoveryRetry">Retry recovery</button><button type="button" class="button secondary" id="storageRecoveryRestore">Restore exported backup</button><button type="button" class="button secondary" id="storageRecoveryFresh">Start fresh in this browser</button></div><input id="storageRecoveryFile" type="file" accept=".skbackup,.json,application/json" hidden><small>Safari and an installed Home Screen app can have separate saved data. Restore a verified backup here, or start fresh only when this is a new browser copy. These choices do not read data from another app installation.</small></div>`;
     document.body.replaceChildren(blocker);
     blocker.querySelector('#storageRecoveryRetry').addEventListener('click', () => location.reload());
+    const fileInput = blocker.querySelector('#storageRecoveryFile');
+    blocker.querySelector('#storageRecoveryRestore').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async event => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      try {
+        const payload = JSON.parse(await file.text());
+        validateBackupPayload(payload);
+        const personal = payload.state.modules.find(module => module.moduleId === 'my-recipes');
+        const profileName = payload.activeProfile?.displayName || 'the backed-up profile';
+        if (!confirm(`Restore ${profileName} with ${personal?.recipes?.length || 0} personal recipes into this browser copy?`)) return;
+        updateStorageRecoveryScreen('Restoring and verifying the exported backup…');
+        profileStore.restoreExternalBackup(payload);
+        location.reload();
+      } catch (error) { updateStorageRecoveryScreen(`The backup was not restored: ${error.message}`); }
+    });
+    blocker.querySelector('#storageRecoveryFresh').addEventListener('click', () => {
+      if (!confirm('Start a new empty kitchen in this browser copy? Only continue if this is Safari or another new installation and your existing kitchen is backed up.')) return;
+      try {
+        updateStorageRecoveryScreen('Creating and verifying a new browser kitchen…');
+        profileStore.initializeFreshBrowserStorage();
+        location.reload();
+      } catch (error) { updateStorageRecoveryScreen(`Fresh setup did not finish: ${error.message}`); }
+    });
   }
 
   function updateStorageRecoveryScreen(message) {
@@ -1133,6 +1158,17 @@
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r => r.update()));
+        const workers = regs.map(reg => reg.installing || reg.waiting).filter(Boolean);
+        await Promise.all(workers.map(worker => new Promise(resolve => {
+          if (worker.state === 'activated') { resolve(); return; }
+          const timeout = setTimeout(resolve, 15000);
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'activated' || worker.state === 'redundant') {
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+        })));
       }
       location.href = `${location.pathname}?app=${Date.now()}`;
     } catch (error) { alert(`The update check could not finish: ${error.message}`); }
@@ -1140,7 +1176,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.38').then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.39', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -3034,7 +3070,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.38');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.39');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
