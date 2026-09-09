@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.39';
+  const ENGINE_VERSION = '0.21.40';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -96,7 +96,7 @@
   const profileStore = new KCProfileStore();
   const state = profileStore.loadActiveState();
   const LIST_EXPANSION_MODES = new Set(['collapsed','stores-open','expanded']);
-  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
+  state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.householdRecipes = state.householdRecipes && typeof state.householdRecipes === 'object' && !Array.isArray(state.householdRecipes) ? state.householdRecipes : {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
   state.settings.listExpansionMode = LIST_EXPANSION_MODES.has(state.settings.listExpansionMode) ? state.settings.listExpansionMode : 'stores-open';
   state.nutritionEstimates = state.nutritionEstimates && typeof state.nutritionEstimates === 'object' && !Array.isArray(state.nutritionEstimates) ? state.nutritionEstimates : {};
   let currentView = 'home';
@@ -1176,7 +1176,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.39', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.40', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1670,8 +1670,34 @@
   }
 
   function getAllRecipes(options = {}) {
-    const recipes = engine.getRecipes(state.modules, options);
+    const recipes = engine.getRecipes(recipeModulesForDisplay(), options);
     return options.includeHidden ? recipes : recipes.filter(recipe => !state.hiddenRecipes.includes(recipe.key));
+  }
+
+  function recipeContentIdentity(recipe) {
+    const normalize = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    return JSON.stringify([
+      normalize(recipe?.name),
+      (recipe?.ingredients || []).map(item => [normalize(item?.quantity), normalize(item?.unit), normalize(item?.item || item?.name), normalize(item?.section)]),
+      (recipe?.instructions || []).map(normalize)
+    ]);
+  }
+
+  function recipeModulesForDisplay() {
+    const modules = [...(state.modules || [])];
+    const ownIdentities = new Set((state.modules.find(module => module.moduleId === 'my-recipes')?.recipes || []).map(recipeContentIdentity));
+    Object.entries(state.householdRecipes || {}).forEach(([ownerId, bucket]) => {
+      if (!bucket || ownerId === householdSync.summary().user?.id) return;
+      const recipes = (bucket.recipes || bucket.personalRecipes || []).filter(recipe => !ownIdentities.has(recipeContentIdentity(recipe)));
+      if (!recipes.length) return;
+      const displayName = String(bucket.ownerDisplayName || 'Household member').trim();
+      modules.push({
+        schemaVersion:1, moduleId:`household-${ownerId}`, name:`${displayName}${displayName.endsWith('s') ? "'" : "'s"} Recipes`,
+        publisher:'Household sharing', version:'1.0.0', description:`Recipes shared by ${displayName}. Edit one to save your own independent copy.`,
+        license:'Household', enabled:true, recipes:JSON.parse(JSON.stringify(recipes))
+      });
+    });
+    return modules;
   }
 
   function repairFavoriteReferences() {
@@ -1748,7 +1774,7 @@
   function renderModuleFilter() {
     const current = els.moduleFilter.value || 'all';
     els.moduleFilter.innerHTML = '<option value="all">All modules</option>';
-    state.modules.filter(m => m.enabled !== false).forEach(module => {
+    recipeModulesForDisplay().filter(m => m.enabled !== false).forEach(module => {
       const option = document.createElement('option');
       option.value = module.moduleId;
       option.textContent = module.name;
@@ -2521,7 +2547,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
 
   function renderHiddenRecipes() {
     if (!els.hiddenRecipesList) return;
-    const all = engine.getRecipes(state.modules, { enabledOnly: false, includeOverridden: true });
+    const all = engine.getRecipes(recipeModulesForDisplay(), { enabledOnly: false, includeOverridden: true });
     const hidden = state.hiddenRecipes.map(key => all.find(recipe => recipe.key === key)).filter(Boolean);
     els.hiddenRecipesList.innerHTML = '';
     els.restoreAllHiddenBtn.disabled = hidden.length === 0;
@@ -2685,7 +2711,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     } catch (error) {
       if (run !== nutritionEditorEstimateRun || !els.recipeEditorDialog.open) return;
       const message = error.status === 404
-        ? 'Automatic nutrition needs Serenity Kitchen Test Server v0.1.3. You can still edit and save the recipe.'
+        ? 'Automatic nutrition needs Serenity Kitchen Test Server v0.1.4. You can still edit and save the recipe.'
         : `Nutrition estimate is unavailable right now. You can still edit and save the recipe${error.message ? `: ${error.message}` : '.'}`;
       updateNutritionEditorStatus(message);
     }
@@ -3070,7 +3096,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.39');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.40');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -5154,7 +5180,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     for (const key of ['favorites','shoppingList','regularItems','pantryItems','stores','manualCrossLinks','mealPlanHistory']) {
       if (incoming[key] !== undefined && !Array.isArray(incoming[key])) throw new Error(`Backup field ${key} is damaged.`);
     }
-    for (const key of ['recipeNotes','nutritionEstimates','settings','moduleSources','backupMeta','ratings','mealPlans','mealPlannerPreferences']) {
+    for (const key of ['recipeNotes','nutritionEstimates','settings','moduleSources','backupMeta','ratings','mealPlans','mealPlannerPreferences','householdRecipes']) {
       if (incoming[key] !== undefined && (!incoming[key] || typeof incoming[key] !== 'object' || Array.isArray(incoming[key]))) throw new Error(`Backup field ${key} is damaged.`);
     }
     Object.entries(incoming.ratings || {}).forEach(([recipeKey, entry]) => {
@@ -5212,14 +5238,15 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         learnedStorePreferences:JSON.parse(JSON.stringify(state.learnedStorePreferences || {})), learnedShoppingGroups:JSON.parse(JSON.stringify(state.learnedShoppingGroups || {})), learnedAisles:JSON.parse(JSON.stringify(state.learnedAisles || {}))
       },
       pantry:{ pantryItems:JSON.parse(JSON.stringify(state.pantryItems || [])) },
-      recipes:{ personalRecipes:JSON.parse(JSON.stringify(personal?.recipes || [])), favorites:JSON.parse(JSON.stringify(state.favorites || [])), recipeNotes:JSON.parse(JSON.stringify(state.recipeNotes || {})), nutritionEstimates:JSON.parse(JSON.stringify(state.nutritionEstimates || {})), hiddenRecipes:JSON.parse(JSON.stringify(state.hiddenRecipes || [])), customCategories:JSON.parse(JSON.stringify(state.customCategories || [])), ratings:JSON.parse(JSON.stringify(state.ratings || {})), manualCrossLinks:JSON.parse(JSON.stringify(state.manualCrossLinks || [])) },
+      recipes:{ ownerUserId:householdSync.summary().user?.id || '', ownerDisplayName:householdSync.summary().user?.displayName || 'Household member', personalRecipes:JSON.parse(JSON.stringify(personal?.recipes || [])) },
       'meal-plans':{ mealPlans:JSON.parse(JSON.stringify(state.mealPlans || {})), mealPlannerPreferences:JSON.parse(JSON.stringify(state.mealPlannerPreferences || {template:{},recipes:{}})), mealPlanHistory:JSON.parse(JSON.stringify(state.mealPlanHistory || [])) }
     };
   }
 
   function applyHouseholdSnapshot(snapshot, options = {}) {
     if (!snapshot || typeof snapshot !== 'object') return;
-    if (options.initial) profileStore.createSafetyBackup('before-household-download', { force:true });
+    profileStore.createSafetyBackup(options.initial ? 'before-household-download' : 'before-household-sync', { force:true });
+    profileStore.createAutomaticRecoverySnapshot(options.initial ? 'before-household-download' : 'before-household-sync').catch(error => console.warn('The automatic recovery snapshot could not be created.', error));
     applyingRemoteSync = true;
     try {
       const shopping = snapshot['shopping-list'];
@@ -5230,8 +5257,22 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (snapshot.pantry?.pantryItems !== undefined) state.pantryItems = JSON.parse(JSON.stringify(snapshot.pantry.pantryItems));
       const recipes = snapshot.recipes;
       if (recipes) {
-        ensurePersonalModule().recipes = JSON.parse(JSON.stringify(recipes.personalRecipes || []));
-        ['favorites','recipeNotes','nutritionEstimates','hiddenRecipes','customCategories','ratings','manualCrossLinks'].forEach(key => { if (recipes[key] !== undefined) state[key] = JSON.parse(JSON.stringify(recipes[key])); });
+        state.householdRecipes = state.householdRecipes && typeof state.householdRecipes === 'object' ? state.householdRecipes : {};
+        const ownUserId = householdSync.summary().user?.id || '';
+        (recipes.ownerRecords || []).forEach(record => {
+          const ownerUserId = String(record.ownerUserId || record.id || '').replace(/^owner:/, '');
+          if (!ownerUserId) return;
+          if (ownerUserId === ownUserId) {
+            if (options.ownershipMigration) ensurePersonalModule().recipes = JSON.parse(JSON.stringify(record.personalRecipes || []));
+            return;
+          }
+          state.householdRecipes[ownerUserId] = {
+            ownerUserId,
+            ownerDisplayName:record.ownerDisplayName || 'Household member',
+            recipes:JSON.parse(JSON.stringify(record.personalRecipes || [])),
+            receivedAt:new Date().toISOString()
+          };
+        });
       }
       const meals = snapshot['meal-plans'];
       if (meals) ['mealPlans','mealPlannerPreferences','mealPlanHistory'].forEach(key => { if (meals[key] !== undefined) state[key] = JSON.parse(JSON.stringify(meals[key])); });

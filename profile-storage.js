@@ -6,12 +6,14 @@
   const PROFILE_PREFIX = 'kitchenCompanion.profile.v1.';
   const LEGACY_KEY = 'recipeEngineState.v1';
   const DB_NAME = 'kitchen-companion';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const BACKUP_KEY = 'kitchenCompanion.safetyBackups.v1';
-  const MAX_AUTOMATIC_BACKUPS = 5;
+  const MAX_AUTOMATIC_BACKUPS = 10;
+  const MAX_INDEXED_DB_SNAPSHOTS = 20;
+  const INDEXED_DB_SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.21.39';
+  const APP_VERSION = '0.21.40';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -34,6 +36,7 @@
         schemaVersion: 2,
         profileId,
         personalRecipes: [],
+        householdRecipes: {},
         favorites: [], recipeNotes: {}, nutritionEstimates: {}, hiddenRecipes: [], customCategories: [],
         shoppingList: [], regularItems: [], pantryItems: [], stores: ['Unassigned', 'Costco', 'Walmart'],
         settings: { darkMode:false, metricHelpers:false, accentColor:'#c80d3e', wakeLockMode:'recipes-and-timers', alarmVolume:0.85, alarmSoundEnabled:true, alarmTone:'bell' },
@@ -473,6 +476,7 @@
       if (!Array.isArray(normalized.personalRecipes)) {
         normalized.personalRecipes = clone(normalized.personalModule?.recipes || []);
       }
+      if (!normalized.householdRecipes || typeof normalized.householdRecipes !== 'object' || Array.isArray(normalized.householdRecipes)) normalized.householdRecipes = {};
       delete normalized.personalModule;
       normalized.schemaVersion = 2;
       normalized.favorites = [...new Set((Array.isArray(normalized.favorites) ? normalized.favorites : []).filter(key => typeof key === 'string' && key))];
@@ -564,6 +568,7 @@
       const personal = personalRecipes.length ? { schemaVersion:1, moduleId:'my-recipes', name:'My Recipes', publisher:'Serenity Kitchen user', version:'1.0.0', description:'Recipes created or edited in Serenity Kitchen.', license:'Personal', enabled:true, recipes:personalRecipes } : null;
       return {
         modules: [...clone(this.shared.modules || []), ...(personal ? [personal] : [])],
+        householdRecipes: clone(this.activeProfile.householdRecipes || {}),
         favorites: clone(this.activeProfile.favorites || []),
         recipeNotes: clone(this.activeProfile.recipeNotes || {}),
         nutritionEstimates: clone(this.activeProfile.nutritionEstimates || {}),
@@ -594,6 +599,7 @@
       this.shared.timers = clone((state.timers || []).map(timer => ({ ...timer, profileId: timer.profileId || this.device.activeProfileId })));
       this.shared.backupMeta = clone(state.backupMeta || {});
       this.activeProfile.personalRecipes = clone((state.modules || []).find(module => module.moduleId === 'my-recipes')?.recipes || []);
+      this.activeProfile.householdRecipes = clone(state.householdRecipes || {});
       for (const key of ['favorites','recipeNotes','nutritionEstimates','hiddenRecipes','customCategories','shoppingList','regularItems','pantryItems','stores','settings','ratings','learnedStorePreferences','learnedShoppingGroups','learnedAisles','manualCrossLinks','mealPlans','mealPlannerPreferences','mealPlanHistory']) {
         this.activeProfile[key] = clone(state[key] ?? this.activeProfile[key]);
       }
@@ -725,7 +731,7 @@
       return { personalRecipes:(data?.personalRecipes || data?.personalModule?.recipes || []).length, favorites:data?.favorites?.length || 0, notes:Object.keys(data?.recipeNotes || {}).length, hidden:data?.hiddenRecipes?.length || 0, ratings:Object.keys(data?.ratings || {}).length, shoppingItems:data?.shoppingList?.length || 0, stores:(data?.stores || []).filter(x => x && x !== 'Unassigned').length };
     }
 
-    async mirrorToIndexedDB() {
+    async mirrorToIndexedDB(options = {}) {
       if (!('indexedDB' in window)) return;
       const db = await new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -735,26 +741,60 @@
           if (!db.objectStoreNames.contains('profiles')) db.createObjectStore('profiles', { keyPath:'profileId' });
           if (!db.objectStoreNames.contains('profileData')) db.createObjectStore('profileData', { keyPath:'profileId' });
           if (!db.objectStoreNames.contains('modules')) db.createObjectStore('modules', { keyPath:'moduleId' });
+          if (!db.objectStoreNames.contains('recoverySnapshots')) db.createObjectStore('recoverySnapshots', { keyPath:'id' });
         };
         request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
       });
       await new Promise((resolve, reject) => {
-        const tx = db.transaction(['appMeta','profiles','profileData','modules'], 'readwrite');
+        const stores = ['appMeta','profiles','profileData','modules','recoverySnapshots'];
+        const tx = db.transaction(stores, 'readwrite');
         tx.objectStore('appMeta').put(clone(this.device), 'device');
         tx.objectStore('appMeta').put({ ...clone(this.shared), modules:undefined }, 'shared');
         this.device.profiles.forEach(profile => tx.objectStore('profiles').put(clone(profile)));
-        const data = { ...clone(this.activeProfile), profileId:this.activeProfile.profileId };
-        tx.objectStore('profileData').put(data);
+        this.device.profiles.forEach(profile => {
+          const profileData = profile.profileId === this.activeProfile.profileId ? this.activeProfile : this.readProfile(profile.profileId);
+          if (profileData) tx.objectStore('profileData').put({ ...clone(profileData), profileId:profile.profileId });
+        });
         (this.shared.modules || []).forEach(module => tx.objectStore('modules').put(clone(module)));
+        const snapshot = options.snapshot || this.collectStorageSnapshot({ includeModules:true });
+        const fingerprint = this.semanticFingerprint(snapshot);
+        const lastSnapshotAt = Number(this.shared?.backupMeta?.indexedDbSnapshotAt || 0);
+        const lastFingerprint = this.shared?.backupMeta?.indexedDbSnapshotFingerprint || '';
+        const due = Date.now() - lastSnapshotAt >= INDEXED_DB_SNAPSHOT_INTERVAL_MS;
+        if (options.forceSnapshot || (due && fingerprint !== lastFingerprint)) {
+          const entry = { id:uuid(), createdAt:now(), reason:options.reason || 'automatic-save', appVersion:APP_VERSION, fingerprint, snapshot };
+          const store = tx.objectStore('recoverySnapshots');
+          store.put(entry);
+          const allRequest = store.getAll();
+          allRequest.onsuccess = () => {
+            (allRequest.result || []).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(MAX_INDEXED_DB_SNAPSHOTS).forEach(item => store.delete(item.id));
+          };
+          this.shared.backupMeta = { ...(this.shared.backupMeta || {}), indexedDbSnapshotAt:Date.now(), indexedDbSnapshotFingerprint:fingerprint };
+          tx.objectStore('appMeta').put({ ...clone(this.shared), modules:undefined }, 'shared');
+        }
         tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
       });
       db.close();
+    }
+
+    async createAutomaticRecoverySnapshot(reason = 'automatic') {
+      const snapshot = this.collectStorageSnapshot({ includeModules:true });
+      await this.mirrorToIndexedDB({ forceSnapshot:true, reason, snapshot });
+      return true;
     }
 
     async recoverFromIndexedDB() {
       if (!this.recoveryRequired || !('indexedDB' in window)) return false;
       const db = await new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = () => {
+          const upgradeDb = request.result;
+          if (!upgradeDb.objectStoreNames.contains('appMeta')) upgradeDb.createObjectStore('appMeta');
+          if (!upgradeDb.objectStoreNames.contains('profiles')) upgradeDb.createObjectStore('profiles', { keyPath:'profileId' });
+          if (!upgradeDb.objectStoreNames.contains('profileData')) upgradeDb.createObjectStore('profileData', { keyPath:'profileId' });
+          if (!upgradeDb.objectStoreNames.contains('modules')) upgradeDb.createObjectStore('modules', { keyPath:'moduleId' });
+          if (!upgradeDb.objectStoreNames.contains('recoverySnapshots')) upgradeDb.createObjectStore('recoverySnapshots', { keyPath:'id' });
+        };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error || new Error('The local recovery mirror could not be opened.'));
       });
@@ -766,8 +806,8 @@
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => reject(request.error);
         });
-        const [mirroredDevice, mirroredShared, profileMetas, profileData, modules] = await Promise.all([
-          readStore('appMeta', 'device'), readStore('appMeta', 'shared'), readStore('profiles'), readStore('profileData'), readStore('modules')
+        const [mirroredDevice, mirroredShared, profileMetas, profileData, modules, snapshots] = await Promise.all([
+          readStore('appMeta', 'device'), readStore('appMeta', 'shared'), readStore('profiles'), readStore('profileData'), readStore('modules'), readStore('recoverySnapshots')
         ]);
         let boundProfileId = '';
         try { boundProfileId = JSON.parse(localStorage.getItem('serenityKitchen.sync.v1') || '{}').profileId || ''; } catch {}
@@ -775,7 +815,13 @@
         const metaById = new Map((profileMetas || []).filter(item => item?.profileId).map(item => [item.profileId, item]));
         const preferredId = [boundProfileId, mirroredDevice?.activeProfileId].find(id => id && dataById.has(id));
         const activeProfileId = preferredId || [...dataById.keys()][0];
-        if (!activeProfileId || !mirroredShared) return false;
+        if (!activeProfileId || !mirroredShared) {
+          const latest = (snapshots || []).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).find(item => item?.snapshot);
+          if (!latest) return false;
+          this.validateStorageSnapshot(latest.snapshot);
+          Object.entries(latest.snapshot).forEach(([key, value]) => this.writeAndVerify(key, value));
+          return true;
+        }
         const recoveredMetas = [...dataById.keys()].map(profileId => metaById.get(profileId) || {
           profileId, displayName:profileId === activeProfileId ? 'Recovered Profile' : 'Recovered Profile', color:'#0f766e', kind:'personal',
           setupComplete:true, createdAt:now(), updatedAt:now(), migrationStatus:'indexeddb-recovery', avatarType:'initials', avatarValue:''

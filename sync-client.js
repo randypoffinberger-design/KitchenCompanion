@@ -17,15 +17,22 @@
       this.pushTimer = null;
       this.syncing = false;
       this.dirty = false;
-      this.changeSequence = 0;
+      this.changeGeneration = 0;
       this.config = this.load();
+      if (this.config.recipeOwnershipVersion !== 2) {
+        this.config.recipeOwnershipVersion = 2;
+        this.config.recipeOwnershipMigrationComplete = false;
+        Object.keys(this.config.cursors || {}).filter(key => key.endsWith(':recipes')).forEach(key => { this.config.cursors[key] = 0; });
+        this.save();
+      }
+      this.ownershipMigrationPending = this.config.recipeOwnershipMigrationComplete !== true;
     }
 
     defaults() {
       return {
         serverUrl: DEFAULT_SERVER,
         token: '', expiresAt: '', user: null, households: [], activeHouseholdId: '',
-        profileId: '', initializedHouseholds: {}, cursors: {}, revisions: {}, lastSyncAt: '', lastError: ''
+        profileId: '', initializedHouseholds: {}, cursors: {}, revisions: {}, recipeOwnershipVersion:0, recipeOwnershipMigrationComplete:false, lastSyncAt: '', lastError: ''
       };
     }
 
@@ -76,6 +83,16 @@
       return this.request('/health', { method:'GET' });
     }
 
+    async importRecipePage(url) {
+      if (!this.isSignedIn()) throw new Error('Sign in to the private Serenity Kitchen server before importing a blocked recipe website.');
+      return this.request('/api/v1/recipes/import-url', { method:'POST', body:JSON.stringify({ url }) });
+    }
+
+    async estimateNutrition(payload) {
+      if (!this.isSignedIn()) throw new Error('Nutrition estimation is waiting for the private Serenity Kitchen server.');
+      return this.request('/api/v1/recipes/estimate-nutrition', { method:'POST', body:JSON.stringify(payload) });
+    }
+
     async register({ displayName, email, password }) {
       await this.request('/api/v1/auth/register', { method:'POST', body:JSON.stringify({ displayName, email, password }) });
       return this.login({ email, password });
@@ -122,7 +139,8 @@
       this.config.activeHouseholdId = id; this.config.profileId = this.profileId; this.save(); this.stop();
     }
 
-    key(collection) { return `${this.config.activeHouseholdId}:${collection}`; }
+    key(collection, recordId = '') { return `${this.config.activeHouseholdId}:${collection}${recordId ? `:${recordId}` : ''}`; }
+    recipeOwnerId() { return `owner:${this.config.user?.id || ''}`; }
 
     async fetchCollection(collection, since = 0) {
       const id = encodeURIComponent(this.config.activeHouseholdId);
@@ -131,12 +149,22 @@
 
     async pushCollection(collection, payload, baseRevision = 0) {
       const id = encodeURIComponent(this.config.activeHouseholdId);
-      const result = await this.request(`/api/v1/households/${id}/sync/${collection}`, {
-        method:'POST', body:JSON.stringify({ changes:[{ id:'shared-state', mutationId:uuid(), baseRevision, payload }] })
-      });
+      const recordId = collection === 'recipes' ? this.recipeOwnerId() : 'shared-state';
+      let result;
+      try {
+        result = await this.request(`/api/v1/households/${id}/sync/${collection}`, {
+          method:'POST', body:JSON.stringify({ changes:[{ id:recordId, mutationId:uuid(), baseRevision, payload }] })
+        });
+      } catch (error) {
+        const current = error.status === 409 ? error.body?.conflicts?.find(item => item.id === recordId)?.current : null;
+        if (!current) throw error;
+        result = await this.request(`/api/v1/households/${id}/sync/${collection}`, {
+          method:'POST', body:JSON.stringify({ changes:[{ id:recordId, mutationId:uuid(), baseRevision:Number(current.revision || 0), payload }] })
+        });
+      }
       const applied = result.applied?.[0];
       if (applied) {
-        this.config.revisions[this.key(collection)] = applied.revision;
+        this.config.revisions[this.key(collection, recordId)] = applied.revision;
         this.config.cursors[this.key(collection)] = Math.max(Number(this.config.cursors[this.key(collection)] || 0), Number(applied.eventId || 0));
       }
       return result;
@@ -146,10 +174,19 @@
       const snapshot = {}; let hasData = false;
       for (const collection of COLLECTIONS) {
         const result = await this.fetchCollection(collection, 0);
-        const event = [...(result.events || [])].reverse().find(item => item.id === 'shared-state');
-        if (event && !event.deleted && event.payload) {
-          snapshot[collection] = event.payload; hasData = true;
-          this.config.revisions[this.key(collection)] = event.revision;
+        const events = result.events || [];
+        if (collection === 'recipes') {
+          const latestOwners = new Map();
+          events.filter(item => item.id.startsWith('owner:')).forEach(item => latestOwners.set(item.id, item));
+          const ownerRecords = [...latestOwners.values()].filter(item => !item.deleted && item.payload);
+          if (ownerRecords.length) { snapshot.recipes = { ownerRecords:ownerRecords.map(item => ({ id:item.id, ...item.payload })) }; hasData = true; }
+          ownerRecords.forEach(item => { if (item.id === this.recipeOwnerId()) this.config.revisions[this.key(collection, item.id)] = item.revision; });
+        } else {
+          const event = [...events].reverse().find(item => item.id === 'shared-state');
+          if (event && !event.deleted && event.payload) {
+            snapshot[collection] = event.payload; hasData = true;
+            this.config.revisions[this.key(collection, 'shared-state')] = event.revision;
+          }
         }
         this.config.cursors[this.key(collection)] = result.cursor || 0;
       }
@@ -172,48 +209,9 @@
       this.emit('Household sync is active.', 'success');
     }
 
-    async downloadLatest() {
-      if (!this.isSignedIn() || !this.activeHousehold() || !this.isProfileBound()) throw new Error('Sign in and select this profile’s household first.');
-      const remote = await this.remoteSnapshot();
-      if (!remote.hasData) throw new Error('The household server does not contain a shared copy.');
-      this.onRemoteState(remote.snapshot, { initial:true, forced:true });
-      this.config.initializedHouseholds[this.initializationKey()] = true;
-      this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save();
-      this.start(); this.emit('Household copy downloaded.', 'success');
-      return remote.snapshot;
-    }
-
-    mergeRecipeCollections(remote = {}, local = {}) {
-      const recipes = new Map((remote.personalRecipes || []).map(recipe => [recipe.id, clone(recipe)]));
-      (local.personalRecipes || []).forEach(recipe => recipes.set(recipe.id, clone(recipe)));
-      const links = new Map((remote.manualCrossLinks || []).map(link => [link.id, clone(link)]));
-      (local.manualCrossLinks || []).forEach(link => links.set(link.id, clone(link)));
-      return {
-        personalRecipes:[...recipes.values()],
-        favorites:[...new Set([...(remote.favorites || []), ...(local.favorites || [])])],
-        recipeNotes:{ ...(remote.recipeNotes || {}), ...(local.recipeNotes || {}) },
-        hiddenRecipes:[...new Set([...(remote.hiddenRecipes || []), ...(local.hiddenRecipes || [])])],
-        customCategories:[...new Set([...(remote.customCategories || []), ...(local.customCategories || [])])],
-        ratings:{ ...(remote.ratings || {}), ...(local.ratings || {}) },
-        manualCrossLinks:[...links.values()]
-      };
-    }
-
-    async repairRecipes(localRecipes) {
-      if (!this.isReady()) throw new Error('Complete household setup before repairing My Recipes.');
-      this.stop();
-      const remote = await this.remoteSnapshot();
-      const merged = this.mergeRecipeCollections(remote.snapshot.recipes || {}, localRecipes || {});
-      await this.pushCollection('recipes', merged, this.config.revisions[this.key('recipes')] || 0);
-      this.onRemoteState({ recipes:merged }, { repair:true });
-      this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save();
-      this.start(); this.emit(`Household now contains ${merged.personalRecipes.length} personal recipes.`, 'success');
-      return merged;
-    }
-
     markDirty() {
       if (!this.isReady()) return;
-      this.dirty = true; this.changeSequence += 1; clearTimeout(this.pushTimer);
+      this.dirty = true; this.changeGeneration += 1; clearTimeout(this.pushTimer);
       if (this.syncing) return;
       this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), 900);
     }
@@ -222,10 +220,19 @@
       const updates = {};
       for (const collection of COLLECTIONS) {
         const key = this.key(collection); const result = await this.fetchCollection(collection, this.config.cursors[key] || 0);
-        const event = [...(result.events || [])].reverse().find(item => item.id === 'shared-state');
-        if (event) {
-          this.config.revisions[key] = event.revision;
-          if (!event.deleted && event.payload) updates[collection] = event.payload;
+        const events = result.events || [];
+        if (collection === 'recipes') {
+          const ownerEvents = new Map();
+          events.filter(item => item.id.startsWith('owner:')).forEach(item => ownerEvents.set(item.id, item));
+          if (ownerEvents.size) updates.recipes = { ownerRecords:[...ownerEvents.values()].filter(item => !item.deleted && item.payload).map(item => ({ id:item.id, ...item.payload })) };
+          const own = ownerEvents.get(this.recipeOwnerId());
+          if (own) this.config.revisions[this.key(collection, own.id)] = own.revision;
+        } else {
+          const event = [...events].reverse().find(item => item.id === 'shared-state');
+          if (event) {
+            this.config.revisions[this.key(collection, 'shared-state')] = event.revision;
+            if (!event.deleted && event.payload) updates[collection] = event.payload;
+          }
         }
         this.config.cursors[key] = result.cursor || this.config.cursors[key] || 0;
       }
@@ -237,19 +244,31 @@
       if (!this.isReady() || this.syncing) return;
       this.syncing = true; this.emit('Syncing household…', 'working');
       try {
+        if (this.ownershipMigrationPending) {
+          const remote = await this.remoteSnapshot();
+          const ownerRecords = remote.snapshot.recipes?.ownerRecords || [];
+          if (ownerRecords.length) this.onRemoteState(remote.snapshot, { initial:false, ownershipMigration:true });
+          else { this.dirty = true; this.changeGeneration += 1; }
+          this.ownershipMigrationPending = false;
+          this.config.recipeOwnershipMigrationComplete = true;
+          this.save();
+        }
         if (this.dirty && localSnapshotProvider) {
-          const pushingSequence = this.changeSequence;
+          const generation = this.changeGeneration;
           const snapshot = localSnapshotProvider();
-          for (const collection of COLLECTIONS) await this.pushCollection(collection, snapshot[collection], this.config.revisions[this.key(collection)] || 0);
-          if (this.changeSequence === pushingSequence) this.dirty = false;
+          for (const collection of COLLECTIONS) {
+            const recordId = collection === 'recipes' ? this.recipeOwnerId() : 'shared-state';
+            await this.pushCollection(collection, snapshot[collection], this.config.revisions[this.key(collection, recordId)] || 0);
+          }
+          if (generation === this.changeGeneration) this.dirty = false;
         }
         await this.pullUpdates();
         this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save(); this.emit('Household is up to date.', 'success');
       } finally {
         this.syncing = false;
-        if (this.dirty && this.isReady()) {
+        if (this.dirty) {
           clearTimeout(this.pushTimer);
-          this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), 250);
+          this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), 100);
         }
       }
     }

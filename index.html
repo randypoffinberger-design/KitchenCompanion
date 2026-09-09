@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.39">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.39">
+  <link rel="manifest" href="app.webmanifest?v=0.21.40">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.40">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.39">
+  <link rel="stylesheet" href="styles.css?v=0.21.40">
 </head>
 <body>
   <div class="app-shell">
@@ -57,7 +57,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.39</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.40</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -251,7 +251,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.39</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.40</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -298,7 +298,7 @@
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Profiles, accounts, and households</summary>
-          <div><p>Local profiles keep personal recipes, favorites, ratings, notes, shopping information, and preferences separate on one device. A private account can connect a local profile to a household.</p><p>Household sync shares Shopping List, Pantry, Regular Items, and Meal Planner data. During the first connection, carefully choose whether the device copy or household copy should become the starting household data.</p></div>
+          <div><p>Local profiles keep personal recipes, favorites, ratings, notes, shopping information, and preferences separate on one device. A private account can connect a local profile to a household.</p><p>Each account permanently owns its My Recipes collection. Family recipes appear as a separate read-only section named for their owner; editing one creates your own independent copy. Household sync also shares Shopping List, Pantry, Regular Items, and Meal Planner data.</p></div>
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Modules and importing</summary>
@@ -306,7 +306,7 @@
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Backups, offline use, and updates</summary>
-          <div><p>Create a full backup before major imports, restores, or household changes. Backups preserve profiles, recipes, modules, Pantry, Shopping List, Meal Planner, and settings.</p><p>Installed content remains available offline. Household changes queue locally and synchronize after the private server becomes reachable again. Use Settings → App and updates to check for a new build.</p></div>
+          <div><p>Serenity Kitchen automatically retains 10 quick local checkpoints and 20 fuller browser recovery snapshots. The private server retains 20 change snapshots per shared collection plus 20 rolling database copies. Manual exports remain available for an off-device copy but are no longer the only protection.</p><p>Installed content remains available offline. Household changes queue locally and synchronize after the private server becomes reachable again. Use Settings → App and updates to check for a new build.</p></div>
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Appearance and accessibility</summary>
@@ -326,7 +326,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.39</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.40</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -397,7 +397,7 @@
           <summary>Backup, restore, and safeguards</summary>
           <div class="settings-section-content">
             <div class="setting-block backup-settings"><strong>Backup and restore</strong><p>Protect your personal recipes, notes, favorites, shopping data, and settings.</p><div class="backup-actions"><button type="button" id="createBackupBtn" class="button">Create full backup</button><button type="button" id="restoreBackupBtn" class="button secondary">Restore backup</button><button type="button" id="exportPersonalRecipesBtn" class="button secondary">Export my recipes</button><button type="button" id="importRecipeBtn" class="button secondary">Import shared recipe</button></div></div>
-            <div class="setting-block developer-safeguards"><strong>Data safeguards</strong><p id="safeguardStatus" class="setting-help">Loading backup and storage status…</p><div id="safetyBackupList" class="safety-backup-list"></div><div class="backup-actions"><button type="button" id="createSafetyBackupBtn" class="button secondary">Create safety checkpoint</button><button type="button" id="runDiagnosticsBtn" class="button secondary">Run diagnostics</button><button type="button" id="optimizeStorageBtn" class="button secondary">Clean up storage</button></div><pre id="diagnosticsOutput" class="diagnostics-output" hidden></pre></div>
+            <div class="setting-block developer-safeguards"><strong>Data safeguards</strong><p class="setting-help">Automatic protection retains up to 10 quick checkpoints and 20 full browser recovery snapshots. When household sharing is active, the server also retains 20 snapshots per collection and 20 database backups.</p><p id="safeguardStatus" class="setting-help">Loading backup and storage status…</p><div id="safetyBackupList" class="safety-backup-list"></div><div class="backup-actions"><button type="button" id="createSafetyBackupBtn" class="button secondary">Create safety checkpoint</button><button type="button" id="runDiagnosticsBtn" class="button secondary">Run diagnostics</button><button type="button" id="optimizeStorageBtn" class="button secondary">Clean up storage</button></div><pre id="diagnosticsOutput" class="diagnostics-output" hidden></pre></div>
           </div>
         </details>
         <details class="settings-section">
@@ -844,13 +844,13 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.39"></script>
-  <script src="recipe-scaling.js?v=0.21.39"></script>
-  <script src="profile-storage.js?v=0.21.39"></script>
-  <script src="url-recipe-import.js?v=0.21.39"></script>
-  <script src="meal-planner.js?v=0.21.39"></script>
-  <script src="sync-client.js?v=0.21.39"></script>
-  <script src="app.js?v=0.21.39"></script>
-  <script src="ocr-service.js?v=0.21.39"></script>
+  <script src="kitchen-engine.js?v=0.21.40"></script>
+  <script src="recipe-scaling.js?v=0.21.40"></script>
+  <script src="profile-storage.js?v=0.21.40"></script>
+  <script src="url-recipe-import.js?v=0.21.40"></script>
+  <script src="meal-planner.js?v=0.21.40"></script>
+  <script src="sync-client.js?v=0.21.40"></script>
+  <script src="app.js?v=0.21.40"></script>
+  <script src="ocr-service.js?v=0.21.40"></script>
 </body>
 </html>
