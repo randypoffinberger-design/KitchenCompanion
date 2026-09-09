@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'serenityKitchen.sync.v1';
+  const STORAGE_KEY = 'serenityKitchen.sync.dev.v1';
   const COLLECTIONS = ['shopping-list', 'pantry', 'recipes', 'meal-plans'];
-  const DEFAULT_SERVER = 'https://pj.tail96598f.ts.net';
+  const DEFAULT_SERVER = 'http://127.0.0.1:8789';
 
   const clone = value => JSON.parse(JSON.stringify(value));
   const uuid = () => globalThis.crypto?.randomUUID?.() || `sync-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -42,7 +42,7 @@
     }
 
     save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.config)); }
-    serverUrl() { return String(this.config.serverUrl || DEFAULT_SERVER).replace(/\/+$/, ''); }
+    serverUrl() { return DEFAULT_SERVER; }
     isSignedIn() { return !!this.config.token && Date.parse(this.config.expiresAt || 0) > Date.now(); }
     activeHousehold() { return this.config.households.find(item => item.id === this.config.activeHouseholdId) || null; }
     isProfileBound() { return !this.config.profileId || this.config.profileId === this.profileId; }
