@@ -19,5 +19,7 @@ assert.match(css, /dialog:not\([.]guided-cooking-dialog\)>[.]dialog-card\{[^}]*o
 assert.match(css, /dialog:not\([.]guided-cooking-dialog\)>[.]dialog-card\{[^}]*touch-action:pan-y/s);
 assert.match(css, /dialog input,dialog select,dialog textarea\{font-size:16px\}/);
 assert.match(css, /button, input, select, textarea \{ font: inherit; \}/);
+assert.match(css, /#shoppingItemForm>label:not\([.]setting-row\)\{[^}]*display:grid[^}]*width:100%/s);
+assert.match(css, /#shoppingItemForm>label:not\([.]setting-row\)>input,#shoppingItemForm>label:not\([.]setting-row\)>select\{[^}]*min-width:0[^}]*width:100%/s);
 
 console.log(`Dialog mobile UI regression passed: ${standardDialogs.length} standard dialogs stay centered and avoid iOS focus zoom.`);

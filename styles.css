@@ -760,7 +760,11 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
 .shopping-checked-heading{margin-top:1rem;color:var(--muted)}
 .shopping-group-label{display:block;margin-top:.35rem;color:var(--muted)}
 .shopping-aisle-label{display:block;margin-top:.18rem;color:var(--text);font-weight:750;overflow-wrap:anywhere}
-#shoppingItemGroup{width:100%}
+#shoppingItemForm>label:not(.setting-row){display:grid;gap:.4rem;width:100%;margin:.8rem 0;font-weight:700}
+#shoppingItemForm>label:not(.setting-row)>input,#shoppingItemForm>label:not(.setting-row)>select{display:block;min-width:0;width:100%;padding:.72rem .8rem;border:1px solid var(--border);border-radius:10px;font-weight:400}
+#shoppingItemForm>.setting-row{align-items:center}
+#shoppingItemForm>.setting-row>span{min-width:0}
+#shoppingItemForm>.setting-row>input{flex:0 0 auto}
 .meal-part-choice {
   min-width: 0;
   width: 100%;
@@ -785,7 +789,7 @@ dialog:not(.guided-cooking-dialog)>.dialog-card{
   --tiffany:#81d8d0;--tiffany-soft:#183c39;--danger:#e55472;--shadow:0 14px 38px rgba(0,0,0,.3);
 }
 html{background:var(--bg)}body{background:var(--bg);font-weight:450}
-body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.40') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.40') center/contain no-repeat}
+body:not(.home-view)::before{content:"";position:fixed;z-index:2;left:50%;top:48%;width:min(82vw,760px);aspect-ratio:1;transform:translate(-50%,-50%);background:var(--watermark-color,#7f1732);opacity:.18;pointer-events:none;user-select:none;-webkit-mask:url('sk-watermark.png?v=0.21.41') center/contain no-repeat;mask:url('sk-watermark.png?v=0.21.41') center/contain no-repeat}
 :root[data-theme="dark"] body:not(.home-view)::before{--watermark-color:#81d8d0;opacity:.22}
 .app-shell,.main{position:relative}.app-shell{z-index:1;grid-template-rows:var(--header-height) 1fr}.main{z-index:1;padding:clamp(1rem,2.6vw,2rem)}
 .topbar{z-index:50;min-height:var(--header-height);padding:max(7px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 7px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--panel) 92%,transparent);border-bottom:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.12)}

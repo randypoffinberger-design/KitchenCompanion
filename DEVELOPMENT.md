@@ -1,10 +1,10 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.21.4
+0.21.41
 
 ## Current task
-Private account, household, and live synchronization testing.
+Shopping-item dialog mobile layout correction.
 
 ## Completed
 - Rolling automatic local safety checkpoints (maximum five).
