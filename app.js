@@ -1,11 +1,11 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'recipeEngineState.v1';
+  const STORAGE_KEY = 'recipeEngineState.test.v1';
   const ENGINE_VERSION = '0.21.41';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
-  const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
+  const OFFLINE_OCR_CACHE = 'serenity-kitchen-test-ocr-tesseract-7.0.0-best-int';
   const OFFLINE_OCR_ASSETS = [
     './Vendor/tesseract-7.0.0/tesseract.min.js',
     './Vendor/tesseract-7.0.0/worker.min.js',
