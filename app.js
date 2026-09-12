@@ -1,6 +1,9 @@
 (() => {
   'use strict';
 
+  window.__skTestBoot ||= { appLoaded:false, ready:false, errors:[] };
+  window.__skTestBoot.appLoaded = true;
+
   const STORAGE_KEY = 'recipeEngineState.test.v1';
   const ENGINE_VERSION = '0.21.41';
   const engine = new KitchenCompanionEngine();
@@ -1176,7 +1179,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.41-test-2', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.41-test-3', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -5320,4 +5323,5 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   // Existing shopping data uses constants declared throughout this script.
   // Start only after every const and helper has finished initialization.
   init();
+  window.__skTestBoot.ready = true;
 })();
