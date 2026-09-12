@@ -6,6 +6,32 @@
   <base id="appBase" href="./">
   <script>
     (() => {
+      window.__skTestBoot = { appLoaded:false, ready:false, errors:[] };
+      const recordError = value => {
+        window.__skTestBoot.errors.push(String(value || 'Unknown startup error'));
+      };
+      window.addEventListener('error', event => {
+        recordError(`${event.message || 'Script error'} at ${event.filename || 'unknown file'}:${event.lineno || 0}:${event.colno || 0}`);
+      });
+      window.addEventListener('unhandledrejection', event => {
+        recordError(`Promise error: ${event.reason?.message || event.reason || 'unknown rejection'}`);
+      });
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          if (window.__skTestBoot?.ready) return;
+          const errors = window.__skTestBoot?.errors || [];
+          const panel = document.createElement('pre');
+          panel.id = 'skTestStartupError';
+          panel.style.cssText = 'position:fixed;z-index:2147483647;left:10px;right:10px;top:90px;max-height:55vh;overflow:auto;margin:0;padding:14px;border:3px solid #b91c1c;border-radius:12px;background:#fff;color:#111;font:13px/1.4 monospace;white-space:pre-wrap;box-shadow:0 8px 30px #0006';
+          panel.textContent = [
+            'SK Test startup stopped.',
+            `URL: ${location.href}`,
+            `app.js loaded: ${window.__skTestBoot?.appLoaded ? 'yes' : 'no'}`,
+            errors.length ? errors.join('\n') : 'No JavaScript error was reported.'
+          ].join('\n');
+          document.body.appendChild(panel);
+        }, 2500);
+      });
       if (location.origin !== 'https://randys.tail96598f.ts.net') return;
       document.querySelector('#appBase').href = '/sk-test/';
       if (location.pathname === '/sk-test') {
@@ -19,10 +45,10 @@
   <meta name="apple-mobile-web-app-title" content="SK Test">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.41-test-2">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.41-test-2">
+  <link rel="manifest" href="app.webmanifest?v=0.21.41-test-3">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.41-test-3">
   <title>Serenity Kitchen™ Test</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.41-test-2">
+  <link rel="stylesheet" href="styles.css?v=0.21.41-test-3">
 </head>
 <body>
   <div class="app-shell">
@@ -854,13 +880,13 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.41-test-2"></script>
-  <script src="recipe-scaling.js?v=0.21.41-test-2"></script>
-  <script src="profile-storage.js?v=0.21.41-test-2"></script>
-  <script src="url-recipe-import.js?v=0.21.41-test-2"></script>
-  <script src="meal-planner.js?v=0.21.41-test-2"></script>
-  <script src="sync-client.js?v=0.21.41-test-2"></script>
-  <script src="app.js?v=0.21.41-test-2"></script>
-  <script src="ocr-service.js?v=0.21.41-test-2"></script>
+  <script src="kitchen-engine.js?v=0.21.41-test-3"></script>
+  <script src="recipe-scaling.js?v=0.21.41-test-3"></script>
+  <script src="profile-storage.js?v=0.21.41-test-3"></script>
+  <script src="url-recipe-import.js?v=0.21.41-test-3"></script>
+  <script src="meal-planner.js?v=0.21.41-test-3"></script>
+  <script src="sync-client.js?v=0.21.41-test-3"></script>
+  <script src="app.js?v=0.21.41-test-3"></script>
+  <script src="ocr-service.js?v=0.21.41-test-3"></script>
 </body>
 </html>
