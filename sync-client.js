@@ -3,7 +3,10 @@
 
   const STORAGE_KEY = 'serenityKitchen.sync.dev.v1';
   const COLLECTIONS = ['shopping-list', 'pantry', 'recipes', 'meal-plans'];
-  const DEFAULT_SERVER = 'http://127.0.0.1:8789';
+  const LOCAL_TEST_SERVER = 'http://127.0.0.1:8789';
+  const PHONE_TEST_SERVER = 'https://randys.tail96598f.ts.net/sk-test-api';
+  const ALLOWED_TEST_SERVERS = new Set([LOCAL_TEST_SERVER, PHONE_TEST_SERVER]);
+  const DEFAULT_SERVER = location.origin === 'https://randys.tail96598f.ts.net' ? PHONE_TEST_SERVER : LOCAL_TEST_SERVER;
 
   const clone = value => JSON.parse(JSON.stringify(value));
   const uuid = () => globalThis.crypto?.randomUUID?.() || `sync-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -58,9 +61,10 @@
     }
 
     setServerUrl(value) {
-      const parsed = new URL(String(value || '').trim());
-      if (parsed.protocol !== 'https:' && parsed.hostname !== '127.0.0.1' && parsed.hostname !== 'localhost') throw new Error('Use the private HTTPS server address.');
-      this.config.serverUrl = parsed.origin;
+      const normalized = String(value || '').trim().replace(/\/+$/, '');
+      new URL(normalized);
+      if (!ALLOWED_TEST_SERVERS.has(normalized)) throw new Error(`This test build only connects to ${DEFAULT_SERVER}.`);
+      this.config.serverUrl = normalized;
       this.save();
     }
 
