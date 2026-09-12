@@ -1,7 +1,8 @@
 {
-  "name": "Serenity Kitchen™",
-  "short_name": "Serenity Kitchen",
+  "name": "Serenity Kitchen™ Test",
+  "short_name": "SK Test",
   "description": "Recipes, timers, modules, notes, and shopping lists.",
+  "id": "./",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
@@ -19,5 +20,5 @@
       "type": "image/png"
     }
   ],
-  "version": "0.21.41"
+  "version": "0.21.41-test"
 }
