@@ -1,13 +1,13 @@
 (() => {
   'use strict';
 
-  const DEVICE_KEY = 'kitchenCompanion.device.v1';
-  const SHARED_KEY = 'kitchenCompanion.shared.v1';
-  const PROFILE_PREFIX = 'kitchenCompanion.profile.v1.';
-  const LEGACY_KEY = 'recipeEngineState.v1';
-  const DB_NAME = 'kitchen-companion';
+  const DEVICE_KEY = 'kitchenCompanionTest.device.v1';
+  const SHARED_KEY = 'kitchenCompanionTest.shared.v1';
+  const PROFILE_PREFIX = 'kitchenCompanionTest.profile.v1.';
+  const LEGACY_KEY = 'recipeEngineState.test.v1';
+  const DB_NAME = 'serenity-kitchen-test';
   const DB_VERSION = 2;
-  const BACKUP_KEY = 'kitchenCompanion.safetyBackups.v1';
+  const BACKUP_KEY = 'kitchenCompanionTest.safetyBackups.v1';
   const MAX_AUTOMATIC_BACKUPS = 10;
   const MAX_INDEXED_DB_SNAPSHOTS = 20;
   const INDEXED_DB_SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000;
@@ -56,7 +56,7 @@
       const values = {};
       for (let i = 0; i < localStorage.length; i += 1) {
         const key = localStorage.key(i);
-        if (!key || !key.startsWith('kitchenCompanion.') || key === BACKUP_KEY) continue;
+        if (!key || !key.startsWith('kitchenCompanionTest.') || key === BACKUP_KEY) continue;
         const raw = localStorage.getItem(key);
         if (key === SHARED_KEY && !includeModules) {
           try {
@@ -109,7 +109,7 @@
       const keys = Object.keys(snapshot);
       if (!keys.length) throw new Error('No Serenity Kitchen data was available to protect.');
       for (const key of keys) {
-        if (!(key.startsWith('kitchenCompanion.') || key === LEGACY_KEY) || key === BACKUP_KEY) throw new Error(`Checkpoint contains an unsupported storage key: ${key}`);
+        if (!(key.startsWith('kitchenCompanionTest.') || key === LEGACY_KEY) || key === BACKUP_KEY) throw new Error(`Checkpoint contains an unsupported storage key: ${key}`);
         if (typeof snapshot[key] !== 'string') throw new Error(`Checkpoint entry ${key} is damaged.`);
         try { JSON.parse(snapshot[key]); } catch { throw new Error(`Checkpoint entry ${key} is not valid saved data.`); }
       }
@@ -282,7 +282,7 @@
         try { return this.validateStorageSnapshot(backup.snapshot); } catch { return false; }
       }).length;
       const storageBytes = this.getDiagnosticsStorageBytes();
-      return { storageSchemaVersion:STORAGE_SCHEMA_VERSION, activeProfileId:this.activeProfile?.profileId || this.device?.activeProfileId || '', profileCount:this.device?.profiles?.length || 0, moduleCount:this.shared?.modules?.length || 0, lastBackupAt:backups[0]?.createdAt || null, backupCount:backups.length, validBackupCount, manualBackupCount:backups.filter(item => item.kind === 'manual').length, automaticBackupCount:backups.filter(item => item.kind !== 'manual').length, fullBackupCount:backups.filter(item => item.snapshotMode === 'full').length, storageBytes, recoveredAt:sessionStorage.getItem('kitchenCompanion.recoveredCheckpoint'), migration:this.device?.migration || null };
+      return { storageSchemaVersion:STORAGE_SCHEMA_VERSION, activeProfileId:this.activeProfile?.profileId || this.device?.activeProfileId || '', profileCount:this.device?.profiles?.length || 0, moduleCount:this.shared?.modules?.length || 0, lastBackupAt:backups[0]?.createdAt || null, backupCount:backups.length, validBackupCount, manualBackupCount:backups.filter(item => item.kind === 'manual').length, automaticBackupCount:backups.filter(item => item.kind !== 'manual').length, fullBackupCount:backups.filter(item => item.snapshotMode === 'full').length, storageBytes, recoveredAt:sessionStorage.getItem('kitchenCompanionTest.recoveredCheckpoint'), migration:this.device?.migration || null };
     }
 
     loadCurrentStorage() {
@@ -355,7 +355,7 @@
       try {
         const recovered = this.recoverLatestValidCheckpoint();
         if (recovered) {
-          sessionStorage.setItem('kitchenCompanion.recoveredCheckpoint', recovered.createdAt);
+          sessionStorage.setItem('kitchenCompanionTest.recoveredCheckpoint', recovered.createdAt);
           return;
         }
       } catch (error) { console.warn('Startup recovery failed.', error); }
@@ -810,7 +810,7 @@
           readStore('appMeta', 'device'), readStore('appMeta', 'shared'), readStore('profiles'), readStore('profileData'), readStore('modules'), readStore('recoverySnapshots')
         ]);
         let boundProfileId = '';
-        try { boundProfileId = JSON.parse(localStorage.getItem('serenityKitchen.sync.v1') || '{}').profileId || ''; } catch {}
+        try { boundProfileId = JSON.parse(localStorage.getItem('serenityKitchen.sync.dev.v1') || '{}').profileId || ''; } catch {}
         const dataById = new Map((profileData || []).filter(item => item?.profileId).map(item => [item.profileId, item]));
         const metaById = new Map((profileMetas || []).filter(item => item?.profileId).map(item => [item.profileId, item]));
         const preferredId = [boundProfileId, mirroredDevice?.activeProfileId].find(id => id && dataById.has(id));
