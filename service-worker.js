@@ -1,8 +1,8 @@
-const CACHE_NAME = 'serenity-kitchen-v0.21.41';
-const OCR_CACHE_NAME = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
+const CACHE_NAME = 'serenity-kitchen-test-v0.21.41-phone-1';
+const OCR_CACHE_NAME = 'serenity-kitchen-test-ocr-tesseract-7.0.0-best-int';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.21.41', './kitchen-engine.js?v=0.21.41', './recipe-scaling.js?v=0.21.41', './profile-storage.js?v=0.21.41', './meal-planner.js?v=0.21.41', './sync-client.js?v=0.21.41', './app.js?v=0.21.41',
-  './url-recipe-import.js?v=0.21.41', './ocr-service.js?v=0.21.41', './alarm-bell.wav?v=0.21.41', './app.webmanifest?v=0.21.41', './icon-180.png?v=0.21.41', './icon-192.png?v=0.21.41', './icon-512.png?v=0.21.41', './serenity-kitchen-icon-1024.png?v=0.21.41', './serenity-kitchen-home.jpeg?v=0.21.41', './sk-watermark.png?v=0.21.41'
+  './', './index.html', './styles.css?v=0.21.41-test-1', './kitchen-engine.js?v=0.21.41-test-1', './recipe-scaling.js?v=0.21.41-test-1', './profile-storage.js?v=0.21.41-test-1', './meal-planner.js?v=0.21.41-test-1', './sync-client.js?v=0.21.41-test-1', './app.js?v=0.21.41-test-1',
+  './url-recipe-import.js?v=0.21.41-test-1', './ocr-service.js?v=0.21.41-test-1', './alarm-bell.wav?v=0.21.41-test-1', './app.webmanifest?v=0.21.41-test-1', './icon-180.png?v=0.21.41-test-1', './icon-192.png?v=0.21.41-test-1', './icon-512.png?v=0.21.41-test-1', './serenity-kitchen-icon-1024.png?v=0.21.41-test-1', './serenity-kitchen-home.jpeg?v=0.21.41-test-1', './sk-watermark.png?v=0.21.41-test-1'
 ];
 const OCR_ASSETS = [
   './Vendor/tesseract-7.0.0/tesseract.min.js',
@@ -34,7 +34,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME && key !== OCR_CACHE_NAME).map(key => caches.delete(key))))
+    caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('serenity-kitchen-test-') && key !== CACHE_NAME && key !== OCR_CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
