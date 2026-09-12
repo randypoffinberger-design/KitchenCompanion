@@ -11,8 +11,12 @@
         window.__skTestBoot.errors.push(String(value || 'Unknown startup error'));
       };
       window.addEventListener('error', event => {
+        if (event.target?.tagName === 'SCRIPT') {
+          recordError(`Failed to load ${event.target.src || 'unknown script'}`);
+          return;
+        }
         recordError(`${event.message || 'Script error'} at ${event.filename || 'unknown file'}:${event.lineno || 0}:${event.colno || 0}`);
-      });
+      }, true);
       window.addEventListener('unhandledrejection', event => {
         recordError(`Promise error: ${event.reason?.message || event.reason || 'unknown rejection'}`);
       });
@@ -30,7 +34,7 @@
             errors.length ? errors.join('\n') : 'No JavaScript error was reported.'
           ].join('\n');
           document.body.appendChild(panel);
-        }, 2500);
+        }, 5000);
       });
       if (location.origin !== 'https://randys.tail96598f.ts.net') return;
       document.querySelector('#appBase').href = '/sk-test/';
@@ -45,10 +49,10 @@
   <meta name="apple-mobile-web-app-title" content="SK Test">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.41-test-3">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.41-test-3">
+  <link rel="manifest" href="app.webmanifest?v=0.21.41-test-4">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.41-test-4">
   <title>Serenity Kitchen™ Test</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.41-test-3">
+  <link rel="stylesheet" href="styles.css?v=0.21.41-test-4">
 </head>
 <body>
   <div class="app-shell">
@@ -880,13 +884,39 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.41-test-3"></script>
-  <script src="recipe-scaling.js?v=0.21.41-test-3"></script>
-  <script src="profile-storage.js?v=0.21.41-test-3"></script>
-  <script src="url-recipe-import.js?v=0.21.41-test-3"></script>
-  <script src="meal-planner.js?v=0.21.41-test-3"></script>
-  <script src="sync-client.js?v=0.21.41-test-3"></script>
-  <script src="app.js?v=0.21.41-test-3"></script>
-  <script src="ocr-service.js?v=0.21.41-test-3"></script>
+  <script>
+    (() => {
+      const files = [
+        'kitchen-engine.js',
+        'recipe-scaling.js',
+        'profile-storage.js',
+        'url-recipe-import.js',
+        'meal-planner.js',
+        'sync-client.js',
+        'app.js',
+        'ocr-service.js'
+      ];
+
+      const loadScript = file => new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = new URL(`${file}?v=0.21.41-test-4`, document.baseURI).href;
+        script.onload = () => {
+          if (file === 'meal-planner.js' && !globalThis.KCMealPlanner) {
+            reject(new Error('meal-planner.js loaded but KCMealPlanner was not created'));
+            return;
+          }
+          resolve();
+        };
+        script.onerror = () => reject(new Error(`Failed to load ${script.src}`));
+        document.body.appendChild(script);
+      });
+
+      (async () => {
+        for (const file of files) await loadScript(file);
+      })().catch(error => {
+        window.__skTestBoot.errors.push(error?.message || String(error));
+      });
+    })();
+  </script>
 </body>
 </html>
