@@ -1,4 +1,14 @@
-# Serenity Kitchen™ v0.21.39
+# Serenity Kitchen™ v0.21.42
+
+## Generalized consumable usage tracking
+
+- Lets Pantry and Regular Items use a manual expected replacement interval.
+- Learns from dated Pantry purchases and Regular Items checked off the shopping list.
+- Waits for at least four separate purchase dates before comparing the observed average.
+- Combines same-day purchases and leaves clear quantity or timing outliers out of recommendations.
+- Suggests a changed interval only when the difference is at least three days and 20 percent.
+- Never changes an interval without approval; the user can keep the manual interval and stop future suggestions for that item.
+- Allows individual purchase records to be ignored or restored without deleting Pantry purchase lots.
 
 ## Automatic estimated nutrition
 

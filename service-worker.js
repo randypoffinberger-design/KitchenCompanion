@@ -1,8 +1,8 @@
-const CACHE_NAME = 'serenity-kitchen-v0.21.41';
+const CACHE_NAME = 'serenity-kitchen-v0.21.42';
 const OCR_CACHE_NAME = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=0.21.41', './kitchen-engine.js?v=0.21.41', './recipe-scaling.js?v=0.21.41', './profile-storage.js?v=0.21.41', './meal-planner.js?v=0.21.41', './sync-client.js?v=0.21.41', './app.js?v=0.21.41',
-  './url-recipe-import.js?v=0.21.41', './ocr-service.js?v=0.21.41', './alarm-bell.wav?v=0.21.41', './app.webmanifest?v=0.21.41', './icon-180.png?v=0.21.41', './icon-192.png?v=0.21.41', './icon-512.png?v=0.21.41', './serenity-kitchen-icon-1024.png?v=0.21.41', './serenity-kitchen-home.jpeg?v=0.21.41', './sk-watermark.png?v=0.21.41'
+  './', './index.html', './styles.css?v=0.21.42', './kitchen-engine.js?v=0.21.42', './recipe-scaling.js?v=0.21.42', './profile-storage.js?v=0.21.42', './meal-planner.js?v=0.21.42', './sync-client.js?v=0.21.42', './usage-tracking.js?v=0.21.42', './app.js?v=0.21.42',
+  './url-recipe-import.js?v=0.21.42', './ocr-service.js?v=0.21.42', './alarm-bell.wav?v=0.21.42', './app.webmanifest?v=0.21.42', './icon-180.png?v=0.21.42', './icon-192.png?v=0.21.42', './icon-512.png?v=0.21.42', './serenity-kitchen-icon-1024.png?v=0.21.42', './serenity-kitchen-home.jpeg?v=0.21.42', './sk-watermark.png?v=0.21.42'
 ];
 const OCR_ASSETS = [
   './Vendor/tesseract-7.0.0/tesseract.min.js',

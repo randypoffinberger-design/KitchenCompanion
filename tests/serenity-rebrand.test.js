@@ -10,9 +10,9 @@ const profile = read('profile-storage.js');
 const manifest = JSON.parse(read('app.webmanifest'));
 const worker = read('service-worker.js');
 
-assert.equal(manifest.name, 'Serenity Kitchen');
-assert.equal(manifest.version, '0.21.4');
-assert.match(html, /Serenity Kitchen by Serenity Valley Works|<strong>Serenity Kitchen<\/strong>[\s\S]*by Serenity Valley Works/);
+assert.equal(manifest.name, 'Serenity Kitchen™');
+assert.equal(manifest.version, '0.21.42');
+assert.match(html, /Serenity Kitchen by Serenity Valley Works|<strong>Serenity Kitchen™<\/strong>[\s\S]*by Serenity Valley Works/);
 assert.match(app, /Serenity-Kitchen-Backup-/);
 assert.match(app, /[.]skbackup/);
 assert.match(app, /format:'kitchen-companion-backup'/);

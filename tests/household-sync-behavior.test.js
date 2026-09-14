@@ -21,27 +21,18 @@ vm.runInContext(fs.readFileSync(path.resolve(__dirname, '..', 'sync-client.js'),
   client.config.households = [{ id:'household-1', name:'Test', role:'owner' }];
   client.config.activeHouseholdId = 'household-1';
   client.config.profileId = 'profile-randy';
-  const snapshot = { recipes:{ personalRecipes:[{ id:'recipe-1' }] }, 'shopping-list':{ shoppingList:[] }, pantry:{ pantryItems:[] }, 'meal-plans':{ mealPlans:{} } };
+  const snapshot = { recipes:{ ownerRecords:[{ id:'owner:user-1', ownerUserId:'user-1', personalRecipes:[{ id:'recipe-1' }] }] }, 'shopping-list':{ shoppingList:[] }, pantry:{ pantryItems:[] }, 'meal-plans':{ mealPlans:{} } };
   client.remoteSnapshot = async () => ({ snapshot, hasData:true });
   client.start = () => {};
 
-  const downloaded = await client.downloadLatest();
-  assert.equal(downloaded.recipes.personalRecipes.length, 1);
-  assert.equal(applied.recipes.personalRecipes[0].id, 'recipe-1');
+  await client.initialize('download', {});
+  assert.equal(applied.recipes.ownerRecords[0].personalRecipes[0].id, 'recipe-1');
   assert.equal(client.summary().initialized, true);
-
-  const merged = client.mergeRecipeCollections(
-    { personalRecipes:[{ id:'server-only' }, { id:'shared', name:'old' }], favorites:['a'] },
-    { personalRecipes:[{ id:'local-only' }, { id:'shared', name:'new' }], favorites:['b'] }
-  );
-  assert.equal(JSON.stringify(merged.personalRecipes.map(recipe => recipe.id).sort()), JSON.stringify(['local-only','server-only','shared']));
-  assert.equal(merged.personalRecipes.find(recipe => recipe.id === 'shared').name, 'new');
-  assert.equal(JSON.stringify([...merged.favorites].sort()), JSON.stringify(['a','b']));
 
   client.syncing = true;
   client.markDirty();
   assert.equal(client.dirty, true);
-  assert.equal(client.changeSequence, 1);
+  assert.equal(client.changeGeneration, 1);
   client.stop();
-  console.log('Household sync behavior passed: forced download initializes the profile and edits remain queued during active requests.');
+  console.log('Household sync behavior passed: guarded download initializes the profile and edits remain queued during active requests.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

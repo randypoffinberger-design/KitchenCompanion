@@ -26,7 +26,8 @@ assert.match(styles, /[.]regular-items-sticky-header\{[\s\S]*?position:sticky/);
 assert.match(app, /const sortedItems=\[[.][.][.]state[.]regularItems\][.]sort/);
 assert.match(app, /SHOPPING_GROUP_ORDER[.]get\(aGroup\)/);
 assert.match(app, /localeCompare\(String\(b[.]name/);
-assert.match(app, /heading[.]className='regular-item-group-heading'/);
+assert.match(app, /className='regular-category-section'/);
+assert.match(app, /class="regular-item-group-heading list-section-toggle"/);
 assert.match(styles, /[.]regular-item-group-heading\{/);
 
 console.log('Bulk regular-items regression passed: staples are grouped by category, alphabetized, reusable, and always closable.');

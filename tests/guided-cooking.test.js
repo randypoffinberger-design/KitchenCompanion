@@ -14,7 +14,7 @@ assert.match(html, /id="guidedNext"/);
 assert.match(html, /id="guidedSpeechEnabled"/);
 assert.match(app, /SpeechSynthesisUtterance/);
 assert.match(app, /guidedCookingProgress/);
-assert.match(app, /renderInstructionWithTimers\(step, guidedRecipe, guidedStepIndex\)/);
+assert.match(app, /renderInstructionWithTimers\(step[.]text, guidedRecipe, step[.]number - 1\)/);
 assert.match(app, /delete state[.]guidedCookingProgress\[guidedRecipe[.]key\]/);
 assert.match(app, /function persistGuidedProgress\(\)/);
 assert.match(app, /Guided cooking is working, but this step could not be saved for later/);
