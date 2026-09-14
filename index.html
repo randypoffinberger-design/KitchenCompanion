@@ -49,10 +49,10 @@
   <meta name="apple-mobile-web-app-title" content="SK Test">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.41-test-4">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.41-test-4">
+  <link rel="manifest" href="app.webmanifest?v=0.21.42-test-5">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.42-test-5">
   <title>Serenity Kitchen™ Test</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.41-test-4">
+  <link rel="stylesheet" href="styles.css?v=0.21.42-test-5">
 </head>
 <body>
   <div class="app-shell">
@@ -97,7 +97,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current test app version">Serenity Kitchen™ Test <strong>v0.21.41</strong></div>
+      <div class="sidebar-version" aria-label="Current test app version">Serenity Kitchen™ Test <strong>v0.21.42</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -291,7 +291,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.41</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.42</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -322,11 +322,15 @@
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Pantry</summary>
-          <div><p>Search by word, filter by category, or show only low-stock items. Tap an item to expand its quantity, unit, threshold, increase, decrease, edit, and remove controls.</p><p>Automatic restock can add an item to Shopping List when its Pantry amount reaches the chosen threshold.</p></div>
+          <div><p>Search by word, filter by category, or show only low-stock items. Tap an item to expand its quantity, unit, threshold, increase, decrease, edit, remove, and Usage controls.</p><p>Automatic restock can add an item to Shopping List when its Pantry amount reaches the chosen threshold. Usage tracking can compare a manual replacement interval with dated Pantry purchase records after four separate purchase dates.</p></div>
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Shopping List</summary>
-          <div><p>Add one item or several at once, then organize items by store, aisle, category, and quantity. Checked purchases can be moved into Pantry.</p><p>More actions contains selection tools, Regular Items, store management, sharing, importing, and clearing checked items.</p></div>
+          <div><p>Add one item or several at once, then organize items by store, aisle, category, and quantity. Checked purchases can be moved into Pantry.</p><p>More actions contains selection tools, Regular Items, store management, sharing, importing, and clearing checked items. In Regular Items, open Usage to set an expected interval. SK records a tracked item when it is checked off the shopping list.</p></div>
+        </details>
+        <details class="manual-section" data-manual-section>
+          <summary>Usage tracking for household items</summary>
+          <div><p>Open a Pantry or Regular Item and choose Usage. Turn tracking on, enter the number of days you expect between replacements, and save. You can add older purchase dates manually to give SK a head start.</p><p>After four separate purchase dates, SK compares your setting with the observed average. It combines same-day purchases and leaves clear quantity or timing outliers out of the recommendation. SK never changes the interval automatically.</p><p>If SK suggests a different interval, choose the new interval or keep the manual interval and stop suggestions for that item. Individual purchase records can be ignored and included again.</p></div>
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Meal Planner</summary>
@@ -366,7 +370,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.41</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.42</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -795,6 +799,27 @@
     </form>
   </dialog>
 
+  <dialog id="usageTrackingDialog">
+    <form id="usageTrackingForm" class="dialog-card usage-tracking-card">
+      <div class="dialog-title-row"><div><h2 id="usageTrackingTitle">Usage tracking</h2><p id="usageTrackingSubtitle" class="setting-help"></p></div><button id="closeUsageTracking" type="button" class="icon-btn" aria-label="Close usage tracking"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <input id="usageTrackingKind" type="hidden"><input id="usageTrackingItemId" type="hidden">
+      <fieldset class="usage-tracking-settings"><legend>Expected replacement</legend>
+        <label class="setting-row"><span>Track this item</span><input id="usageTrackingEnabled" type="checkbox"></label>
+        <label>Expected interval<input id="usageExpectedDays" type="number" min="1" max="3650" step="1" inputmode="numeric" placeholder="14"><small>Days between purchases or replacements.</small></label>
+        <label id="usageMuteSuggestionsRow" class="setting-row"><span>Stop interval suggestions</span><input id="usageSuggestionsMuted" type="checkbox"></label>
+      </fieldset>
+      <section id="usageRecommendation" class="usage-recommendation" aria-live="polite"></section>
+      <fieldset><legend>Add a purchase</legend>
+        <div class="form-grid"><label>Date<input id="usagePurchaseDate" type="date"></label><label>Quantity<input id="usagePurchaseQuantity" type="number" min="0" step="any" placeholder="1"></label></div>
+        <label>Unit<input id="usagePurchaseUnit" placeholder="bag, case, rolls, etc."></label>
+        <button id="addUsagePurchase" type="button" class="button secondary">Add purchase</button>
+      </fieldset>
+      <div><h3>Purchase history</h3><p class="setting-help">SK combines same-day entries and leaves unusual quantities or time gaps out of recommendations. You can also ignore a purchase manually.</p><div id="usagePurchaseHistory" class="usage-purchase-history"></div></div>
+      <p id="usageTrackingStatus" class="setting-help" aria-live="polite"></p>
+      <div class="dialog-actions"><button id="cancelUsageTracking" type="button" class="button secondary">Cancel</button><button type="submit" class="button">Save tracking</button></div>
+    </form>
+  </dialog>
+
   <dialog id="pantryItemDialog">
     <form id="pantryItemForm" class="dialog-card pantry-item-card">
       <div class="dialog-title-row"><h2 id="pantryItemDialogTitle">Add pantry item</h2><button id="closePantryItem" type="button" class="icon-btn" aria-label="Close pantry item"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
@@ -893,13 +918,14 @@
         'url-recipe-import.js',
         'meal-planner.js',
         'sync-client.js',
+        'usage-tracking.js',
         'app.js',
         'ocr-service.js'
       ];
 
       const loadScript = file => new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = new URL(`${file}?v=0.21.41-test-4`, document.baseURI).href;
+        script.src = new URL(`${file}?v=0.21.42-test-5`, document.baseURI).href;
         script.onload = () => {
           if (file === 'meal-planner.js' && !globalThis.KCMealPlanner) {
             reject(new Error('meal-planner.js loaded but KCMealPlanner was not created'));

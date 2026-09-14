@@ -65,10 +65,13 @@ async function runLifecycle(type) {
   assert.ok(ocrName, 'stable OCR cache was not created');
   assert.equal(stores.get(ocrName).size, 6, 'all OCR runtime assets must be cached');
 
-  stores.set('kitchen-companion-v-old', new Map());
+  const obsoleteCache = [...stores.keys()].some(name => name.startsWith('serenity-kitchen-test-'))
+    ? 'serenity-kitchen-test-v-old'
+    : 'kitchen-companion-v-old';
+  stores.set(obsoleteCache, new Map());
   await runLifecycle('activate');
   assert.ok(stores.has(ocrName), 'normal app activation must preserve the OCR cache');
-  assert.ok(!stores.has('kitchen-companion-v-old'), 'obsolete app cache should still be removed');
+  assert.ok(!stores.has(obsoleteCache), 'obsolete app cache should still be removed');
 
   const ocrService = fs.readFileSync(path.join(root, 'ocr-service.js'), 'utf8');
   assert.match(ocrService, /Vendor\/tesseract-7[.]0[.]0/);

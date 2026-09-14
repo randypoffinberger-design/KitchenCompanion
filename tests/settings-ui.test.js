@@ -7,7 +7,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 
-assert.equal((html.match(/class="settings-section"/g) || []).length, 9);
+assert.equal((html.match(/class="settings-section"/g) || []).length, 10);
 assert.match(html, /class="settings-section" open>\s*<summary>App and updates/);
 assert.match(html, /aria-label="Close settings"/);
 assert.match(html, /id="guidedVoiceSelect"/);

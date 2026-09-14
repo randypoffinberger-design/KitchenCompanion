@@ -5,7 +5,7 @@
   window.__skTestBoot.appLoaded = true;
 
   const STORAGE_KEY = 'recipeEngineState.test.v1';
-  const ENGINE_VERSION = '0.21.41';
+  const ENGINE_VERSION = '0.21.42';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'serenity-kitchen-test-ocr-tesseract-7.0.0-best-int';
@@ -518,6 +518,13 @@
     document.querySelector('#bulkShoppingForm')?.addEventListener('submit', addBulkShoppingItems);
     els.regularItemsBtn.addEventListener('click', showRegularItems);
     document.querySelector('#closeRegularItems')?.addEventListener('click', () => els.regularItemsDialog.close());
+    document.querySelector('#usageTrackingForm')?.addEventListener('submit', saveUsageTracking);
+    document.querySelector('#closeUsageTracking')?.addEventListener('click', () => document.querySelector('#usageTrackingDialog')?.close());
+    document.querySelector('#cancelUsageTracking')?.addEventListener('click', () => document.querySelector('#usageTrackingDialog')?.close());
+    document.querySelector('#addUsagePurchase')?.addEventListener('click', addUsagePurchase);
+    document.querySelector('#usageTrackingEnabled')?.addEventListener('change', event => {if(usageTrackingDraft){readUsageTrackingControls();if(event.target.checked&&!usageTrackingDraft.expectedIntervalDays)usageTrackingDraft.expectedIntervalDays=14;renderUsageTrackingDialog();}});
+    document.querySelector('#usageExpectedDays')?.addEventListener('change',()=>{readUsageTrackingControls();renderUsageTrackingDialog();});
+    document.querySelector('#usageSuggestionsMuted')?.addEventListener('change',()=>{readUsageTrackingControls();renderUsageTrackingDialog();});
     document.querySelector('#movePurchasedToPantryBtn')?.addEventListener('click', movePurchasedToPantry);
     document.querySelector('#addPantryItemBtn')?.addEventListener('click', () => openPantryItemDialog());
     document.querySelector('#addManyPantryItemsBtn')?.addEventListener('click', openBulkPantryDialog);
@@ -1179,7 +1186,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.41-test-4', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.42-test-5', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -3099,7 +3106,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.41');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.42');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -3437,6 +3444,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   let pantrySelectionMode = false;
   const pantrySelectedIds = new Set();
   let pantryExpandedId = null;
+  let usageTrackingDraft = null;
+  let usageTrackingTarget = null;
 
   function visibleShoppingItems() {
     const filter = els.shoppingStoreFilter.value || 'all';
@@ -4189,13 +4198,15 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     const name=displayShoppingName(item.name);
     const unit=normalizePantryUnit(item.unit||'items'),quantity=Math.max(0,Number(item.quantity)||0);
     const lots=Array.isArray(item.lots)&&item.lots.length?item.lots.map(lot=>normalizePantryLot(lot,unit)).filter(lot=>lot.quantity>0):(quantity>0?[normalizePantryLot({quantity,unit,purchasedAt:item.purchasedAt||'',store:item.store||'',source:item.source||'Existing inventory'},unit)]:[]);
-    return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:lots.reduce((sum,lot)=>sum+lot.quantity,0),unit,group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),conversionProfile:item.conversionProfile||detectPantryConversionProfile(name),estimated:!!item.estimated,sourceQuantity:Number(item.sourceQuantity)||0,sourceUnit:normalizePantryUnit(item.sourceUnit||''),lots,autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),updatedAt:item.updatedAt||new Date().toISOString()};
+    const existingTracking=SKUsageTracking.normalizeTracking(item.usageTracking||{});const lotHistory=lots.filter(lot=>lot.purchasedAt).map(lot=>({id:`lot:${lot.id}`,purchasedAt:lot.purchasedAt,quantity:lot.quantity,unit:lot.unit||unit,source:lot.source||'Pantry purchase',createdAt:lot.createdAt}));
+    const usageTracking=SKUsageTracking.normalizeTracking({...existingTracking,purchases:[...lotHistory,...existingTracking.purchases]});
+    return {id:item.id||pantryId(),name,normalizedName:shoppingNameKey(item.normalizedName||name),quantity:lots.reduce((sum,lot)=>sum+lot.quantity,0),unit,group:SHOPPING_GROUPS.includes(item.group)?item.group:classifyShoppingGroup(name),conversionProfile:item.conversionProfile||detectPantryConversionProfile(name),estimated:!!item.estimated,sourceQuantity:Number(item.sourceQuantity)||0,sourceUnit:normalizePantryUnit(item.sourceUnit||''),lots,autoRestock:!!item.autoRestock,threshold:Math.max(0,Number(item.threshold)||0),restockQuantity:String(item.restockQuantity||'').trim(),usageTracking,updatedAt:item.updatedAt||new Date().toISOString()};
   }
 
   function upsertPantryItem(source) {
     const incoming=normalizePantryItem(preparePantrySource(source));
     let item=state.pantryItems.find(entry=>shoppingNameKey(entry.normalizedName||entry.name)===incoming.normalizedName && normalizePantryUnit(entry.unit)===incoming.unit);
-    if(item){item.lots=[...(item.lots||[]),...(incoming.lots||[])];item.quantity=pantryLotTotal(item);item.group=incoming.group;item.estimated=!!(item.estimated||incoming.estimated);item.conversionProfile=item.conversionProfile||incoming.conversionProfile;item.updatedAt=new Date().toISOString();}
+    if(item){item.lots=[...(item.lots||[]),...(incoming.lots||[])];item.quantity=pantryLotTotal(item);item.group=incoming.group;item.estimated=!!(item.estimated||incoming.estimated);item.conversionProfile=item.conversionProfile||incoming.conversionProfile;item.usageTracking=SKUsageTracking.normalizeTracking({...item.usageTracking,purchases:[...(item.usageTracking?.purchases||[]),...(incoming.usageTracking?.purchases||[])]});item.updatedAt=new Date().toISOString();}
     else {item=incoming;state.pantryItems.push(item);}
     checkPantryRestock(item);
     return item;
@@ -4262,12 +4273,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       const low=Number(item.quantity)<=Number(item.threshold);const expanded=!pantrySelectionMode&&pantryExpandedId===item.id;const row=document.createElement('article');row.className=`pantry-row${low?' pantry-low':''}${expanded?' pantry-expanded':''}${pantrySelectedIds.has(item.id)?' bulk-selected':''}`;
       const conversionNote=item.estimated?`Approximate balance${item.conversionProfile?` · ${escapeHtml(PANTRY_CONVERSION_PROFILES[item.conversionProfile]?.label||'ingredient profile')}`:''}`:'';
       const lotRows=sortPantryLots(item.lots).map(lot=>`<div class="pantry-lot-row" data-lot-id="${escapeHtml(lot.id)}"><div><strong>${escapeHtml(formatNumber(lot.quantity))} ${escapeHtml(item.unit)}</strong><small>${lot.purchasedAt?escapeHtml(new Date(`${lot.purchasedAt}T12:00:00`).toLocaleDateString()):'Date not recorded'} · ${escapeHtml(lot.store||'Store not recorded')}</small></div><div><button type="button" class="pantry-lot-edit">Edit</button><button type="button" class="pantry-lot-remove danger-text">Remove</button></div></div>`).join('');
-      row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${uiIcon(expanded?'chevron-up':'chevron-down')}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}<div class="pantry-lot-list"><div class="pantry-lot-heading"><b>Purchases</b><button type="button" class="pantry-add-lot">＋ Add purchase</button></div>${lotRows||'<small>No purchase records</small>'}</div></div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
+      row.innerHTML=`<div class="pantry-row-summary">${pantrySelectionMode?`<label class="bulk-select-control"><input class="pantry-select-check" type="checkbox" ${pantrySelectedIds.has(item.id)?'checked':''}></label>`:''}<button type="button" class="pantry-name-toggle" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}><strong>${escapeHtml(item.name)}</strong></button>${low?'<span class="pantry-low-label">Low</span>':''}<button type="button" class="pantry-detail-toggle" aria-label="${expanded?'Hide':'Show'} details for ${escapeHtml(item.name)}" aria-expanded="${expanded}" ${pantrySelectionMode?'disabled':''}>${uiIcon(expanded?'chevron-up':'chevron-down')}</button></div><div class="pantry-row-details" ${expanded?'':'hidden'}><div class="pantry-item-info"><span><b>On hand:</b> ${item.estimated?'≈ ':''}${escapeHtml(formatNumber(item.quantity))} ${escapeHtml(item.unit)}</span>${conversionNote?`<small>${conversionNote}</small>`:''}${item.autoRestock?`<small>${low?'Low stock · added to shopping list':`Restock at ${formatNumber(item.threshold)} ${escapeHtml(item.unit)}`}</small>`:''}<small>${escapeHtml(usageSummary(item,'pantry'))}</small><div class="pantry-lot-list"><div class="pantry-lot-heading"><b>Purchases</b><button type="button" class="pantry-add-lot">＋ Add purchase</button></div>${lotRows||'<small>No purchase records</small>'}</div></div><div class="pantry-row-actions"><button type="button" class="pantry-step pantry-minus" aria-label="Remove one ${escapeHtml(item.unit)}">−</button><button type="button" class="pantry-step pantry-plus" aria-label="Add one ${escapeHtml(item.unit)}">＋</button><button type="button" class="pantry-compact-action pantry-usage">Usage</button><button type="button" class="pantry-compact-action pantry-edit">Edit</button><button type="button" class="pantry-compact-action danger-text pantry-remove" aria-label="Remove ${escapeHtml(item.name)}">Remove</button></div></div>`;
       row.querySelector('.pantry-select-check')?.addEventListener('change',event=>{event.target.checked?pantrySelectedIds.add(item.id):pantrySelectedIds.delete(item.id);renderPantry();});
       const toggle=()=>{pantryExpandedId=pantryExpandedId===item.id?null:item.id;renderPantry();};
       row.querySelector('.pantry-name-toggle')?.addEventListener('click',toggle);row.querySelector('.pantry-detail-toggle')?.addEventListener('click',toggle);
       row.querySelector('.pantry-minus')?.addEventListener('click',()=>adjustPantryItem(item,-1));row.querySelector('.pantry-plus')?.addEventListener('click',()=>adjustPantryItem(item,1));
       row.querySelector('.pantry-add-lot')?.addEventListener('click',()=>openPantryLotDialog(item));
+      row.querySelector('.pantry-usage')?.addEventListener('click',()=>openUsageTracking(item,'pantry'));
       row.querySelectorAll('.pantry-lot-row').forEach(lotRow=>{const lot=item.lots.find(entry=>entry.id===lotRow.dataset.lotId);lotRow.querySelector('.pantry-lot-edit')?.addEventListener('click',()=>openPantryLotDialog(item,lot));lotRow.querySelector('.pantry-lot-remove')?.addEventListener('click',()=>removePantryLot(item,lot));});
       row.querySelector('.pantry-edit')?.addEventListener('click',()=>openPantryItemDialog(item));row.querySelector('.pantry-remove')?.addEventListener('click',()=>{if(confirm(`Remove ${item.name} from Pantry?`)){state.pantryItems=state.pantryItems.filter(entry=>entry.id!==item.id);saveState();renderPantry();renderCounts();}});
       groupBox.append(row);
@@ -4293,7 +4305,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function savePantryItem(event) {
     event.preventDefault();const id=document.querySelector('#pantryItemId').value;const existing=state.pantryItems.find(item=>item.id===id);const enteredUnit=document.querySelector('#pantryItemUnit').value;const source={id:id||pantryId(),name:document.querySelector('#pantryItemName').value,quantity:document.querySelector('#pantryItemQuantity').value,unit:enteredUnit,conversionProfile:document.querySelector('#pantryConversionProfile').value,group:document.querySelector('#pantryItemGroup').value,autoRestock:document.querySelector('#pantryAutoRestock').checked,threshold:document.querySelector('#pantryItemThreshold').value,restockQuantity:document.querySelector('#pantryRestockQuantity').value,purchasedAt:document.querySelector('#pantryPurchaseDate').value,store:document.querySelector('#pantryPurchaseStore').value,source:'Manual pantry entry'};const item=normalizePantryItem(preparePantrySource(source));
     if(existing?.estimated&&normalizePantryUnit(enteredUnit)===existing.unit){item.estimated=true;item.sourceQuantity=existing.sourceQuantity;item.sourceUnit=existing.sourceUnit;}
-    if(existing){const oldLots=existing.lots||[];Object.assign(existing,item,{lots:oldLots});reconcilePantryLots(existing,item.quantity,{source:'Inventory adjustment'});}else state.pantryItems.push(item);checkPantryRestock(existing||item);saveState();document.querySelector('#pantryItemDialog').close();renderPantry();renderCounts();
+    if(existing){const oldLots=existing.lots||[],usageTracking=existing.usageTracking;Object.assign(existing,item,{lots:oldLots,usageTracking});reconcilePantryLots(existing,item.quantity,{source:'Inventory adjustment'});}else state.pantryItems.push(item);checkPantryRestock(existing||item);saveState();document.querySelector('#pantryItemDialog').close();renderPantry();renderCounts();
   }
 
   function populatePantryStoreSelect(select,value='') {
@@ -4308,10 +4320,12 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function savePantryLot(event) {
     event.preventDefault();const item=state.pantryItems.find(entry=>entry.id===document.querySelector('#pantryLotItemId').value);if(!item)return;
     const lotId=document.querySelector('#pantryLotId').value,existing=item.lots.find(lot=>lot.id===lotId),lot=normalizePantryLot({id:lotId||pantryId(),quantity:document.querySelector('#pantryLotQuantity').value,unit:item.unit,purchasedAt:document.querySelector('#pantryLotDate').value,store:document.querySelector('#pantryLotStore').value,source:existing?.source||'Manual purchase record',createdAt:existing?.createdAt});
-    if(existing)Object.assign(existing,lot);else item.lots.push(lot);item.lots=item.lots.filter(entry=>entry.quantity>0);item.quantity=pantryLotTotal(item);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();document.querySelector('#pantryLotDialog').close();renderPantry();renderCounts();
+    if(existing)Object.assign(existing,lot);else item.lots.push(lot);syncPantryLotPurchase(item,lot);item.lots=item.lots.filter(entry=>entry.quantity>0);item.quantity=pantryLotTotal(item);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();document.querySelector('#pantryLotDialog').close();renderPantry();renderCounts();
   }
 
-  function removePantryLot(item,lot) {if(!lot||!confirm(`Remove this purchase record from ${item.name}?`))return;item.lots=item.lots.filter(entry=>entry.id!==lot.id);item.quantity=pantryLotTotal(item);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();renderPantry();renderCounts();}
+  function syncPantryLotPurchase(item,lot){const tracking=SKUsageTracking.normalizeTracking(item.usageTracking||{}),id=`lot:${lot.id}`;tracking.purchases=tracking.purchases.filter(entry=>entry.id!==id);if(lot.purchasedAt)tracking.purchases.push({id,purchasedAt:lot.purchasedAt,quantity:lot.quantity,unit:lot.unit||item.unit,source:lot.source||'Pantry purchase',createdAt:lot.createdAt});item.usageTracking=SKUsageTracking.normalizeTracking(tracking);}
+
+  function removePantryLot(item,lot) {if(!lot||!confirm(`Remove this purchase record from ${item.name}?`))return;item.lots=item.lots.filter(entry=>entry.id!==lot.id);const tracking=SKUsageTracking.normalizeTracking(item.usageTracking||{});tracking.purchases=tracking.purchases.filter(entry=>entry.id!==`lot:${lot.id}`);tracking.ignoredPurchaseIds=tracking.ignoredPurchaseIds.filter(id=>id!==`lot:${lot.id}`);item.usageTracking=SKUsageTracking.normalizeTracking(tracking);item.quantity=pantryLotTotal(item);item.updatedAt=new Date().toISOString();checkPantryRestock(item);saveState();renderPantry();renderCounts();}
 
   function openBulkPantryDialog() {document.querySelector('#bulkPantryForm').reset();document.querySelector('#bulkPantryPurchaseDate').value=pantryToday();populatePantryStoreSelect(document.querySelector('#bulkPantryPurchaseStore'),'');document.querySelector('#bulkPantryStatus').textContent='';document.querySelector('#bulkPantryDialog').showModal();}
   function addBulkPantryItems(event) {event.preventDefault();const lines=parseBulkShoppingLines(document.querySelector('#bulkPantryText').value),purchasedAt=document.querySelector('#bulkPantryPurchaseDate').value,store=document.querySelector('#bulkPantryPurchaseStore').value;lines.forEach(line=>{const parsed=extractBulkShoppingQuantity(line);const amount=parsePantryAmount(parsed.quantity);upsertPantryItem({name:parsed.name,quantity:amount.quantity,unit:amount.unit,group:classifyShoppingGroup(parsed.name),purchasedAt,store,source:'Bulk pantry entry'});});saveState();renderPantry();renderCounts();document.querySelector('#bulkPantryStatus').textContent=`${lines.length} entr${lines.length===1?'y':'ies'} added to Pantry.`;setTimeout(()=>document.querySelector('#bulkPantryDialog').close(),800);}
@@ -4429,7 +4443,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const storeButton=row.querySelector('.row-store-pill');
         storeButton.addEventListener('click',()=>openShoppingMoveDialog([item.id],`Move ${item.name}`));
         const purchase=row.querySelector('.purchase-check');
-        purchase?.addEventListener('change',e=>{item.checked=e.target.checked;item.updatedAt=new Date().toISOString();saveState();renderShoppingList();renderCounts()});
+        purchase?.addEventListener('change',e=>{if(e.target.checked&&!item.checked)recordRegularPurchase(item);item.checked=e.target.checked;item.updatedAt=new Date().toISOString();saveState();renderShoppingList();renderCounts()});
         const bulk=row.querySelector('.bulk-select-check');
         bulk?.addEventListener('change',e=>{e.target.checked?shoppingSelectedIds.add(item.id):shoppingSelectedIds.delete(item.id);row.classList.toggle('bulk-selected',e.target.checked);updateShoppingBulkBar();});
         const nameToggle=row.querySelector('.shopping-name-toggle');
@@ -4503,7 +4517,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     let regularItem = state.regularItems.find(item => shoppingNameKey(item.normalizedName || item.name) === normalizedName);
     if (regularItem) Object.assign(regularItem, values);
     else {
-      regularItem = { id:shoppingId(), ...values };
+      regularItem = { id:shoppingId(), ...values, usageTracking:SKUsageTracking.normalizeTracking({}) };
       state.regularItems.push(regularItem);
     }
     return regularItem;
@@ -4519,7 +4533,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         id:source.id || shoppingId(), name, normalizedName,
         quantity:String(source.quantity || '').trim(), store:normalizeStore(source.store),
         group:SHOPPING_GROUPS.includes(source.group) ? source.group : classifyShoppingGroup(name),
-        aisle:String(source.aisle || preferredAisleFor(name, source.store)).trim().slice(0, 40)
+        aisle:String(source.aisle || preferredAisleFor(name, source.store)).trim().slice(0, 40),
+        usageTracking:SKUsageTracking.normalizeTracking(source.usageTracking || {})
       };
       const existing = consolidated.get(normalizedName);
       if (!existing) { consolidated.set(normalizedName, item); return; }
@@ -4528,6 +4543,8 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (item.store !== 'Unassigned') existing.store = item.store;
       if (item.group !== 'Other') existing.group = item.group;
       if (item.aisle) existing.aisle = item.aisle;
+      const incomingHistory=item.usageTracking?.purchases||[],existingHistory=existing.usageTracking?.purchases||[];
+      if(item.usageTracking?.enabled||item.usageTracking?.expectedIntervalDays||incomingHistory.length){existing.usageTracking=SKUsageTracking.normalizeTracking({...existing.usageTracking,purchases:[...existingHistory,...incomingHistory],ignoredPurchaseIds:[...(existing.usageTracking?.ignoredPurchaseIds||[]),...(item.usageTracking?.ignoredPurchaseIds||[])],enabled:item.usageTracking.enabled||existing.usageTracking.enabled,expectedIntervalDays:item.usageTracking.expectedIntervalDays||existing.usageTracking.expectedIntervalDays,suggestionsMuted:item.usageTracking.suggestionsMuted||existing.usageTracking.suggestionsMuted});}
     });
     return [...consolidated.values()];
   }
@@ -4619,6 +4636,108 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     }
   }
 
+  function usageTarget(kind,id) {
+    const collection=kind==='pantry'?state.pantryItems:state.regularItems;
+    return collection.find(item=>item.id===id)||null;
+  }
+
+  function usagePurchasesFor(item,kind,tracking=item?.usageTracking||{}) {
+    const manual=SKUsageTracking.normalizeTracking(tracking).purchases;
+    return manual;
+  }
+
+  function usageAnalysis(item,kind,tracking=item?.usageTracking||{}) {
+    return SKUsageTracking.analyze({...SKUsageTracking.normalizeTracking(tracking),purchases:usagePurchasesFor(item,kind,tracking)});
+  }
+
+  function usagePeriodLabel(analysis) {
+    if(!analysis.spanDays)return `${analysis.purchaseDayCount} purchase${analysis.purchaseDayCount===1?'':'s'}`;
+    if(analysis.spanDays>=60)return `the last ${Math.max(2,Math.round(analysis.spanDays/30))} months`;
+    return `the last ${analysis.spanDays} days`;
+  }
+
+  function usageSummary(item,kind) {
+    const tracking=SKUsageTracking.normalizeTracking(item.usageTracking||{});
+    if(!tracking.enabled)return 'Usage tracking off';
+    const analysis=usageAnalysis(item,kind,tracking);
+    const observed=analysis.ready?` · observed about every ${analysis.observedAverageDays} days`: ` · ${analysis.purchaseDayCount}/${analysis.minimumPurchaseDays} purchase dates`;
+    return `Set to every ${tracking.expectedIntervalDays} days${observed}${analysis.recommendation?' · suggestion available':''}${tracking.suggestionsMuted?' · suggestions off':''}`;
+  }
+
+  function recordRegularPurchase(shoppingItem) {
+    const regular=state.regularItems.find(item=>shoppingNameKey(item.normalizedName||item.name)===shoppingNameKey(shoppingItem.normalizedName||shoppingItem.name));
+    if(!regular)return;
+    const tracking=SKUsageTracking.normalizeTracking(regular.usageTracking||{});
+    if(!tracking.enabled)return;
+    const amounts=(shoppingItem.entries||[]).map(entry=>parsePantryAmount(entry.quantity)).filter(entry=>entry.quantity>0);
+    const sameUnit=amounts.length&&amounts.every(entry=>entry.unit===amounts[0].unit);
+    regular.usageTracking=SKUsageTracking.recordPurchase(tracking,{id:`shopping:${shoppingItem.id}:${pantryToday()}`,purchasedAt:pantryToday(),quantity:sameUnit?amounts.reduce((sum,entry)=>sum+entry.quantity,0):0,unit:sameUnit?amounts[0].unit:'',source:'Shopping list purchase'});
+  }
+
+  function openUsageTracking(item,kind) {
+    usageTrackingTarget={kind,id:item.id};
+    usageTrackingDraft=SKUsageTracking.normalizeTracking(item.usageTracking||{});
+    document.querySelector('#usageTrackingKind').value=kind;
+    document.querySelector('#usageTrackingItemId').value=item.id;
+    document.querySelector('#usageTrackingTitle').textContent=`Usage tracking · ${item.name}`;
+    document.querySelector('#usageTrackingSubtitle').textContent=kind==='pantry'?'Pantry purchase dates are included automatically.':'Purchases are recorded when this item is checked off the shopping list.';
+    document.querySelector('#usagePurchaseDate').value=pantryToday();
+    document.querySelector('#usagePurchaseQuantity').value='1';
+    document.querySelector('#usagePurchaseUnit').value=kind==='pantry'?item.unit:'';
+    renderUsageTrackingDialog();
+    document.querySelector('#usageTrackingDialog').showModal();
+  }
+
+  function readUsageTrackingControls() {
+    if(!usageTrackingDraft)return;
+    usageTrackingDraft.enabled=document.querySelector('#usageTrackingEnabled').checked;
+    usageTrackingDraft.expectedIntervalDays=Math.round(Number(document.querySelector('#usageExpectedDays').value)||0);
+    usageTrackingDraft.suggestionsMuted=document.querySelector('#usageSuggestionsMuted').checked;
+  }
+
+  function renderUsageTrackingDialog() {
+    if(!usageTrackingTarget||!usageTrackingDraft)return;
+    const item=usageTarget(usageTrackingTarget.kind,usageTrackingTarget.id);if(!item)return;
+    usageTrackingDraft=SKUsageTracking.normalizeTracking(usageTrackingDraft);
+    document.querySelector('#usageTrackingEnabled').checked=usageTrackingDraft.enabled;
+    document.querySelector('#usageExpectedDays').value=usageTrackingDraft.expectedIntervalDays||'';
+    document.querySelector('#usageSuggestionsMuted').checked=usageTrackingDraft.suggestionsMuted;
+    document.querySelector('#usageMuteSuggestionsRow').hidden=!usageTrackingDraft.enabled;
+    const analysis=usageAnalysis(item,usageTrackingTarget.kind,usageTrackingDraft);
+    const recommendation=document.querySelector('#usageRecommendation');
+    if(analysis.recommendation){recommendation.innerHTML=`<strong>SK found a different pattern</strong><p>You have ${escapeHtml(item.name)} set to ${analysis.tracking.expectedIntervalDays} days, but over ${escapeHtml(usagePeriodLabel(analysis))} you replaced it about every ${analysis.recommendation} days. Change to ${analysis.recommendation} days?</p><div class="usage-recommendation-actions"><button type="button" class="button accept-usage-recommendation">Change to ${analysis.recommendation} days</button><button type="button" class="button secondary mute-usage-recommendation">Keep ${analysis.tracking.expectedIntervalDays} days and stop suggestions</button></div>`;}
+    else if(analysis.ready&&usageTrackingDraft.enabled){recommendation.innerHTML=`<strong>Observed interval: about ${analysis.observedAverageDays} days</strong><p>Your ${usageTrackingDraft.expectedIntervalDays}-day setting is still close enough that SK won’t suggest a change.</p>`;}
+    else if(usageTrackingDraft.enabled){recommendation.innerHTML=`<strong>Learning this item</strong><p>SK has ${analysis.purchaseDayCount} of ${analysis.minimumPurchaseDays} separate purchase dates needed before comparing the interval.</p>`;}
+    else recommendation.innerHTML='<strong>Tracking is off</strong><p>Turn it on and enter the interval you expect.</p>';
+    recommendation.querySelector('.accept-usage-recommendation')?.addEventListener('click',()=>{usageTrackingDraft.expectedIntervalDays=analysis.recommendation;usageTrackingDraft.suggestionsMuted=false;renderUsageTrackingDialog();});
+    recommendation.querySelector('.mute-usage-recommendation')?.addEventListener('click',()=>{usageTrackingDraft.suggestionsMuted=true;renderUsageTrackingDialog();});
+    const excludedReasons=new Map(analysis.excluded.map(entry=>[entry.id,entry.reason]));
+    const ignored=new Set(usageTrackingDraft.ignoredPurchaseIds||[]);
+    const history=usagePurchasesFor(item,usageTrackingTarget.kind,usageTrackingDraft).sort((a,b)=>b.purchasedAt.localeCompare(a.purchasedAt));
+    const root=document.querySelector('#usagePurchaseHistory');root.innerHTML='';
+    if(!history.length)root.innerHTML='<p class="setting-help">No purchases recorded yet.</p>';
+    history.forEach(purchase=>{const row=document.createElement('div');row.className='usage-purchase-row';const isLot=purchase.id.startsWith('lot:');const reason=ignored.has(purchase.id)?'Ignored by user':excludedReasons.get(purchase.id)||'';row.innerHTML=`<div><strong>${escapeHtml(new Date(`${purchase.purchasedAt}T12:00:00`).toLocaleDateString())}</strong><small>${purchase.quantity?`${escapeHtml(formatNumber(purchase.quantity))} ${escapeHtml(purchase.unit||'items')} · `:''}${escapeHtml(purchase.source||'Purchase')}${reason?` · <b>${escapeHtml(reason)}</b>`:''}</small></div><div><button type="button" class="text-button toggle-usage-purchase">${ignored.has(purchase.id)?'Include':'Ignore'}</button>${isLot?'':`<button type="button" class="text-button danger-text remove-usage-purchase">Remove</button>`}</div>`;row.querySelector('.toggle-usage-purchase').addEventListener('click',()=>{ignored.has(purchase.id)?ignored.delete(purchase.id):ignored.add(purchase.id);usageTrackingDraft.ignoredPurchaseIds=[...ignored];renderUsageTrackingDialog();});row.querySelector('.remove-usage-purchase')?.addEventListener('click',()=>{usageTrackingDraft.purchases=usageTrackingDraft.purchases.filter(entry=>entry.id!==purchase.id);usageTrackingDraft.ignoredPurchaseIds=usageTrackingDraft.ignoredPurchaseIds.filter(id=>id!==purchase.id);renderUsageTrackingDialog();});root.append(row);});
+  }
+
+  function addUsagePurchase() {
+    if(!usageTrackingDraft)return;
+    readUsageTrackingControls();
+    const purchasedAt=document.querySelector('#usagePurchaseDate').value;
+    if(!purchasedAt){document.querySelector('#usageTrackingStatus').textContent='Choose a purchase date.';return;}
+    usageTrackingDraft=SKUsageTracking.recordPurchase(usageTrackingDraft,{purchasedAt,quantity:document.querySelector('#usagePurchaseQuantity').value,unit:document.querySelector('#usagePurchaseUnit').value,source:'Manual purchase'});
+    document.querySelector('#usageTrackingStatus').textContent='Purchase added. Save tracking to keep it.';
+    renderUsageTrackingDialog();
+  }
+
+  function saveUsageTracking(event) {
+    event.preventDefault();if(!usageTrackingTarget||!usageTrackingDraft)return;
+    readUsageTrackingControls();
+    if(usageTrackingDraft.enabled&&(!usageTrackingDraft.expectedIntervalDays||usageTrackingDraft.expectedIntervalDays<1)){document.querySelector('#usageTrackingStatus').textContent='Enter an expected interval of at least 1 day.';return;}
+    const item=usageTarget(usageTrackingTarget.kind,usageTrackingTarget.id);if(!item)return;
+    item.usageTracking=SKUsageTracking.normalizeTracking(usageTrackingDraft);item.updatedAt=new Date().toISOString();saveState();document.querySelector('#usageTrackingDialog').close();
+    if(usageTrackingTarget.kind==='pantry')renderPantry();else showRegularItems();
+  }
+
   function showRegularItems(){
     populateStoreSelects(); els.regularItemsList.innerHTML='';
     if(!state.regularItems.length){els.regularItemsList.innerHTML='<p>No regular items yet. Add a manual item and choose “Save as regular item.”</p>';}
@@ -4637,9 +4756,10 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
         const section=document.createElement('section');section.className='regular-category-section';section.innerHTML=`<button type="button" class="regular-item-group-heading list-section-toggle" aria-expanded="${expanded}"><span>${escapeHtml(groupKey)}</span><small>${count} item${count===1?'':'s'}</small><b class="list-section-chevron">${uiIcon(expanded?'chevron-up':'chevron-down')}</b></button><div class="regular-category-items" ${expanded?'':'hidden'}></div>`;section.querySelector('button').addEventListener('click',()=>{regularCategoryExpansion.set(groupKey,!listSectionExpanded(regularCategoryExpansion,groupKey,'category'));showRegularItems();});els.regularItemsList.append(section);groupBox=section.querySelector('.regular-category-items');
       }
       const row=document.createElement('div');row.className='regular-item-row';
-      row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(displayStoreName(item.store))}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
+      row.innerHTML=`<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.quantity||'No default quantity')} · ${escapeHtml(displayStoreName(item.store))}</small><small>${escapeHtml(usageSummary(item,'regular'))}</small></span><div class="regular-item-actions"><button type="button" class="button secondary add-regular">Add</button><button type="button" class="text-button usage-regular">Usage</button><button type="button" class="text-button edit-regular">Edit</button><button type="button" class="text-button remove-regular">Remove</button></div>`;
       row.querySelector('.add-regular').addEventListener('click',e=>{const added=addShoppingEntry({name:item.name,quantity:item.quantity,store:item.store,group:item.group,aisle:item.aisle,source:'Regular item',learnStore:true});saveState();renderShoppingList(added.id);renderCounts();e.currentTarget.textContent='Added ✓';setTimeout(()=>e.currentTarget.textContent='Add',1000);});
       row.querySelector('.edit-regular').addEventListener('click',()=>{const name=prompt('Regular item name:',item.name);if(!name)return;const quantity=prompt('Default quantity or note:',item.quantity||'')??item.quantity;const store=prompt(`Default store:\n${state.stores.join('\n')}`,item.store||'Unassigned')||item.store;item.name=displayShoppingName(name);item.normalizedName=shoppingNameKey(name);item.quantity=quantity.trim();item.store=normalizeStore(store);saveState();showRegularItems();});
+      row.querySelector('.usage-regular').addEventListener('click',()=>openUsageTracking(item,'regular'));
       row.querySelector('.remove-regular').addEventListener('click',()=>{if(!confirm(`Remove ${item.name} from regular items?`))return;state.regularItems=state.regularItems.filter(x=>x.id!==item.id);saveState();showRegularItems();});
       groupBox.append(row)
     });

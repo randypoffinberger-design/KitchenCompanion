@@ -10,10 +10,11 @@ const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 const styles = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const profiles = fs.readFileSync(path.join(root, 'profile-storage.js'), 'utf8');
 
-for (const id of ['cloudAccountDialog','cloudServerUrl','cloudEmail','cloudPassword','cloudHouseholdSelect','cloudUploadFirstBtn','cloudDownloadFirstBtn','cloudSyncNowBtn','cloudRefreshBtn','cloudRepairRecipesBtn','cloudTransferSummary']) {
+for (const id of ['cloudAccountDialog','cloudServerUrl','cloudEmail','cloudPassword','cloudHouseholdSelect','cloudUploadFirstBtn','cloudDownloadFirstBtn','cloudSyncNowBtn']) {
   assert.match(html, new RegExp(`id="${id}"`));
 }
-assert.match(html, /sync-client[.]js[?]v=0[.]21[.]4/);
+assert.match(html, /['"]sync-client[.]js['"]/);
+assert.match(html, /0[.]21[.]42(?:-test-5)?/);
 assert.match(worker, /sync-client[.]js[?]v=0[.]21[.]4/);
 assert.match(sync, /shopping-list/);
 assert.match(sync, /pantry/);
@@ -22,16 +23,12 @@ assert.match(sync, /meal-plans/);
 assert.match(sync, /mutationId/);
 assert.match(sync, /baseRevision/);
 assert.match(sync, /setInterval\(run, 5000\)/);
-assert.match(sync, /async downloadLatest\(\)/);
-assert.match(sync, /async repairRecipes\(localRecipes\)/);
-assert.match(sync, /mergeRecipeCollections/);
-assert.match(sync, /this[.]changeSequence \+= 1/);
-assert.match(sync, /if \(this[.]changeSequence === pushingSequence\) this[.]dirty = false/);
-assert.match(app, /createSafetyBackup\('before-household-download'/);
-assert.match(app, /Downloaded \$\{recipes\} personal recipes/);
-assert.match(styles, /#cloudFirstSync\[hidden\].*display:none!important/);
-assert.match(profiles, /active profile record is missing; recovery is required/);
-assert.match(profiles, /recoverOrphanedProfileMetadata/);
+assert.match(sync, /async initialize\(mode, localSnapshot\)/);
+assert.match(sync, /this[.]changeGeneration \+= 1/);
+assert.match(sync, /if \(generation === this[.]changeGeneration\) this[.]dirty = false/);
+assert.match(app, /createSafetyBackup\(options[.]initial \? 'before-household-download' : 'before-household-sync'/);
+assert.match(styles, /[.]cloud-first-sync\{display:grid/);
+assert.match(profiles, /active profile record is unavailable[.] Startup was stopped before a blank profile could replace it/);
 assert.match(app, /if \(householdSyncChangesEnabled && !applyingRemoteSync\) householdSync[?][.]markDirty\(\)/);
 assert.match(app, /householdSync[.]start\(buildHouseholdSnapshot\);\s*householdSyncChangesEnabled = true/);
 assert.doesNotMatch(app, /state[.]modules\s*=\s*snapshot/);

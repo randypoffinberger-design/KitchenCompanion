@@ -10,14 +10,14 @@ const profile = read('profile-storage.js');
 const manifest = JSON.parse(read('app.webmanifest'));
 const worker = read('service-worker.js');
 
-assert.equal(manifest.name, 'Serenity Kitchen');
-assert.equal(manifest.version, '0.21.4');
-assert.match(html, /Serenity Kitchen by Serenity Valley Works|<strong>Serenity Kitchen<\/strong>[\s\S]*by Serenity Valley Works/);
+assert.ok(['Serenity Kitchen™', 'Serenity Kitchen™ Test'].includes(manifest.name));
+assert.match(manifest.version, /^0[.]21[.]42(?:-test)?$/);
+assert.match(html, /Serenity Kitchen by Serenity Valley Works|<strong>Serenity Kitchen™<\/strong>[\s\S]*by Serenity Valley Works/);
 assert.match(app, /Serenity-Kitchen-Backup-/);
 assert.match(app, /[.]skbackup/);
 assert.match(app, /format:'kitchen-companion-backup'/);
 assert.match(app, /payload[.]format !== 'kitchen-companion-backup'/);
-assert.match(profile, /kitchenCompanion[.]/);
+assert.match(profile, /kitchenCompanion(?:Test)?[.]/);
 assert.match(worker, /serenity-kitchen-home[.]jpeg/);
 assert.match(worker, /serenity-kitchen-icon-1024[.]png/);
 assert.match(app, /if \(els[.]moduleCount\) els[.]moduleCount[.]textContent/);

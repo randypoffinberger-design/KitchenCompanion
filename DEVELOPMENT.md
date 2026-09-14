@@ -1,12 +1,16 @@
 # Kitchen Companion Development Journal
 
 ## Current version
-0.21.41
+0.21.42
 
 ## Current task
-Shopping-item dialog mobile layout correction.
+Generalized usage tracking for Pantry and Regular Items.
 
 ## Completed
+- Expected replacement intervals for household consumables.
+- Purchase-history learning from Pantry lots and checked Regular Items.
+- Recommendation-only interval changes with unusual-purchase safeguards.
+- Per-item controls to ignore purchases or stop future suggestions.
 - Rolling automatic local safety checkpoints (maximum five).
 - Startup checkpoints limited to one per 24 hours; rapid duplicates compact automatically.
 - Manual checkpoint and restore controls in Settings.
