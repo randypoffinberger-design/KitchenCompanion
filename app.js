@@ -5,7 +5,7 @@
   window.__skTestBoot.appLoaded = true;
 
   const STORAGE_KEY = 'recipeEngineState.test.v1';
-  const ENGINE_VERSION = '0.21.42';
+  const ENGINE_VERSION = '0.21.43';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'serenity-kitchen-test-ocr-tesseract-7.0.0-best-int';
@@ -102,6 +102,7 @@
   state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.householdRecipes = state.householdRecipes && typeof state.householdRecipes === 'object' && !Array.isArray(state.householdRecipes) ? state.householdRecipes : {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
   state.settings.listExpansionMode = LIST_EXPANSION_MODES.has(state.settings.listExpansionMode) ? state.settings.listExpansionMode : 'stores-open';
   state.nutritionEstimates = state.nutritionEstimates && typeof state.nutritionEstimates === 'object' && !Array.isArray(state.nutritionEstimates) ? state.nutritionEstimates : {};
+  let recipeListRenderVersion = 0;
   let currentView = 'home';
   let selectedCategory = null;
   let selectedRecipeKey = null;
@@ -1186,7 +1187,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.42-test-5', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.43-test-6', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -1876,8 +1877,13 @@
     else showList();
   }
 
-  function renderRecipeList() {
-    if (currentView === 'modules') return;
+  function renderRecipeList({ onComplete } = {}) {
+    const version = ++recipeListRenderVersion;
+    if (currentView === 'modules' || els.listPane.hidden) return;
+    const pantryIndex = buildPantryReadinessIndex();
+    const favorites = new Set(state.favorites);
+    let interactiveAfter = Infinity;
+    let offset = 0;
     const query = els.searchInput.value.trim().toLowerCase();
     const moduleId = els.moduleFilter.value;
     const selectedFilterCategory = currentView === 'category' ? selectedCategory : els.categoryFilter.value;
@@ -1908,17 +1914,34 @@
         return bTime - aTime || a.name.localeCompare(b.name);
       }
       return a.name.localeCompare(b.name);
-    }).forEach(recipe => {
-      const fragment = document.querySelector('#recipeCardTemplate').content.cloneNode(true);
+    });
+    const template = document.querySelector('#recipeCardTemplate');
+    els.recipeGrid.setAttribute('aria-busy', 'true');
+    function renderBatch() {
+      if (version !== recipeListRenderVersion || els.listPane.hidden) return;
+      const batch = document.createDocumentFragment();
+      const started = performance.now();
+      const limit = Math.min(offset + 24, recipes.length);
+      while (offset < limit) {
+      const recipe = recipes[offset++];
+      const fragment = template.content.cloneNode(true);
       const card = fragment.querySelector('.recipe-card');
+      const eventTime = event => event.timeStamp > 1e12 ? event.timeStamp - performance.timeOrigin : event.timeStamp;
+      let earlyPointer = false;
+      card.addEventListener('pointerdown', event => { earlyPointer = eventTime(event) < interactiveAfter; });
+      const acceptCardInput = event => {
+        const early = earlyPointer || eventTime(event) < interactiveAfter;
+        earlyPointer = false;
+        return !early && version === recipeListRenderVersion && !els.listPane.hidden;
+      };
       fragment.querySelector('.recipe-category').textContent = recipe.category || 'Uncategorized';
-      fragment.querySelector('.recipe-card-topline')?.insertAdjacentHTML('beforeend', pantryReadinessMarker(recipePantryReadiness(recipe), 'solid'));
+      fragment.querySelector('.recipe-card-topline')?.insertAdjacentHTML('beforeend', pantryReadinessMarker(recipePantryReadiness(recipe, 1, pantryIndex), 'solid'));
       const favoriteButton = fragment.querySelector('.recipe-favorite');
-      const isFavorite = state.favorites.includes(recipe.key);
+      const isFavorite = favorites.has(recipe.key);
       favoriteButton.innerHTML = uiIcon(isFavorite ? 'star-filled' : 'star');
       favoriteButton.setAttribute('aria-pressed', String(isFavorite));
       favoriteButton.setAttribute('aria-label', isFavorite ? `Remove ${recipe.name} from favorites` : `Add ${recipe.name} to favorites`);
-      favoriteButton.addEventListener('click', event => { event.stopPropagation(); toggleFavoriteFromList(recipe.key); });
+      favoriteButton.addEventListener('click', event => { event.stopPropagation(); if (acceptCardInput(event)) toggleFavoriteFromList(recipe.key); });
       fragment.querySelector('.recipe-name').textContent = recipe.name;
       const rating = recipeRatingValue(recipe.key);
       const ratingSummary = fragment.querySelector('.recipe-card-rating');
@@ -1933,7 +1956,9 @@
         const span = document.createElement('span'); span.textContent = text; meta.append(span);
       });
       fragment.querySelector('.recipe-source').textContent = recipe.moduleName;
-      const openCard = () => {
+      // Ignore physical input queued before the first recipe frame was visible.
+      const openCard = event => {
+        if (!acceptCardInput(event)) return;
         recipeNavigationStack = [];
         recipeReturnView = 'list';
         recipeListScrollPosition = window.scrollY || document.documentElement.scrollTop || 0;
@@ -1942,8 +1967,22 @@
         showDetail();
       };
       card.addEventListener('click', openCard);
-      card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCard(); } });
-      els.recipeGrid.append(fragment);
+      card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCard(event); } });
+      batch.append(fragment);
+      if (performance.now() - started >= 8) break;
+      }
+      els.recipeGrid.append(batch);
+      if (offset < recipes.length) window.requestAnimationFrame(renderBatch);
+      else {
+        els.recipeGrid.setAttribute('aria-busy', 'false');
+        if (typeof onComplete === 'function') onComplete();
+      }
+    }
+    window.requestAnimationFrame(() => {
+      renderBatch();
+      window.requestAnimationFrame(() => {
+        if (version === recipeListRenderVersion) interactiveAfter = performance.now();
+      });
     });
   }
 
@@ -1955,7 +1994,7 @@
     selectedRecipeKey = null;
     els.homePane.hidden = true; els.listPane.hidden = false; els.detailPane.hidden = true; els.modulesPane.hidden = true; els.shoppingPane.hidden = true; els.pantryPane.hidden = true; els.mealPlannerPane.hidden = true;
     setHomeScreen(false);
-    renderRecipeList();
+    renderRecipeList({ onComplete: restoreScroll ? () => window.scrollTo({ top:recipeListScrollPosition, behavior:'auto' }) : undefined });
     updateWakeLock();
     if (restoreScroll) {
       window.requestAnimationFrame(() => window.scrollTo({ top:recipeListScrollPosition, behavior:'auto' }));
@@ -3106,7 +3145,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.42');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.43');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -4136,9 +4175,20 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return {family:normalized||'items',amount};
   }
 
-  function ingredientPantryReadiness(ingredient, scale=1) {
+  function buildPantryReadinessIndex() {
+    const index = new Map();
+    state.pantryItems.forEach(item => {
+      const key = pantryIngredientMatchKey(item.name);
+      // Preserve the existing first-match behavior when pantry entries overlap.
+      if (!index.has(key)) index.set(key, item);
+    });
+    return index;
+  }
+
+  function ingredientPantryReadiness(ingredient, scale=1, pantryIndex) {
     const legacyRange=legacyRangeIngredient(ingredient);const embedded=extractEmbeddedShoppingQuantity(effectiveIngredientItem(ingredient));const wantedName=cleanShoppingName(embedded.name);
-    const pantry=state.pantryItems.find(item=>pantryIngredientMatchKey(item.name)===pantryIngredientMatchKey(wantedName));
+    const wantedKey = pantryIngredientMatchKey(wantedName);
+    const pantry = pantryIndex ? pantryIndex.get(wantedKey) : state.pantryItems.find(item=>pantryIngredientMatchKey(item.name)===wantedKey);
     if(!pantry||Number(pantry.quantity)<=0)return 'red';
     const requested=legacyRange?legacyRange.range.low*scale:typeof ingredient?.quantity==='number'?ingredient.quantity*(ingredientShouldScale(ingredient)?scale:1):pantryNumber(ingredient?.displayQuantity);
     if(!requested)return 'yellow';
@@ -4149,11 +4199,16 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     return ratio>=1?'green':ratio>=.75?'yellow':'red';
   }
 
-  function recipePantryReadiness(recipe, scale=1) {
+  function recipePantryReadiness(recipe, scale=1, pantryIndex = buildPantryReadinessIndex()) {
     const ingredients=(recipe?.ingredientGroups||[]).flatMap(group=>group.ingredients||[]).filter(ingredient=>ingredient?.item&&!/\b(optional|for serving|to taste|as needed)\b/i.test(`${ingredient.item} ${ingredient.notes||''}`));
     if(!ingredients.length)return 'yellow';
-    const statuses=ingredients.map(ingredient=>ingredientPantryReadiness(ingredient,scale));
-    return statuses.includes('red')?'red':statuses.includes('yellow')?'yellow':'green';
+    let status = 'green';
+    for (const ingredient of ingredients) {
+      const next = ingredientPantryReadiness(ingredient, scale, pantryIndex);
+      if (next === 'red') return 'red';
+      if (next === 'yellow') status = 'yellow';
+    }
+    return status;
   }
 
   function recipePantryReadinessByKey(key) {
