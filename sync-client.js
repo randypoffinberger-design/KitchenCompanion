@@ -3,7 +3,8 @@
 
   const STORAGE_KEY = 'serenityKitchen.sync.v1';
   const COLLECTIONS = ['shopping-list', 'pantry', 'recipes', 'meal-plans'];
-  const DEFAULT_SERVER = 'https://pj.tail96598f.ts.net';
+  const DEFAULT_SERVER = 'https://api.serenityvalleyworks.com/sk';
+  const LEGACY_SERVERS = new Set(['https://pj.tail96598f.ts.net', 'https://randys.tail96598f.ts.net']);
 
   const clone = value => JSON.parse(JSON.stringify(value));
   const uuid = () => globalThis.crypto?.randomUUID?.() || `sync-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -19,6 +20,10 @@
       this.dirty = false;
       this.changeGeneration = 0;
       this.config = this.load();
+      if (LEGACY_SERVERS.has(String(this.config.serverUrl || '').replace(/\/+$/, ''))) {
+        this.config.serverUrl = DEFAULT_SERVER;
+        this.save();
+      }
       if (this.config.recipeOwnershipVersion !== 2) {
         this.config.recipeOwnershipVersion = 2;
         this.config.recipeOwnershipMigrationComplete = false;
@@ -59,8 +64,8 @@
 
     setServerUrl(value) {
       const parsed = new URL(String(value || '').trim());
-      if (parsed.protocol !== 'https:' && parsed.hostname !== '127.0.0.1' && parsed.hostname !== 'localhost') throw new Error('Use the private HTTPS server address.');
-      this.config.serverUrl = parsed.origin;
+      if (parsed.protocol !== 'https:' && parsed.hostname !== '127.0.0.1' && parsed.hostname !== 'localhost') throw new Error('Use an HTTPS server address.');
+      this.config.serverUrl = parsed.origin + parsed.pathname.replace(/\/+$/, '');
       this.save();
     }
 
@@ -69,7 +74,7 @@
       if (this.config.token) headers.authorization = `Bearer ${this.config.token}`;
       let response;
       try { response = await fetch(`${this.serverUrl()}${path}`, { ...options, headers, cache:'no-store' }); }
-      catch { throw new Error('The private server could not be reached. Check Tailscale and the server laptop.'); }
+      catch { throw new Error('The server could not be reached. Check your internet connection and try again.'); }
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         const error = new Error(body.error || `Server request failed (${response.status}).`);

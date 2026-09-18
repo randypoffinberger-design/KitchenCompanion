@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.41">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.41">
+  <link rel="manifest" href="app.webmanifest?v=0.21.42">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.42">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.41">
+  <link rel="stylesheet" href="styles.css?v=0.21.42">
 </head>
 <body>
   <div class="app-shell">
@@ -57,7 +57,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.41</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.42</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -251,7 +251,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.41</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.42</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -314,7 +314,7 @@
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Troubleshooting</summary>
-          <div><p>If an update seems missing, open the hamburger menu and confirm the version at the bottom. Then use Check for app update in Settings and reopen the installed app.</p><p>If household data stops updating, confirm the server and Tailscale connection are available, open Account and household, and use Sync now. Do not choose a first-copy option again unless the app specifically requires it.</p></div>
+          <div><p>If an update seems missing, open the hamburger menu and confirm the version at the bottom. Then use Check for app update in Settings and reopen the installed app.</p><p>If household data stops updating, check your internet connection, open Account and household, and use Sync now. Do not choose a first-copy option again unless the app specifically requires it.</p></div>
         </details>
       </div>
     </div>
@@ -326,7 +326,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.41</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.42</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -411,7 +411,7 @@
   <dialog id="cloudAccountDialog">
     <form id="cloudAccountForm" class="dialog-card cloud-account-card">
       <div class="settings-sticky-header"><h2>Account and household</h2><button type="button" id="closeCloudAccountBtn" class="icon-btn" aria-label="Close account settings"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-      <label>Private server address<input id="cloudServerUrl" type="url" inputmode="url" required value="https://pj.tail96598f.ts.net"></label>
+      <label>Server address<input id="cloudServerUrl" type="url" inputmode="url" required value="https://api.serenityvalleyworks.com/sk"></label>
       <div id="cloudSignedOutPanel">
         <div class="cloud-mode-tabs" role="group" aria-label="Account action"><button type="button" id="cloudLoginMode" class="filter-chip active">Sign in</button><button type="button" id="cloudRegisterMode" class="filter-chip">Create account</button></div>
         <label id="cloudDisplayNameField" hidden>Display name<input id="cloudDisplayName" maxlength="80" autocomplete="name"></label>
@@ -844,13 +844,13 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.41"></script>
-  <script src="recipe-scaling.js?v=0.21.41"></script>
-  <script src="profile-storage.js?v=0.21.41"></script>
-  <script src="url-recipe-import.js?v=0.21.41"></script>
-  <script src="meal-planner.js?v=0.21.41"></script>
-  <script src="sync-client.js?v=0.21.41"></script>
-  <script src="app.js?v=0.21.41"></script>
-  <script src="ocr-service.js?v=0.21.41"></script>
+  <script src="kitchen-engine.js?v=0.21.42"></script>
+  <script src="recipe-scaling.js?v=0.21.42"></script>
+  <script src="profile-storage.js?v=0.21.42"></script>
+  <script src="url-recipe-import.js?v=0.21.42"></script>
+  <script src="meal-planner.js?v=0.21.42"></script>
+  <script src="sync-client.js?v=0.21.42"></script>
+  <script src="app.js?v=0.21.42"></script>
+  <script src="ocr-service.js?v=0.21.42"></script>
 </body>
 </html>
