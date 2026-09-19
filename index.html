@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <meta name="referrer" content="no-referrer">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" id="themeColorMeta" content="#7b3f00">
@@ -9,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.43">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.43">
+  <link rel="manifest" href="app.webmanifest?v=0.21.44">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.44">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.43">
+  <link rel="stylesheet" href="styles.css?v=0.21.44">
 </head>
 <body>
   <div class="app-shell">
@@ -57,7 +58,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.43</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.44</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -251,7 +252,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.43</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.44</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -326,7 +327,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.43</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.44</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -418,9 +419,11 @@
         <label>Email<input id="cloudEmail" type="email" autocomplete="email" required></label>
         <label>Password<input id="cloudPassword" type="password" minlength="12" maxlength="200" autocomplete="current-password" required><span class="setting-help">At least 12 characters.</span></label>
         <button type="submit" id="cloudAuthSubmit" class="button">Sign in</button>
+        <button type="button" id="forgotPasswordBtn" class="button secondary">Forgot password?</button>
       </div>
       <div id="cloudSignedInPanel" hidden>
         <div class="cloud-user-card"><div><strong id="cloudUserName"></strong><span id="cloudUserEmail"></span></div><button type="button" id="cloudLogoutBtn" class="button secondary">Sign out</button></div>
+        <button type="button" id="changePasswordBtn" class="button secondary">Change password</button>
         <label>Household<select id="cloudHouseholdSelect"><option value="">No household yet</option></select></label>
         <div class="cloud-household-actions"><button type="button" id="cloudCreateHouseholdBtn" class="button secondary">Create household</button><button type="button" id="cloudJoinHouseholdBtn" class="button secondary">Join with code</button><button type="button" id="cloudInviteBtn" class="button secondary">Invite household member</button></div>
         <div id="cloudFirstSync" class="cloud-first-sync" hidden>
@@ -432,6 +435,19 @@
         <button type="button" id="cloudSyncNowBtn" class="button" hidden>Sync now</button>
       </div>
       <p id="cloudDialogStatus" class="import-status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
+  <dialog id="passwordDialog" aria-labelledby="passwordTitle">
+    <form id="passwordForm" class="dialog-card cloud-account-card">
+      <h2 id="passwordTitle">Reset your password</h2>
+      <label>Email<input id="passwordEmail" type="email" autocomplete="email" required></label>
+      <label>Current password<input id="passwordCurrent" type="password" autocomplete="current-password" maxlength="200"></label>
+      <label>New password<input id="passwordNew" type="password" autocomplete="new-password" minlength="12" maxlength="200"><span class="setting-help">Use at least 12 characters. You will need to sign in again on your devices.</span></label>
+      <label>Confirm new password<input id="passwordConfirm" type="password" autocomplete="new-password" minlength="12" maxlength="200"></label>
+      <p id="passwordStatus" role="status" aria-live="polite"></p>
+      <button id="passwordSubmit" type="submit" class="button">Send reset link</button>
+      <button id="passwordCancel" type="button" class="button secondary">Cancel</button>
     </form>
   </dialog>
 
@@ -844,13 +860,15 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.43"></script>
-  <script src="recipe-scaling.js?v=0.21.43"></script>
-  <script src="profile-storage.js?v=0.21.43"></script>
-  <script src="url-recipe-import.js?v=0.21.43"></script>
-  <script src="meal-planner.js?v=0.21.43"></script>
-  <script src="sync-client.js?v=0.21.43"></script>
-  <script src="app.js?v=0.21.43"></script>
-  <script src="ocr-service.js?v=0.21.43"></script>
+  <script src="kitchen-engine.js?v=0.21.44"></script>
+  <script src="recipe-scaling.js?v=0.21.44"></script>
+  <script src="profile-storage.js?v=0.21.44"></script>
+  <script src="url-recipe-import.js?v=0.21.44"></script>
+  <script src="meal-planner.js?v=0.21.44"></script>
+  <script src="sync-client.js?v=0.21.44"></script>
+  <script src="password-ui.js?v=0.21.44"></script>
+  <script src="app.js?v=0.21.44"></script>
+  <script src="ocr-service.js?v=0.21.44"></script>
 </body>
 </html>
+
