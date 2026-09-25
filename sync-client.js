@@ -170,7 +170,8 @@
       const applied = result.applied?.[0];
       if (applied) {
         this.config.revisions[this.key(collection, recordId)] = applied.revision;
-        this.config.cursors[this.key(collection)] = Math.max(Number(this.config.cursors[this.key(collection)] || 0), Number(applied.eventId || 0));
+        // A write acknowledgement is not a read cursor: other members may have
+        // written intervening events that this device has not downloaded yet.
       }
       return result;
     }
@@ -223,6 +224,8 @@
 
     async pullUpdates() {
       const updates = {};
+      const generation = this.changeGeneration;
+      const cursors = { ...this.config.cursors }, revisions = { ...this.config.revisions };
       for (const collection of COLLECTIONS) {
         const key = this.key(collection); const result = await this.fetchCollection(collection, this.config.cursors[key] || 0);
         const events = result.events || [];
@@ -231,23 +234,28 @@
           events.filter(item => item.id.startsWith('owner:')).forEach(item => ownerEvents.set(item.id, item));
           if (ownerEvents.size) updates.recipes = { ownerRecords:[...ownerEvents.values()].filter(item => !item.deleted && item.payload).map(item => ({ id:item.id, ...item.payload })) };
           const own = ownerEvents.get(this.recipeOwnerId());
-          if (own) this.config.revisions[this.key(collection, own.id)] = own.revision;
+          if (own) revisions[this.key(collection, own.id)] = own.revision;
         } else {
           const event = [...events].reverse().find(item => item.id === 'shared-state');
           if (event) {
-            this.config.revisions[this.key(collection, 'shared-state')] = event.revision;
+            revisions[this.key(collection, 'shared-state')] = event.revision;
             if (!event.deleted && event.payload) updates[collection] = event.payload;
           }
         }
-        this.config.cursors[key] = result.cursor || this.config.cursors[key] || 0;
+        cursors[key] = result.cursor || this.config.cursors[key] || 0;
       }
+      // Keep edits made while these requests were in flight. Consume the remote
+      // events only after they have actually been applied and saved locally.
+      if (this.dirty || generation !== this.changeGeneration) return {};
       if (Object.keys(updates).length) this.onRemoteState(updates, { initial:false });
+      this.config.cursors = cursors; this.config.revisions = revisions;
       return updates;
     }
 
     async syncNow(localSnapshotProvider) {
       if (!this.isReady() || this.syncing) return;
       this.syncing = true; this.emit('Syncing household…', 'working');
+      let completed = false;
       try {
         if (this.ownershipMigrationPending) {
           const remote = await this.remoteSnapshot();
@@ -267,13 +275,16 @@
           }
           if (generation === this.changeGeneration) this.dirty = false;
         }
-        await this.pullUpdates();
-        this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save(); this.emit('Household is up to date.', 'success');
+        if (!this.dirty) await this.pullUpdates();
+        completed = true;
+        if (!this.dirty) {
+          this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save(); this.emit('Household is up to date.', 'success');
+        } else this.emit('Local changes are waiting to sync.', 'working');
       } finally {
         this.syncing = false;
         if (this.dirty) {
           clearTimeout(this.pushTimer);
-          this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), 100);
+          this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), completed ? 100 : 5000);
         }
       }
     }

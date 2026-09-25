@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8').replace(/\r\n/g, '\n');
 
 assert.match(html, /id="addManyShoppingItemsBtn"/);
 assert.match(html, /id="bulkShoppingDialog"/);

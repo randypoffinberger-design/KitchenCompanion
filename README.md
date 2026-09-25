@@ -1,4 +1,12 @@
-# Serenity Kitchen™ v0.21.39
+# Serenity Kitchen™ v0.21.45
+
+## Release baseline
+
+Run `npm run check` with Node.js 24 or newer before publishing. It checks JavaScript syntax, local assets, matching release versions, and the full regression suite. GitHub runs the same check on pushes and pull requests.
+
+This candidate fixes sync races that could overwrite edits made while a request was in flight, skip unread household events, or consume changes before local storage accepted them. Failed uploads retain pending edits and retry at the normal polling interval. Existing first-copy protection and recipe ownership are preserved.
+
+Automated checks are not a substitute for installed iPhone/Android upgrade and real-device restore testing.
 
 ## Automatic estimated nutrition
 

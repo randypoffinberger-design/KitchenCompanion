@@ -751,3 +751,12 @@
 - Changes app navigation to network-first with an offline cached fallback so installed apps can activate new releases reliably.
 - Waits for a discovered service-worker update to activate before reloading.
 - Keeps browser recovery actions isolated from other installed Home Screen copies.
+# Serenity Kitchen v0.21.45 — release baseline
+
+- Keeps edits made during sync queued instead of applying an older download over them.
+- Keeps download cursors separate from write acknowledgements so household events are not skipped.
+- Advances download cursors only after local application succeeds.
+- Retries failed uploads at five seconds rather than every tenth of a second.
+- Updates stale regression checks and adds behavioral coverage for sync, navigation and guided cooking.
+- Aligns release versions and adds a repeatable automated release check.
+
