@@ -4,12 +4,18 @@
   function text(value) {
     if (Array.isArray(value)) return value.map(text).filter(Boolean).join(', ');
     if (value && typeof value === 'object') return text(value.name || value.text || value['@value']);
-    return String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    let raw = String(value ?? '');
+    if (typeof document !== 'undefined' && document.createElement) {
+      const decoder = document.createElement('textarea');
+      decoder.innerHTML = raw.replace(/<[^>]*>/g, ' ');
+      raw = decoder.value;
+    }
+    return raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   function types(node) {
     return (Array.isArray(node?.['@type']) ? node['@type'] : [node?.['@type']])
-      .map(value => String(value || '').toLowerCase());
+      .map(value => String(value || '').toLowerCase().replace(/^https?:\/\/schema.org\//, ''));
   }
 
   function findRecipes(value, found = []) {
@@ -23,7 +29,7 @@
   function instructionLines(value, lines = [], section = '') {
     if (!value) return lines;
     if (typeof value === 'string') {
-      value.split(/\r?\n+/).map(text).filter(Boolean).forEach(line => lines.push(line));
+      value.replace(/<br\s*\/?\s*>|<\/(?:p|li|div)>/gi, '\n').split(/\r?\n+/).map(text).filter(Boolean).forEach(line => lines.push(line));
       return lines;
     }
     if (Array.isArray(value)) {
@@ -38,7 +44,7 @@
       return lines;
     }
     const line = text(value.text || value.name);
-    if (line) lines.push(line);
+    if (line) instructionLines(value.text || value.name, lines, section);
     else instructionLines(value.itemListElement || value.steps, lines, section);
     return lines;
   }
@@ -138,8 +144,62 @@
       category: category(recipe.recipeCategory),
       tags,
       ingredients,
-      instructions
+      instructions,
+      nutrition: nutritionText(recipe.nutrition),
+      nutritionMeta: recipe.nutrition ? { source:'source' } : undefined
     };
+  }
+
+  function nutritionText(value) {
+    if (!value || typeof value !== 'object') return text(value);
+    const fields = { servingSize:'Serving size', calories:'Calories', fatContent:'Fat', saturatedFatContent:'Saturated fat',
+      unsaturatedFatContent:'Unsaturated fat', transFatContent:'Trans fat', cholesterolContent:'Cholesterol', sodiumContent:'Sodium',
+      carbohydrateContent:'Carbohydrates', fiberContent:'Fiber', sugarContent:'Sugar', proteinContent:'Protein' };
+    return Object.entries(fields).filter(([key]) => text(value[key])).map(([key, label]) => `${label}: ${text(value[key])}`).join('\n');
+  }
+
+  function readRecipeCards(page) {
+    const roots = page.querySelectorAll('[itemtype~="https://schema.org/Recipe"], [itemtype~="http://schema.org/Recipe"], .wprm-recipe-container, .tasty-recipes');
+    const value = node => node ? text(node.getAttribute('content') || node.getAttribute('datetime') || node.innerHTML || node.textContent) : '';
+    const result = [];
+    for (const root of roots) {
+      const one = selectors => value(root.querySelector(selectors));
+      const title = root.querySelector('.wprm-recipe-name, .tasty-recipes-title') ||
+        [...root.querySelectorAll('[itemprop~="name"]')].find(node => !node.closest('[itemscope]') || node.closest('[itemscope]') === root);
+      const many = selectors => [...root.querySelectorAll(selectors)].map(value).filter(Boolean);
+      const recipe = {
+        '@type':'Recipe',
+        name:value(title),
+        description:one('[itemprop~="description"], .wprm-recipe-summary, .tasty-recipes-description'),
+        recipeIngredient:many('[itemprop~="recipeIngredient"], .wprm-recipe-ingredient, .tasty-recipes-ingredients li'),
+        recipeInstructions:[],
+        recipeYield:one('[itemprop~="recipeYield"], .wprm-recipe-servings-container, .tasty-recipes-yield'),
+        prepTime:one('[itemprop~="prepTime"], .wprm-recipe-prep_time-container, .tasty-recipes-prep-time'),
+        cookTime:one('[itemprop~="cookTime"], .wprm-recipe-cook_time-container, .tasty-recipes-cook-time'),
+        totalTime:one('[itemprop~="totalTime"]'),
+        author:one('[itemprop~="author"], .wprm-recipe-author, .tasty-recipes-author-name'),
+        cookNote:one('.wprm-recipe-notes, .tasty-recipes-notes'),
+        nutrition:{}
+      };
+      const steps = root.querySelectorAll('[itemprop~="recipeInstructions"], .wprm-recipe-instruction-text, .tasty-recipes-instructions');
+      for (const step of steps) {
+        // Some microdata wraps every step in one property; others repeat the
+        // property per step. Do not add nested properties twice.
+        if ([...steps].some(other => other !== step && other.contains(step))) continue;
+        const children = step.querySelectorAll('li, [itemprop~="text"]');
+        if (children.length) {
+          for (const child of children) {
+            if ([...children].some(other => other !== child && other.contains(child))) continue;
+            if (value(child)) recipe.recipeInstructions.push(value(child));
+          }
+        } else recipe.recipeInstructions.push(...instructionLines(step.innerHTML || step.textContent));
+      }
+      const nutrition = root.querySelector('[itemprop~="nutrition"]');
+      if (nutrition) for (const field of nutrition.querySelectorAll('[itemprop]')) recipe.nutrition[field.getAttribute('itemprop')] = value(field);
+      if (!Object.keys(recipe.nutrition).length) recipe.nutrition = one('.wprm-nutrition-label-container, .tasty-recipes-nutrition');
+      if (recipe.name && recipe.recipeIngredient.length && recipe.recipeInstructions.length) result.push(recipe);
+    }
+    return result;
   }
 
   function parseHtml(html, sourceUrl = '') {
@@ -150,18 +210,52 @@
       try { findRecipes(JSON.parse(script.textContent), recipes); }
       catch { /* Ignore unrelated or malformed metadata blocks. */ }
     });
-    if (!recipes.length) throw new Error('This page does not contain supported Recipe data.');
     const ranked = recipes.sort((a, b) =>
       ((b.recipeIngredient?.length || 0) + (b.recipeInstructions?.length || 0))
       - ((a.recipeIngredient?.length || 0) + (a.recipeInstructions?.length || 0)));
+    ranked.push(...readRecipeCards(document));
+    if (!ranked.length) throw new Error('This page does not contain supported Recipe data. Try the direct recipe page, or use Paste recipe or Import from images.');
     let lastError;
     const cookNote = extractCookNote(document);
     for (const recipe of ranked) {
-      try { return normalizeRecipe(recipe, sourceUrl, cookNote); }
+      try { return normalizeRecipe(recipe, sourceUrl, recipe.cookNote || cookNote); }
       catch (error) { lastError = error; }
     }
     throw lastError || new Error('No complete recipe was found on this page.');
   }
 
-  globalThis.KCUrlRecipeImport = { parseHtml, normalizeRecipe, duration, category, extractCookNote, findRecipes };
+  async function fetchPage(url, { sync, endpoint = '', fetcher = globalThis.fetch } = {}) {
+    if (sync?.isSignedIn?.()) {
+      try {
+        const result = await sync.importRecipePage(url);
+        if (!result?.html) throw new Error('The recipe server returned an empty page. Try another recipe link.');
+        return { html:result.html, finalUrl:result.finalUrl || url };
+      } catch (error) {
+        if (error.status === 401) throw new Error('Your session expired. Sign in again to import this recipe.');
+        if (error.status === 429) throw new Error('Too many recipe imports. Wait a moment, then try again.');
+        if (error.status === 404) throw new Error('The recipe import service is unavailable. Try again later or use Paste recipe.');
+        throw error;
+      }
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    try {
+      if (endpoint) {
+        const response = await fetcher(endpoint, { method:'POST', signal:controller.signal,
+          headers:{ 'Content-Type':'application/json', Accept:'application/json' }, body:JSON.stringify({ url }) });
+        const result = await response.json();
+        if (!response.ok || !result?.html) throw new Error(result.error || 'The recipe import service could not read this page.');
+        return { html:result.html, finalUrl:result.finalUrl || url };
+      }
+      const response = await fetcher(url, { signal:controller.signal, credentials:'omit', headers:{ Accept:'text/html,application/xhtml+xml' } });
+      if (!response.ok) throw new Error(`The recipe website returned ${response.status}.`);
+      return { html:await response.text(), finalUrl:response.url || url };
+    } catch (error) {
+      if (error.name === 'AbortError') throw new Error('The recipe page took too long to load. Try again or use Paste recipe.');
+      if (endpoint) throw error;
+      throw new Error('Sign in to use server recipe importing. This website could not be read directly; Paste recipe and Import from images are also available.');
+    } finally { clearTimeout(timeout); }
+  }
+
+  globalThis.KCUrlRecipeImport = { parseHtml, normalizeRecipe, duration, category, extractCookNote, findRecipes, fetchPage };
 })();

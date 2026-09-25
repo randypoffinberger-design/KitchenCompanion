@@ -7,7 +7,10 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 
-assert.equal((html.match(/class="settings-section"/g) || []).length, 9);
+const sections = [...html.matchAll(/class="settings-section"[^>]*>\s*<summary>([^<]+)<\/summary>/g)].map(match => match[1]);
+assert.deepEqual(sections, ['App and updates', 'Account and household sharing', 'Profiles and recipes',
+  'Appearance and measurements', 'Lists and organization', 'Guided cooking and voice', 'Timers and alarms',
+  'Offline image recognition', 'Backup, restore, and safeguards', 'Feedback and support']);
 assert.match(html, /class="settings-section" open>\s*<summary>App and updates/);
 assert.match(html, /aria-label="Close settings"/);
 assert.match(html, /id="guidedVoiceSelect"/);

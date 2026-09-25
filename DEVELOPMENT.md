@@ -1,10 +1,10 @@
-# Kitchen Companion Development Journal
+# Serenity Kitchen Development Journal
 
 ## Current version
-0.21.41
+0.21.46
 
 ## Current task
-Shopping-item dialog mobile layout correction.
+Server-first URL importer following the v0.21.45 baseline. Run `npm ci` and `npm run check` before publishing. Deploy the separately prepared server v0.1.6 update first. Current checks cover the release baseline, sync races, navigation, guided cooking, HTML recipe formats and importer routing. Real-device installed-app upgrades and authenticated cloud import verification remain release checks.
 
 ## Completed
 - Rolling automatic local safety checkpoints (maximum five).
@@ -12,7 +12,7 @@ Shopping-item dialog mobile layout correction.
 - Manual checkpoint and restore controls in Settings.
 - Storage schema and migration status diagnostics.
 - Built-in regression smoke checks.
-- Consistent 0.12.1 cache-busting and service-worker versioning.
+- Consistent app, manifest, checkpoint, and service-worker versioning enforced by the release check.
 - Previous release remains untouched as the rollback build.
 
 ## Release checklist

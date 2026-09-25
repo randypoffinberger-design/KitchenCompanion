@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.44';
+  const ENGINE_VERSION = '0.21.46';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1177,7 +1177,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.44', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.46', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2832,36 +2832,10 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   globalThis.KCImageImportUi = { setStage: setImageImportStage };
 
   async function fetchRecipePage(url) {
-    try {
-      const response = await fetch(url, { headers:{ Accept:'text/html,application/xhtml+xml' } });
-      if (!response.ok) throw new Error(`website returned ${response.status}`);
-      return { html:await response.text(), finalUrl:response.url || url };
-    } catch (directError) {
-      if (householdSync?.isSignedIn?.()) {
-        try {
-          const result = await householdSync.importRecipePage(url);
-          if (!result?.html) throw new Error('The private server returned an empty page.');
-          return { html:result.html, finalUrl:result.finalUrl || url };
-        } catch (serverError) {
-          if (serverError.status === 404) throw new Error('The private server needs Serenity Kitchen Test Server v0.1.2 before it can import blocked recipe websites.');
-          throw serverError;
-        }
-      }
-      const endpoint = document.querySelector('meta[name="kc-url-import-endpoint"]')?.content?.trim();
-      if (!endpoint) {
-        throw new Error('This website blocks direct recipe import. Sign in to the private Serenity Kitchen server, or use Paste recipe or Import from images.');
-      }
-      const response = await fetch(endpoint, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', Accept:'application/json' },
-        body:JSON.stringify({ url })
-      });
-      let result = {};
-      try { result = await response.json(); } catch {}
-      if (!response.ok) throw new Error(result.error || `Recipe import service returned ${response.status}.`);
-      if (!result.html) throw new Error('The recipe import service returned an empty page.');
-      return { html:result.html, finalUrl:result.finalUrl || url };
-    }
+    return globalThis.KCUrlRecipeImport.fetchPage(url, {
+      sync:householdSync,
+      endpoint:document.querySelector('meta[name="kc-url-import-endpoint"]')?.content?.trim() || ''
+    });
   }
 
   async function importRecipeFromUrl(event) {
@@ -3135,7 +3109,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.44');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.46');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);

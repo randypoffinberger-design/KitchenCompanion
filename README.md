@@ -1,4 +1,18 @@
-# Serenity Kitchen™ v0.21.39
+# Serenity Kitchen™ v0.21.46
+
+## Server-first recipe importing
+
+Signed-in URL imports use the authenticated recipe server first. The review editor can read JSON-LD, Recipe microdata, WordPress Recipe Maker cards and Tasty Recipes cards. Imports preserve encoded fractions, HTML step boundaries, source attribution and source nutrition. Pages without a complete supported recipe still offer paste/image fallbacks rather than inventing missing information.
+
+Deploy the separately prepared SK server v0.1.6 update before this web candidate: it connects the import route to the pinned-IP, compressed-page reader and fixes the old Node DNS callback failure. Extraction and review remain in the app; the server retrieves the public HTML. No image upload or AI service was added.
+
+## Release baseline
+
+Run `npm ci`, then `npm run check` with Node.js 24 or newer before publishing. It checks JavaScript syntax, local assets, matching release versions, and the full regression suite. GitHub runs the same check on pushes and pull requests.
+
+This candidate fixes sync races that could overwrite edits made while a request was in flight, skip unread household events, or consume changes before local storage accepted them. Failed uploads retain pending edits and retry at the normal polling interval. Existing first-copy protection and recipe ownership are preserved.
+
+Automated checks are not a substitute for installed iPhone/Android upgrade and real-device restore testing.
 
 ## Automatic estimated nutrition
 
