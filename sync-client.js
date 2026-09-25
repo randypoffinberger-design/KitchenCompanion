@@ -89,8 +89,15 @@
     }
 
     async importRecipePage(url) {
-      if (!this.isSignedIn()) throw new Error('Sign in to the private Serenity Kitchen server before importing a blocked recipe website.');
-      return this.request('/api/v1/recipes/import-url', { method:'POST', body:JSON.stringify({ url }) });
+      if (!this.isSignedIn()) throw new Error('Sign in to use server recipe importing.');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
+      try {
+        return await this.request('/api/v1/recipes/import-url', { method:'POST', signal:controller.signal, body:JSON.stringify({ url }) });
+      } catch (error) {
+        if (controller.signal.aborted) throw new Error('The recipe server took too long to respond. Try again or use Paste recipe.');
+        throw error;
+      } finally { clearTimeout(timeout); }
     }
 
     async estimateNutrition(payload) {

@@ -1,10 +1,10 @@
 # Serenity Kitchen Development Journal
 
 ## Current version
-0.21.45
+0.21.46
 
 ## Current task
-Release baseline: run `npm run check` before publishing. The suite covers the current UI, first-copy sync safeguards, in-flight edits, unread events, storage failure, and retry pacing. URL importer changes follow in a separate build.
+Server-first URL importer following the v0.21.45 baseline. Run `npm ci` and `npm run check` before publishing. Deploy the separately prepared server v0.1.6 update first. Current checks cover the release baseline, sync races, navigation, guided cooking, HTML recipe formats and importer routing. Real-device installed-app upgrades and authenticated cloud import verification remain release checks.
 
 ## Completed
 - Rolling automatic local safety checkpoints (maximum five).

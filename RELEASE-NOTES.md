@@ -760,3 +760,10 @@
 - Updates stale regression checks and adds behavioral coverage for sync, navigation and guided cooking.
 - Aligns release versions and adds a repeatable automated release check.
 
+# Serenity Kitchen v0.21.46 — server-first URL importing
+
+- Uses the authenticated server first for signed-in recipe URL imports.
+- Adds Recipe microdata and common WordPress Recipe Maker/Tasty Recipes card fallbacks.
+- Preserves source nutrition, encoded fractions, separate HTML cooking steps and source attribution.
+- Keeps imports in the review editor and improves timeout/session/rate-limit messages.
+- Requires the separately prepared server v0.1.6 fetch-path correction for reliable server retrieval.
