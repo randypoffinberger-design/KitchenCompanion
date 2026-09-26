@@ -170,6 +170,7 @@
       } catch (error) {
         const current = error.status === 409 ? error.body?.conflicts?.find(item => item.id === recordId)?.current : null;
         if (!current) throw error;
+        if (collection === 'recipes') throw new Error('Recipe sync paused: another device has newer recipes. Your local and server copies have been kept. Automatic replacement is blocked.');
         result = await this.request(`/api/v1/households/${id}/sync/${collection}`, {
           method:'POST', body:JSON.stringify({ changes:[{ id:recordId, mutationId:uuid(), baseRevision:Number(current.revision || 0), payload }] })
         });

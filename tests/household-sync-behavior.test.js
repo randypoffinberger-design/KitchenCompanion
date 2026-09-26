@@ -20,6 +20,34 @@ function harness() {
 const snapshot = { 'shopping-list':{ shoppingList:[{ id:'milk', name:'Milk' }] }, pantry:{ pantryItems:[] },
   recipes:{ personalRecipes:[{ id:'r1', name:'Soup' }] }, 'meal-plans':{ mealPlans:{} } };
 function ready(client) { client.config.initializedHouseholds[client.initializationKey()] = true; }
+
+test('stale recipe upload never retries with the server revision', async () => {
+  const { client } = harness(); let attempts = 0;
+  client.request = async () => {
+    attempts++;
+    throw Object.assign(new Error('Conflict'), {status:409,body:{conflicts:[{id:'owner:user-1',current:{revision:8,payload:{personalRecipes:[{id:'new-recipe'}]}}}]}});
+  };
+  await assert.rejects(client.pushCollection('recipes', snapshot.recipes, 1), /Automatic replacement is blocked/);
+  assert.equal(attempts, 1);
+  assert.equal(client.config.revisions[client.key('recipes', 'owner:user-1')], undefined);
+});
+
+test('ownership migration keeps local personal recipes and separates other members', () => {
+  const {loadFunctions} = require('./helpers/app-functions.cjs');
+  const personal = {recipes:[{id:'sheree-local',name:'Local recipe'}]}, state={householdRecipes:{}};
+  const app = loadFunctions(['applyHouseholdSnapshot'], {
+    state,applyingRemoteSync:false,currentView:'home',
+    profileStore:{createSafetyBackup(){},createAutomaticRecoverySnapshot:()=>Promise.resolve(),saveCombinedState(){}},
+    householdSync:{summary:()=>({user:{id:'sheree'}})},ensurePersonalModule:()=>personal,
+    migrateState(){},refreshAll(){},console
+  });
+  app.applyHouseholdSnapshot({recipes:{ownerRecords:[
+    {ownerUserId:'randy',personalRecipes:[{id:'randy-recipe'}]},
+    {ownerUserId:'sheree',personalRecipes:[]}
+  ]}},{ownershipMigration:true});
+  assert.deepEqual(personal.recipes,[{id:'sheree-local',name:'Local recipe'}]);
+  assert.deepEqual(copy(state.householdRecipes.randy.recipes),[{id:'randy-recipe'}]);
+});
 test('first download applies the household copy before marking the profile ready', async () => {
   const { client, applied } = harness();
   const remote = { ...snapshot, recipes:{ ownerRecords:[{ id:'owner:user-1', personalRecipes:snapshot.recipes.personalRecipes }] } };
