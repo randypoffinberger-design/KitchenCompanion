@@ -21,15 +21,18 @@ const snapshot = { 'shopping-list':{ shoppingList:[{ id:'milk', name:'Milk' }] }
   recipes:{ personalRecipes:[{ id:'r1', name:'Soup' }] }, 'meal-plans':{ mealPlans:{} } };
 function ready(client) { client.config.initializedHouseholds[client.initializationKey()] = true; }
 
-test('stale recipe upload never retries with the server revision', async () => {
-  const { client } = harness(); let attempts = 0;
-  client.request = async () => {
-    attempts++;
-    throw Object.assign(new Error('Conflict'), {status:409,body:{conflicts:[{id:'owner:user-1',current:{revision:8,payload:{personalRecipes:[{id:'new-recipe'}]}}}]}});
+test('stale recipe edits keep a conflict copy without force-retrying the newer revision', async () => {
+  const { client, applied } = harness(); const writes = [];
+  client.request = async (url, options) => {
+    if (options.method === 'GET') return {events:[],cursor:0};
+    const operation = JSON.parse(options.body).changes[0]; writes.push(operation);
+    throw Object.assign(new Error('Conflict'), {status:409,body:{conflicts:[{id:operation.id,mutationId:operation.mutationId,current:{version:'a'.repeat(64),payload:{id:'r1',name:'New soup'}}}]}});
   };
-  await assert.rejects(client.pushCollection('recipes', snapshot.recipes, 1), /Automatic replacement is blocked/);
-  assert.equal(attempts, 1);
-  assert.equal(client.config.revisions[client.key('recipes', 'owner:user-1')], undefined);
+  await client.pushCollection('recipes', snapshot.recipes);
+  assert.equal(writes.length, 1); assert.equal(writes[0].baseVersion, null);
+  const recipes = applied[0].data.recipes.ownerRecords[0].personalRecipes;
+  assert.equal(recipes.find(r=>r.id==='r1').name, 'New soup');
+  assert.equal(recipes.find(r=>r.conflictOf==='r1').name, 'Soup (conflict copy)');
 });
 
 test('ownership migration keeps local personal recipes and separates other members', () => {
@@ -82,14 +85,14 @@ test('uninitialized and unrelated profiles cannot queue writes', () => {
 });
 test('edits during upload remain queued and are not overwritten by a pull', async () => {
   const { client, timers } = harness(); ready(client); client.markDirty();
-  let pushes = 0, pulls = 0;
+  let pushes = 0, pulls = 0; client.recipeSync.sync = async () => true;
   client.pushCollection = async () => { if (++pushes === 1) client.markDirty(); };
   client.pullUpdates = async () => { pulls++; };
   await client.syncNow(() => snapshot);
   assert.equal(client.dirty, true); assert.equal(pulls, 0);
   assert.ok([...timers.values()].some(timer => timer.delay >= 100));
   await client.syncNow(() => snapshot);
-  assert.equal(client.dirty, false); assert.equal(pulls, 1); assert.equal(pushes, 8);
+  assert.equal(client.dirty, false); assert.equal(pulls, 1); assert.equal(pushes, 6);
 });
 test('local edits during download defer remote apply and cursor advancement', async () => {
   const { client, applied } = harness(); ready(client);
@@ -108,15 +111,19 @@ test('failed remote application does not consume downloaded changes', async () =
   await assert.rejects(client.pullUpdates(), /Storage full/);
   assert.equal(client.config.cursors[client.key('shopping-list')], undefined);
 });
-test('recipe pushes use the signed-in owner without skipping unread remote events', async () => {
+test('recipe writes carry per-recipe revisions and never advance a read cursor from an acknowledgement', async () => {
   const { client } = harness(); let sent;
-  client.request = async (url, options) => { sent = JSON.parse(options.body); return { applied:[{ revision:3, eventId:20 }] }; };
-  client.config.cursors[client.key('recipes')] = 7;
-  await client.pushCollection('recipes', snapshot.recipes, 2);
-  assert.equal(sent.changes[0].id, 'owner:user-1'); assert.equal(sent.changes[0].baseRevision, 2);
-  assert.equal(client.config.revisions[client.key('recipes', 'owner:user-1')], 3);
-  assert.equal(client.config.cursors[client.key('recipes')], 7);
+  client.request = async (url, options) => {
+    if(options.method==='GET')return {events:[],cursor:0};
+    sent=JSON.parse(options.body).changes[0]; return {applied:[{id:sent.id,mutationId:sent.mutationId,version:'b'.repeat(64)}]};
+  };
+  await client.pushCollection('recipes', snapshot.recipes);
+  assert.equal(sent.id, 'r1'); assert.equal(sent.baseVersion, null);
+  assert.equal(sent.ownerUserId, undefined); // Ownership comes from authentication.
+  assert.equal(client.recipeSync.data.versions.r1, 'b'.repeat(64));
+  assert.equal(client.recipeSync.data.cursor, 0);
 });
+
 test('network failure retains queued changes without a rapid retry loop', async () => {
   const { client, timers } = harness(); ready(client); client.markDirty(); timers.clear();
   client.pushCollection = async () => { throw new Error('Offline'); };

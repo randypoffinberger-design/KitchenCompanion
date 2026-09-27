@@ -1,4 +1,8 @@
-# Serenity Kitchen™ v0.21.46
+# Serenity Kitchen™ v0.21.48
+
+## Recipe removal and safe sharing
+
+Remove from this device changes only this device's local visibility. Other people keep access; both people can remove and restore independently. Recipe edits use owner-authenticated per-recipe revisions and preserve conflicting versions. Install server 0.1.8 before this client. See [release notes](RELEASE-NOTES-v0.21.48.md).
 
 ## Server-first recipe importing
 
@@ -500,7 +504,7 @@ After uploading v0.9.2, open the GitHub Pages site in Safari and use **Settings 
 
 ## v0.9.2 cookbook management
 
-Personal recipes support permanent deletion. Module recipes support persistent hiding and can be restored from Settings → Hidden Recipes. Timers use persistent finished states with dismissible repeating alarms, and scaled cup amounts favor practical kitchen measurements.
+Personal, shared, and module recipes support **Remove from this device**. This saves a local visibility preference and leaves other devices and household members' copies intact. If both people remove a recipe, neither sees it on that device; either can restore it through Settings → Hidden Recipes. It does not permanently delete the server recipe. Timers use persistent finished states with dismissible repeating alarms, and scaled cup amounts favor practical kitchen measurements.
 
 ## v0.11.0 local profiles
 

@@ -6,7 +6,7 @@ const source=fs.readFileSync(__dirname+'/../sync-client.js','utf8');
 function harness(url){
  let saved={serverUrl:url,token:'preserved',recipeOwnershipVersion:2,recipeOwnershipMigrationComplete:true,cursors:{a:12},households:[]};
  const requests=[];
- const context={URL,window:{},localStorage:{getItem:()=>JSON.stringify(saved),setItem:(k,v)=>{saved=JSON.parse(v)}},fetch:async(url)=>{requests.push(url);return {ok:true,json:async()=>({ok:true})}}};
+ const context={URL,window:{}, clearInterval(){}, clearTimeout(){},localStorage:{getItem:()=>JSON.stringify(saved),setItem:(k,v)=>{saved=JSON.parse(v)}},fetch:async(url)=>{requests.push(url);return {ok:true,json:async()=>({ok:true})}}};
  vm.runInNewContext(source,context);
  const sync=new context.window.SKHouseholdSync();
  return {sync,requests,saved:()=>saved};
