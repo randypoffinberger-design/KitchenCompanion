@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.47';
+  const ENGINE_VERSION = '0.21.48';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -157,6 +157,12 @@
   const householdSync = new SKHouseholdSync({
     profileId:profileStore.getActiveProfileMeta()?.profileId || '',
     onRemoteState:applyHouseholdSnapshot,
+    confirmProfileBinding:user => {
+      const count = state.modules.find(module => module.moduleId === 'my-recipes')?.recipes?.length || 0;
+      return !count || confirm(`This local profile contains ${count} personal recipes. Do they belong to ${user.displayName || user.email}?
+
+Continue to share them as this account's recipes. Cancel and choose a separate local profile if they belong to someone else.`);
+    },
     onStatus:status => { renderCloudAccount(); setCloudStatus(status.message, status.kind); }
   });
 
@@ -1177,7 +1183,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.47', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.21.48', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2369,7 +2375,7 @@
         </div>
         <span class="module-badge">${escapeHtml(recipe.moduleName)} · ${escapeHtml(recipe.publisher || 'Unknown publisher')}</span>
         ${renderRecipeRating(recipe)}
-        <div class="recipe-action-row"><button id="startGuidedCookingBtn" class="button">${uiIcon('cook')} ${guidedProgress > 0 && guidedResumeEntry ? `Resume${guidedResumeEntry.section ? ` ${escapeHtml(guidedResumeEntry.section)},` : ' at'} step ${guidedResumeEntry.number}` : 'Start guided cooking'}</button><button id="favoriteRecipeBtn" class="favorite-button">${uiIcon(favorite ? 'star-filled' : 'star')}<span>${favorite ? 'Saved' : 'Favorite'}</span></button><button id="editRecipeBtn" class="button secondary">${uiIcon('edit')} Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : '<button id="hideRecipeBtn" class="button danger">Hide recipe</button>'}</div>
+        <div class="recipe-action-row"><button id="startGuidedCookingBtn" class="button">${uiIcon('cook')} ${guidedProgress > 0 && guidedResumeEntry ? `Resume${guidedResumeEntry.section ? ` ${escapeHtml(guidedResumeEntry.section)},` : ' at'} step ${guidedResumeEntry.number}` : 'Start guided cooking'}</button><button id="favoriteRecipeBtn" class="favorite-button">${uiIcon(favorite ? 'star-filled' : 'star')}<span>${favorite ? 'Saved' : 'Favorite'}</span></button><button id="editRecipeBtn" class="button secondary">${uiIcon('edit')} Edit</button><button id="shareRecipeBtn" class="button secondary">Share recipe</button>${recipe.copiedFrom ? '<button id="viewOriginalBtn" class="button secondary">View original</button>' : ''}${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Remove from this device</button>' : '<button id="hideRecipeBtn" class="button danger">Remove from this device</button>'}</div>
       </section>
       <div class="scale-bar"><strong>Scale recipe:</strong>${[0.5,1,1.5,2,3].map(scale => `<button class="scale-button ${scale === activeScale ? 'active' : ''}" data-scale="${scale}">${scale}×</button>`).join('')}</div>
       <div class="recipe-layout">
@@ -2382,7 +2388,7 @@
       <section class="recipe-section recipe-notes"><h2>My notes</h2><textarea id="recipeNotesInput" placeholder="Add changes, reminders, results, or ideas for next time…">${escapeHtml(state.recipeNotes?.[recipe.key] || '')}</textarea><div id="saveNoteStatus" class="save-note-status"></div></section>`;
     } catch (error) {
       console.error('Recipe detail rendering failed.', error);
-      els.recipeDetail.innerHTML = `<section class="recipe-hero recipe-render-recovery"><div class="recipe-kicker">${escapeHtml(recipe.category || 'Uncategorized')}</div><h1>${escapeHtml(recipe.name || 'Recipe')}</h1><p>This recipe could not be fully displayed, but its saved data is still present.</p><details><summary>Technical detail</summary><code>${escapeHtml(error?.message || String(error))}</code></details><div class="recipe-action-row"><button id="editRecipeBtn" class="button secondary">Edit and repair recipe</button>${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Delete recipe</button>' : ''}</div></section>`;
+      els.recipeDetail.innerHTML = `<section class="recipe-hero recipe-render-recovery"><div class="recipe-kicker">${escapeHtml(recipe.category || 'Uncategorized')}</div><h1>${escapeHtml(recipe.name || 'Recipe')}</h1><p>This recipe could not be fully displayed, but its saved data is still present.</p><details><summary>Technical detail</summary><code>${escapeHtml(error?.message || String(error))}</code></details><div class="recipe-action-row"><button id="editRecipeBtn" class="button secondary">Edit and repair recipe</button>${recipe.moduleId === 'my-recipes' ? '<button id="deleteRecipeBtn" class="button danger">Remove from this device</button>' : ''}</div></section>`;
       document.querySelector('#editRecipeBtn')?.addEventListener('click', () => openRecipeEditor(recipe));
       document.querySelector('#deleteRecipeBtn')?.addEventListener('click', () => deletePersonalRecipe(recipe));
       return;
@@ -2558,31 +2564,26 @@
     });
   }
 
-  function deletePersonalRecipe(recipe) {
-    if (recipe.moduleId !== 'my-recipes') return;
-    if (!confirm(`Permanently delete “${recipe.name}”?
+  function removeRecipeFromDevice(recipe) {
+    if (!recipe?.key) return;
+    if (!confirm(`Remove “${recipe.name}” from this device?
 
-This removes the recipe, its favorite status, notes, and related personal metadata from this device.`)) return;
+Other devices and household members keep their copies. You can restore it from Settings → Hidden Recipes.`)) return;
+    const previous = [...state.hiddenRecipes];
     try {
-      requireSafetyCheckpoint('before-recipe-delete');
-      const personal = ensurePersonalModule();
-      personal.recipes = personal.recipes.filter(item => item.id !== recipe.id);
-      cleanupRecipeReferences(recipe.key);
-      state.hiddenRecipes = state.hiddenRecipes.filter(key => key !== recipe.key);
-      selectedRecipeKey = null;
-      saveState(); refreshAll(); showList();
-    } catch (error) { alert(`Recipe was not deleted: ${error.message}`); }
+      if (!state.hiddenRecipes.includes(recipe.key)) state.hiddenRecipes.push(recipe.key);
+      // Keep the recipe contents and references. Only this profile's local
+      // visibility changes, and that preference is never part of household sync.
+      profileStore.saveCombinedState(state);
+      selectedRecipeKey = null; refreshAll({ save:false }); showList();
+    } catch (error) { state.hiddenRecipes = previous; alert(`Recipe was not removed: ${error.message}`); }
   }
 
-  function hideModuleRecipe(recipe) {
-    if (recipe.moduleId === 'my-recipes') return;
-    if (!confirm(`Hide “${recipe.name}”?
-
-The recipe remains installed and can be restored from Settings → Hidden Recipes.`)) return;
-    if (!state.hiddenRecipes.includes(recipe.key)) state.hiddenRecipes.push(recipe.key);
-    selectedRecipeKey = null;
-    saveState(); refreshAll(); showList();
+  function deletePersonalRecipe(recipe) {
+    if (recipe.moduleId === 'my-recipes') removeRecipeFromDevice(recipe);
   }
+
+  function hideModuleRecipe(recipe) { removeRecipeFromDevice(recipe); }
 
   function renderHiddenRecipes() {
     if (!els.hiddenRecipesList) return;
@@ -3109,7 +3110,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.47');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.21.48');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -5276,6 +5277,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
     if (!snapshot || typeof snapshot !== 'object') return;
     profileStore.createSafetyBackup(options.initial ? 'before-household-download' : 'before-household-sync', { force:true });
     profileStore.createAutomaticRecoverySnapshot(options.initial ? 'before-household-download' : 'before-household-sync').catch(error => console.warn('The automatic recovery snapshot could not be created.', error));
+    const previousState = JSON.parse(JSON.stringify(state));
     applyingRemoteSync = true;
     try {
       const shopping = snapshot['shopping-list'];
@@ -5286,14 +5288,13 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (snapshot.pantry?.pantryItems !== undefined) state.pantryItems = JSON.parse(JSON.stringify(snapshot.pantry.pantryItems));
       const recipes = snapshot.recipes;
       if (recipes) {
-        state.householdRecipes = state.householdRecipes && typeof state.householdRecipes === 'object' ? state.householdRecipes : {};
+        state.householdRecipes = options.recipeReconciled ? {} : state.householdRecipes && typeof state.householdRecipes === 'object' ? state.householdRecipes : {};
         const ownUserId = householdSync.summary().user?.id || '';
         (recipes.ownerRecords || []).forEach(record => {
           const ownerUserId = String(record.ownerUserId || record.id || '').replace(/^owner:/, '');
           if (!ownerUserId) return;
           if (ownerUserId === ownUserId) {
-            // A migration snapshot may be incomplete. Never replace personal
-            // recipes with it; retain the local copy for safe reconciliation.
+            if (options.recipeReconciled) ensurePersonalModule().recipes = JSON.parse(JSON.stringify(record.personalRecipes || []));
             return;
           }
           state.householdRecipes[ownerUserId] = {
@@ -5310,7 +5311,7 @@ The recipe remains installed and can be restored from Settings → Hidden Recipe
       if (currentView === 'shopping') renderShoppingList();
       if (currentView === 'pantry') renderPantry();
       if (currentView === 'meal-planner') renderMealPlanner();
-    } finally { applyingRemoteSync = false; }
+    } catch (error) { Object.keys(state).forEach(key => delete state[key]); Object.assign(state, previousState); throw error; } finally { applyingRemoteSync = false; }
   }
 
   function cloudElement(id) { return document.querySelector(`#${id}`); }
