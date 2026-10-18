@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.22.0';
+  const ENGINE_VERSION = '0.22.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -167,7 +167,7 @@
 
 Continue to share them as this account's recipes. Cancel and choose a separate local profile if they belong to someone else.`);
     },
-    onStatus:status => { renderCloudAccount(); setCloudStatus(status.message, status.kind); }
+    onStatus:status => { if(cloudElement('cloudAccountDialog')?.open && status.kind!=='working')renderCloudAccount(); setCloudStatus(status.message, status.kind); }
   });
 
   if (profileStore.durable) profileStore.durable.onSaved = renderLocalSaveStatus;
@@ -362,6 +362,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     });
     els.profilesDialog?.addEventListener('close', () => { closeProfileMoreMenus(); closeProfileQuickMenu(); });
     els.menuBtn.addEventListener('click', () => toggleSidebar(true));
+    document.querySelector('#homeMenuBtn')?.addEventListener('click', () => toggleSidebar(true));
     els.scrim.addEventListener('click', () => toggleSidebar(false));
     els.searchInput.addEventListener('input', renderRecipeList);
     document.addEventListener('keydown', event => {
@@ -981,7 +982,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     try { profileStore.deleteProfile(profile.profileId); renderProfiles(); } catch (error) { alert(error.message); }
   }
 
-  function toggleSidebar(open) { els.sidebar.classList.toggle('open', open); els.scrim.classList.toggle('show', open); document.body.classList.toggle('menu-open', open); }
+  function toggleSidebar(open) { els.sidebar.classList.toggle('open', open); els.scrim.classList.toggle('show', open); document.body.classList.toggle('menu-open', open); document.querySelector('#homeMenuBtn')?.setAttribute('aria-expanded',String(open)); }
 
   function shoppingId() { return crypto.randomUUID ? crypto.randomUUID() : `shopping-${Date.now()}-${Math.random()}`; }
   function extractEmbeddedShoppingQuantity(name) {
@@ -1195,7 +1196,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.22.0', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.22.1', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -3125,7 +3126,7 @@ Other devices and household members keep their copies. You can restore it from S
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.22.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.22.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -5341,11 +5342,13 @@ Other devices and household members keep their copies. You can restore it from S
 
   function renderLocalSaveStatus() {
     let status=document.querySelector('#localSaveStatus');
-    if(!status){status=document.createElement('p');status.id='localSaveStatus';status.className='setting-help';status.setAttribute('role','status');document.body.prepend(status);}
+    if(!status)return;
     const durable=profileStore.durable;
     if(durable?.lastError){status.textContent='Changes have not been saved. Export a backup before closing SK.';return;}
     const pending=householdSync.hasPending(),saved=!durable||durable.savedGeneration===durable.storage.generation;
-    status.textContent=!saved?'Saving on this device…':pending?'Saved on this device · Waiting to sync':householdSync.isReady()?'Saved on this device and household':'Saved on this device';
+    const conflicts=householdSync.itemSync?.load().conflicts?.length;
+    const message=!saved?'Saving on this device…':conflicts?'Saved on this device · Sync needs review':pending?'Saved on this device · Waiting to sync':householdSync.isReady()?'Saved on this device and household':'Saved on this device';
+    if(status.textContent!==message)status.textContent=message;
     if(saved)document.querySelector('#durableSaveNotice')?.remove();
   }
 
@@ -5386,9 +5389,9 @@ Other devices and household members keep their copies. You can restore it from S
     const container=document.querySelector('#itemSyncConflicts');if(!container)return;container.replaceChildren();
     for(const conflict of householdSync.itemSync?.load().conflicts||[]){
       const card=document.createElement('div'),label=document.createElement('p');
-      label.textContent=`${conflict.changes.length} local changes need review. A newer household version is also saved.`;card.append(label);
+      label.textContent=`${conflict.conflicts.length} items need review. All ${conflict.changes.length} related changes are paused together; both versions are saved.`;card.append(label);const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Review item differences';details.append(summary);card.append(details);
       const describe=(row,removed)=>{if(removed)return 'Removed';if(!row)return 'Not present';const value=row.value;if(typeof value!=='object'||value===null)return String(value);return [value.name||'Saved entry',value.quantity==null?'':`Quantity ${value.quantity}`,value.checked?'Purchased':'',value.store||''].filter(Boolean).join(' · ');};
-      for(const op of conflict.changes){const text=document.createElement('p'),key=window.SKSharedModel.identifier([op.collection,op.id]),remote=householdSync.itemSync.data.remote[key];const effective=householdSync.itemSync.data.pending[key]||op;text.textContent=`${({'shopping-list':'Shopping',pantry:'Pantry','meal-plans':'Meal plan'})[op.collection]} — Local: ${describe(effective.payload,effective.operation==='remove')} — Household: ${describe(remote?.payload,remote?.deleted)}`;card.append(text);}
+      for(const op of conflict.changes){const text=document.createElement('p'),key=window.SKSharedModel.identifier([op.collection,op.id]),remote=householdSync.itemSync.data.remote[key];const effective=householdSync.itemSync.data.pending[key]||op;text.textContent=`${({'shopping-list':'Shopping',pantry:'Pantry','meal-plans':'Meal plan'})[op.collection]} — Local: ${describe(effective.payload,effective.operation==='remove')} — Household: ${describe(remote?.payload,remote?.deleted)}`;details.append(text);}
       const exportButton=document.createElement('button');exportButton.type='button';exportButton.className='button secondary';exportButton.textContent='Export both versions';exportButton.addEventListener('click',()=>deliverFile('SK-Saved-Versions.json',JSON.stringify({format:'serenity-kitchen-saved-versions',conflict,localPending:householdSync.itemSync.data.pending,household:householdSync.itemSync.data.remote},null,2)));card.append(exportButton);
       for(const [choice,text] of [['local','Use these local changes'],['shared','Use the household version']]){const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent=text;button.addEventListener('click',async()=>{if(!confirm(`${text}? The alternate version remains in saved recovery history.`))return;try{await profileStore.flush('before-conflict-choice',true);await householdSync.itemSync.resolve(conflict.id,choice,buildHouseholdSnapshot);renderCloudAccount();householdSync.start(buildHouseholdSnapshot);}catch(error){showCloudError(error);}});card.append(button);}container.append(card);
     }
@@ -5455,4 +5458,6 @@ Other devices and household members keep their copies. You can restore it from S
   notice.textContent='SK could not open its saved data. Existing data has not been replaced. Close other SK windows and reopen this app. Do not clear website data.';
   document.body.prepend(notice);
 });
+
+
 

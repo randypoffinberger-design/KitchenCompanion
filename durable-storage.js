@@ -80,14 +80,19 @@
       });
     }
     async semanticFingerprint(entries) {
+      const hash=async text=>{if(globalThis.crypto?.subtle){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join('');}return text;};
+      this.fingerprintCache ||= new Map();
       const clean=value=>Array.isArray(value)?value.map(clean):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().filter(key=>!['updatedAt','lastUsedAt','lastOpenedAt','lastSavedAt','backupMeta'].includes(key)).map(key=>[key,clean(value[key])])):value;
-      const data={};
+      const parts=[];
       for(const key of Object.keys(entries).sort())if(key.startsWith('kitchenCompanion.')&&!key.includes('safetyBackups')){
-        try{data[key]=clean(JSON.parse(entries[key]));}catch{data[key]=entries[key];}
+        const cached=this.fingerprintCache.get(key);
+        if(cached?.source===entries[key]){parts.push(JSON.stringify(key)+':'+cached.canonical);continue;}
+        let value;try{value=JSON.stringify(clean(JSON.parse(entries[key])));}catch{value=JSON.stringify(entries[key]);}
+        parts.push(JSON.stringify(key)+':'+value);this.fingerprintCache.set(key,{source:entries[key],canonical:value});
       }
-      const text=JSON.stringify(data);
-      if(globalThis.crypto?.subtle){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join('');}
-      return text;
+      const text='{'+parts.join(',')+'}';
+      for(const key of this.fingerprintCache.keys())if(!(key in entries))this.fingerprintCache.delete(key);
+      return hash(text);
     }
     flush(reason = 'save', pin = false, forceHistory = false) {
       if (this.closed) return Promise.reject(new Error('Saved kitchen connection closed. Export your changes and reopen SK.'));
@@ -110,7 +115,6 @@
           nextRevision = this.revision + 1;
           const createdAt = new Date().toISOString();
           const next = {id:'active', schema:1, revision:nextRevision, createdAt, entries, fingerprint,legacyFingerprint:this.legacyFingerprint};
-          tx.objectStore('current').put(next);
           // Store meaningful restore points independently of the active record.
           const due = forceHistory || !current?.historyAt || fingerprint!==current.historyFingerprint && Date.now() - current.historyAt >= 15 * 60 * 1000;
           next.historyAt = pin || due ? Date.now() : current.historyAt;

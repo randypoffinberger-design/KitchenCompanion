@@ -497,7 +497,7 @@
         this.emit(conflicts ? 'Both recipe versions were kept. Review recipes marked “conflict copy”.' : this.dirty ? 'Local changes are waiting to sync.' : 'Household is up to date.', conflicts ? 'warning' : 'success');
       } finally {
         this.syncing = false;
-        if (context === this.context() && this.dirty) {
+        if (context === this.context() && this.dirty && !this.itemSync?.data?.conflicts?.length) {
           clearTimeout(this.pushTimer);
           this.pushTimer = setTimeout(() => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)), completed ? 100 : 5000);
         }
@@ -508,8 +508,8 @@
       this.stop();
       this.localSnapshotProvider = localSnapshotProvider || this.localSnapshotProvider;
       if (!this.isReady()) return;
-      const run = () => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error));
-      this.timer = setInterval(run, 5000); run();
+      const run = () => { if(typeof document!=='undefined' && document.hidden)return; return this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error)); };
+      this.timer = setInterval(run, 30000); run();
     }
 
     stop() { clearInterval(this.timer); clearTimeout(this.pushTimer); this.timer = null; this.pushTimer = null; }

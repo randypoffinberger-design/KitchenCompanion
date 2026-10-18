@@ -19,6 +19,13 @@ test('installed-app startup uses durable storage and a signed-out form edit surv
  try{
   w.eval(read('app.js'));
   await waitFor(()=>w.document.querySelector('#localSaveStatus')?.textContent.includes('Saved on this device'));
+  assert.equal(w.document.querySelector('#localSaveStatus').closest('#sidebar')?.id,'sidebar');
+  assert.equal(w.document.querySelector('#homeMenuBtn').closest('.home-artwork')?.className,'home-artwork');
+  w.document.querySelector('#homeMenuBtn').click();
+  assert.equal(w.document.querySelector('#sidebar').classList.contains('open'),true);
+  assert.equal(w.document.querySelector('#homeMenuBtn').getAttribute('aria-expanded'),'true');
+  w.document.querySelector('#scrim').click();
+  assert.equal(w.document.querySelector('#sidebar').classList.contains('open'),false);
   w.document.querySelector('#addShoppingItemBtn').click();
   w.document.querySelector('#shoppingItemName').value='Strawberry cream cheese';
   const submitted=new w.Event('submit',{bubbles:true,cancelable:true});
