@@ -11,7 +11,7 @@ w.HTMLDialogElement.prototype.close = function(){this.open=false;};
 w.Audio = class { load(){} pause(){} play(){return Promise.resolve();} addEventListener(){} };
 w.alert = message => {throw new Error('Unexpected alert: '+message);}; w.confirm = () => false;
 w.fetch = async () => {throw new Error('Unexpected external request');};
-for (const file of ['kitchen-engine.js','recipe-scaling.js','profile-storage.js','url-recipe-import.js','meal-planner.js','sync-client.js','password-ui.js']) w.eval(fs.readFileSync(path.join(root,file),'utf8'));
+for (const file of ['kitchen-engine.js','recipe-scaling.js','profile-storage.js','url-recipe-import.js','meal-planner.js','shared-model.js','item-sync.js','sync-client.js','password-ui.js']) w.eval(fs.readFileSync(path.join(root,file),'utf8'));
 // Seed a disposable kitchen through the real storage API, not a production account.
 const store = new w.KCProfileStore();
 if(store.needsStorageRecovery()) store.initializeFreshBrowserStorage();

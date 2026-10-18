@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.21.48">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.21.48">
+  <link rel="manifest" href="app.webmanifest?v=0.22.0">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.22.0">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.21.48">
+  <link rel="stylesheet" href="styles.css?v=0.22.0">
 </head>
 <body>
   <div class="app-shell">
@@ -58,7 +58,7 @@
       <div class="sidebar-heading">Categories</div>
       <div id="categoryList" class="category-list"></div>
       </div>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.21.48</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.22.0</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -252,7 +252,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.21.48</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.22.0</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -307,7 +307,7 @@
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Backups, offline use, and updates</summary>
-          <div><p>Serenity Kitchen automatically retains 10 quick local checkpoints and 20 fuller browser recovery snapshots. The private server retains 20 change snapshots per shared collection plus 20 rolling database copies. Manual exports remain available for an off-device copy but are no longer the only protection.</p><p>Installed content remains available offline. Household changes queue locally and synchronize after the private server becomes reachable again. Use Settings → App and updates to check for a new build.</p></div>
+          <div><p>Serenity Kitchen saves changes and pending synchronization together. Recovery includes quick checkpoints, recent saved versions, and retained daily, weekly, and monthly browser history. Household changes retain item history on the server; the established SK backup jobs also verify off-site copies. Manual exports remain available for an off-device copy but are no longer the only protection.</p><p>Installed content remains available offline. Household changes queue locally and synchronize after the private server becomes reachable again. Use Settings → App and updates to check for a new build.</p></div>
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Appearance and accessibility</summary>
@@ -327,7 +327,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.21.48</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.22.0</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -398,7 +398,7 @@
           <summary>Backup, restore, and safeguards</summary>
           <div class="settings-section-content">
             <div class="setting-block backup-settings"><strong>Backup and restore</strong><p>Protect your personal recipes, notes, favorites, shopping data, and settings.</p><div class="backup-actions"><button type="button" id="createBackupBtn" class="button">Create full backup</button><button type="button" id="restoreBackupBtn" class="button secondary">Restore backup</button><button type="button" id="exportPersonalRecipesBtn" class="button secondary">Export my recipes</button><button type="button" id="importRecipeBtn" class="button secondary">Import shared recipe</button></div></div>
-            <div class="setting-block developer-safeguards"><strong>Data safeguards</strong><p class="setting-help">Automatic protection retains up to 10 quick checkpoints and 20 full browser recovery snapshots. When household sharing is active, the server also retains 20 snapshots per collection and 20 database backups.</p><p id="safeguardStatus" class="setting-help">Loading backup and storage status…</p><div id="safetyBackupList" class="safety-backup-list"></div><div class="backup-actions"><button type="button" id="createSafetyBackupBtn" class="button secondary">Create safety checkpoint</button><button type="button" id="runDiagnosticsBtn" class="button secondary">Run diagnostics</button><button type="button" id="optimizeStorageBtn" class="button secondary">Clean up storage</button></div><pre id="diagnosticsOutput" class="diagnostics-output" hidden></pre></div>
+            <div class="setting-block developer-safeguards"><strong>Data safeguards</strong><p class="setting-help">Review and export saved recovery copies without changing current data. Recover selected Shopping, Pantry, or recipe items while keeping your current work. Previous browser snapshots remain available when present.</p><p id="safeguardStatus" class="setting-help">Loading backup and storage status…</p><div id="safetyBackupList" class="safety-backup-list"></div><div class="backup-actions"><button type="button" id="createSafetyBackupBtn" class="button secondary">Create safety checkpoint</button><button type="button" id="runDiagnosticsBtn" class="button secondary">Run diagnostics</button><button type="button" id="optimizeStorageBtn" class="button secondary">Clean up storage</button></div><pre id="diagnosticsOutput" class="diagnostics-output" hidden></pre></div>
           </div>
         </details>
         <details class="settings-section">
@@ -427,13 +427,14 @@
         <label>Household<select id="cloudHouseholdSelect"><option value="">No household yet</option></select></label>
         <div class="cloud-household-actions"><button type="button" id="cloudCreateHouseholdBtn" class="button secondary">Create household</button><button type="button" id="cloudJoinHouseholdBtn" class="button secondary">Join with code</button><button type="button" id="cloudInviteBtn" class="button secondary">Invite household member</button></div>
         <div id="cloudFirstSync" class="cloud-first-sync" hidden>
-          <strong>Choose the first household copy</strong>
-          <p>This is required once. No local information will be replaced without your choice.</p>
-          <button type="button" id="cloudUploadFirstBtn" class="button">Use this device’s data</button>
-          <button type="button" id="cloudDownloadFirstBtn" class="button secondary">Use household data</button>
+          <strong>Connect this profile to the household</strong>
+          <p>Local additions are kept. Different versions are saved for review; this device cannot replace the household with an older list.</p>
+          <button type="button" id="cloudUploadFirstBtn" class="button">Connect and keep local additions</button>
+          <button type="button" id="cloudDownloadFirstBtn" class="button secondary">Connect and review shared items</button>
         </div>
         <button type="button" id="cloudSyncNowBtn" class="button" hidden>Sync now</button>
       </div>
+      <div id="itemSyncConflicts" aria-live="polite"></div>
       <p id="cloudDialogStatus" class="import-status" aria-live="polite"></p>
     </form>
   </dialog>
@@ -860,15 +861,18 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.21.48"></script>
-  <script src="recipe-scaling.js?v=0.21.48"></script>
-  <script src="profile-storage.js?v=0.21.48"></script>
-  <script src="url-recipe-import.js?v=0.21.48"></script>
-  <script src="meal-planner.js?v=0.21.48"></script>
-  <script src="sync-client.js?v=0.21.48"></script>
-  <script src="password-ui.js?v=0.21.48"></script>
-  <script src="app.js?v=0.21.48"></script>
-  <script src="ocr-service.js?v=0.21.48"></script>
+  <script src="kitchen-engine.js?v=0.22.0"></script>
+  <script src="recipe-scaling.js?v=0.22.0"></script>
+  <script src="durable-storage.js?v=0.22.0"></script>
+  <script src="profile-storage.js?v=0.22.0"></script>
+  <script src="url-recipe-import.js?v=0.22.0"></script>
+  <script src="meal-planner.js?v=0.22.0"></script>
+  <script src="shared-model.js?v=0.22.0"></script>
+  <script src="item-sync.js?v=0.22.0"></script>
+  <script src="sync-client.js?v=0.22.0"></script>
+  <script src="password-ui.js?v=0.22.0"></script>
+  <script src="app.js?v=0.22.0"></script>
+  <script src="ocr-service.js?v=0.22.0"></script>
 </body>
 </html>
 

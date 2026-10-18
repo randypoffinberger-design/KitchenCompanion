@@ -13,7 +13,7 @@
   const INDEXED_DB_SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.21.48';
+  const APP_VERSION = '0.22.0';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -21,7 +21,9 @@
   const now = () => new Date().toISOString();
 
   class KCProfileStore {
-    constructor() {
+    constructor(options = {}) {
+      this._storage = options.storage;
+      this.durable = options.durable;
       this.device = null;
       this.shared = null;
       this.activeProfile = null;
@@ -29,6 +31,72 @@
       this.recoveryReason = '';
       this.freshInstallAllowed = false;
       this.initialize();
+    }
+
+    get storage() { return this._storage || localStorage; }
+    flush(reason = 'save', pin = false, forceHistory = false) { return this.durable ? this.durable.flush(reason, pin, forceHistory) : Promise.resolve(); }
+    sharedRecoveryPoint(snapshot, reason, kinds = ['shopping','pantry']) {
+      const storage=this.collectStorageSnapshot({includeModules:true});
+      const key=PROFILE_PREFIX+this.activeProfile.profileId,profile=JSON.parse(storage[key]);
+      for(const bucket of Object.values(snapshot))Object.assign(profile,clone(bucket));
+      storage[key]=JSON.stringify(profile);
+      return {id:uuid(),createdAt:now(),source:reason,reason,snapshot:storage,snapshotMode:'full',kinds};
+    }
+    async recoveryPoints() {
+      const points = this.getSafetyBackups().map(item => ({...clone(item), id:`quick:${item.id}`, source:'Local checkpoint'}));
+      if (this.durable) for (const entry of await this.durable.history()) {
+        const snapshot = Object.fromEntries(Object.entries(entry.entries).filter(([key]) => (key.startsWith('kitchenCompanion.') && key !== BACKUP_KEY) || key === LEGACY_KEY));
+        if (Object.keys(snapshot).length) points.push({id:`durable:${entry.id}`,createdAt:entry.createdAt,reason:entry.reason,source:entry.pinned?'Preserved recovery copy':'Saved browser history',snapshot,snapshotMode:'full'});
+      }
+      if ('indexedDB' in window) {
+        const old = await new Promise(resolve => {
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onupgradeneeded = () => request.transaction.abort();
+          request.onsuccess = () => resolve(request.result); request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+        if (old) {
+          try {
+            if (old.objectStoreNames.contains('recoverySnapshots')) {
+              const snapshots = await new Promise((resolve,reject) => {
+                const request=old.transaction('recoverySnapshots','readonly').objectStore('recoverySnapshots').getAll();
+                request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+              });
+              for (const entry of snapshots) if(entry.snapshot) points.push({...clone(entry),id:`previous:${entry.id}`,source:'Previous browser recovery history'});
+            }
+          } finally {old.close();}
+        }
+      }
+      return points.sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));
+    }
+    recoveryItems(point, kind) {
+      if(point.kinds && !point.kinds.includes(kind))throw new Error('This recovery copy does not include that collection.');
+      this.validateStorageSnapshot(point.snapshot);
+      const raw=point.snapshot[PROFILE_PREFIX+this.activeProfile.profileId];
+      if(!raw) throw new Error('This copy does not contain the active profile. Export it for review or switch to its original profile.');
+      const profile=JSON.parse(raw),field={shopping:'shoppingList',pantry:'pantryItems',recipes:'personalRecipes'}[kind];
+      if(!field || !Array.isArray(profile[field])) throw new Error('This recovery copy does not contain that collection.');
+      return clone(profile[field]);
+    }
+    mergeRecoveredItems(current, incoming, selectedIds) {
+      const selected=new Set(selectedIds),result=clone(current),byId=new Map(result.map(item=>[item.id,item]));
+      for(const item of incoming) {
+        if(!selected.has(item.id))continue;
+        const existing=byId.get(item.id);
+        if(existing && JSON.stringify(existing)===JSON.stringify(item))continue;
+        const recovered=clone(item);
+        if(existing){recovered.id=uuid();recovered.name=`${item.name || 'Recovered item'} (recovered copy)`;recovered.normalizedName=recovered.name.toLowerCase();}
+        result.push(recovered);byId.set(recovered.id,recovered);
+      }
+      return result;
+    }
+    static async open() {
+      if (!window.indexedDB) return new KCProfileStore();
+      if (!window.SKDurableStorage) throw new Error('The app update is incomplete. Close and reopen SK.');
+      const durable = await window.SKDurableStorage.open(localStorage, window.indexedDB);
+      const store = new KCProfileStore({storage:durable.storage, durable});
+      await store.flush('startup');
+      return store;
     }
 
     defaultProfileData(profileId) {
@@ -54,10 +122,10 @@
     collectStorageSnapshot(options = {}) {
       const includeModules = !!options.includeModules;
       const values = {};
-      for (let i = 0; i < localStorage.length; i += 1) {
-        const key = localStorage.key(i);
+      for (let i = 0; i < this.storage.length; i += 1) {
+        const key = this.storage.key(i);
         if (!key || !key.startsWith('kitchenCompanion.') || key === BACKUP_KEY) continue;
-        const raw = localStorage.getItem(key);
+        const raw = this.storage.getItem(key);
         if (key === SHARED_KEY && !includeModules) {
           try {
             const shared = JSON.parse(raw);
@@ -96,7 +164,7 @@
       if (snapshot[SHARED_KEY]) {
         const savedShared = JSON.parse(snapshot[SHARED_KEY]);
         let currentModules = [];
-        try { currentModules = JSON.parse(localStorage.getItem(SHARED_KEY))?.modules || []; } catch {}
+        try { currentModules = JSON.parse(this.storage.getItem(SHARED_KEY))?.modules || []; } catch {}
         savedShared.modules = currentModules;
         delete savedShared.checkpointModulesOmitted;
         snapshot[SHARED_KEY] = JSON.stringify(savedShared);
@@ -117,8 +185,8 @@
     }
 
     writeAndVerify(key, value) {
-      localStorage.setItem(key, value);
-      if (localStorage.getItem(key) !== value) throw new Error(`Browser storage could not verify ${key}.`);
+      this.storage.setItem(key, value);
+      if (this.storage.getItem(key) !== value) throw new Error(`Browser storage could not verify ${key}.`);
     }
 
     semanticFingerprint(snapshot) {
@@ -173,22 +241,10 @@
     }
 
     saveSafetyBackups(backups) {
-      const candidates = [...backups];
-      while (candidates.length) {
-        try { this.writeAndVerify(BACKUP_KEY, JSON.stringify(candidates)); return; }
-        catch (error) {
-          if (error?.name !== 'QuotaExceededError' && !/quota/i.test(error?.message || '')) throw error;
-          if (candidates.length === 1) throw error;
-          // Remove the oldest automatic checkpoint first. A failed write leaves
-          // the previously saved BACKUP_KEY untouched, so quota pressure can
-          // never erase every existing recovery point.
-          let removeIndex = -1;
-          for (let index = candidates.length - 1; index >= 0; index -= 1) {
-            if (candidates[index]?.kind !== 'manual') { removeIndex = index; break; }
-          }
-          candidates.splice(removeIndex >= 0 ? removeIndex : candidates.length - 1, 1);
-        }
-      }
+      // Never make a new backup fit by discarding the existing recovery point.
+      // A quota-rejected setItem leaves the old value intact. The normal
+      // count-based retention policy is handled before this write.
+      this.writeAndVerify(BACKUP_KEY, JSON.stringify(backups));
     }
 
     createSafetyBackup(reason = 'startup', options = {}) {
@@ -255,7 +311,7 @@
     }
 
     getSafetyBackups() {
-      try { return JSON.parse(localStorage.getItem(BACKUP_KEY)) || []; } catch { return []; }
+      try { return JSON.parse(this.storage.getItem(BACKUP_KEY)) || []; } catch { return []; }
     }
 
     restoreSafetyBackup(backupId) {
@@ -266,18 +322,18 @@
       const restoredSnapshot = this.hydrateSnapshot({ ...backup, snapshotMode:backup.snapshotMode || 'full' });
       const current = this.collectStorageSnapshot({ includeModules:true });
       try {
-        Object.keys(current).filter(key => !(key in restoredSnapshot)).forEach(key => localStorage.removeItem(key));
+        Object.keys(current).filter(key => !(key in restoredSnapshot)).forEach(key => this.storage.removeItem(key));
         Object.keys(restoredSnapshot).forEach(key => this.writeAndVerify(key, restoredSnapshot[key]));
       } catch (error) {
-        Object.keys(this.collectStorageSnapshot()).forEach(key => localStorage.removeItem(key));
-        Object.keys(current).forEach(key => localStorage.setItem(key, current[key]));
+        Object.keys(this.collectStorageSnapshot()).forEach(key => this.storage.removeItem(key));
+        Object.keys(current).forEach(key => this.storage.setItem(key, current[key]));
         throw new Error(`Checkpoint restore was rolled back: ${error.message}`);
       }
       return true;
     }
 
     getDiagnostics() {
-      const backups = this.compactSafetyBackups();
+      const backups = this.getSafetyBackups();
       const validBackupCount = backups.filter(backup => {
         try { return this.validateStorageSnapshot(backup.snapshot); } catch { return false; }
       }).length;
@@ -286,8 +342,8 @@
     }
 
     loadCurrentStorage() {
-      const device = JSON.parse(localStorage.getItem(DEVICE_KEY));
-      const shared = JSON.parse(localStorage.getItem(SHARED_KEY));
+      const device = JSON.parse(this.storage.getItem(DEVICE_KEY));
+      const shared = JSON.parse(this.storage.getItem(SHARED_KEY));
       if (!device?.profiles?.length || !shared) return false;
       const savedProfile = this.readProfile(device.activeProfileId);
       if (!savedProfile) throw new Error('The active profile record is unavailable. Startup was stopped before a blank profile could replace it.');
@@ -308,17 +364,17 @@
         try {
           this.validateStorageSnapshot(backup.snapshot);
           const restoredSnapshot = this.hydrateSnapshot(backup);
-          Object.keys(this.collectStorageSnapshot()).forEach(key => localStorage.removeItem(key));
+          Object.keys(this.collectStorageSnapshot()).forEach(key => this.storage.removeItem(key));
           Object.keys(restoredSnapshot).forEach(key => this.writeAndVerify(key, restoredSnapshot[key]));
           if (this.loadCurrentStorage()) return backup;
         } catch (error) {
           console.warn('A recovery checkpoint could not be used.', error);
-          Object.keys(this.collectStorageSnapshot()).forEach(key => localStorage.removeItem(key));
-          Object.keys(original).forEach(key => localStorage.setItem(key, original[key]));
+          Object.keys(this.collectStorageSnapshot()).forEach(key => this.storage.removeItem(key));
+          Object.keys(original).forEach(key => this.storage.setItem(key, original[key]));
         }
       }
-      Object.keys(this.collectStorageSnapshot()).forEach(key => localStorage.removeItem(key));
-      Object.keys(original).forEach(key => localStorage.setItem(key, original[key]));
+      Object.keys(this.collectStorageSnapshot()).forEach(key => this.storage.removeItem(key));
+      Object.keys(original).forEach(key => this.storage.setItem(key, original[key]));
       return null;
     }
 
@@ -329,16 +385,16 @@
         try { return this.validateStorageSnapshot(backup.snapshot); } catch { return false; }
       });
       if (hasVerifiedCheckpoint) {
-        [LEGACY_KEY, `${LEGACY_KEY}.preProfiles`, `${LEGACY_KEY}.preUpdate`, `${LEGACY_KEY}.rollback`].forEach(key => localStorage.removeItem(key));
+        [LEGACY_KEY, `${LEGACY_KEY}.preProfiles`, `${LEGACY_KEY}.preUpdate`, `${LEGACY_KEY}.rollback`].forEach(key => this.storage.removeItem(key));
       }
       const after = this.getDiagnosticsStorageBytes();
       return { beforeBytes:before, afterBytes:after, freedBytes:Math.max(0, before-after), backupCount:backups.length };
     }
 
     getDiagnosticsStorageBytes() {
-      return Array.from({length:localStorage.length}, (_, index) => {
-        const key = localStorage.key(index) || '';
-        return (key.length + (localStorage.getItem(key) || '').length) * 2;
+      return Array.from({length:this.storage.length}, (_, index) => {
+        const key = this.storage.key(index) || '';
+        return (key.length + (this.storage.getItem(key) || '').length) * 2;
       }).reduce((sum, bytes) => sum + bytes, 0);
     }
 
@@ -359,7 +415,7 @@
           return;
         }
       } catch (error) { console.warn('Startup recovery failed.', error); }
-      const hasKnownStorage = !!localStorage.getItem(DEVICE_KEY) || !!localStorage.getItem(SHARED_KEY) || !!localStorage.getItem(LEGACY_KEY);
+      const hasKnownStorage = !!this.storage.getItem(DEVICE_KEY) || !!this.storage.getItem(SHARED_KEY) || !!this.storage.getItem(LEGACY_KEY);
       const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
       this.enterReadOnlyRecovery(hasKnownStorage
         ? 'Saved profile storage is incomplete or unavailable.'
@@ -398,15 +454,15 @@
       if (!this.recoveryRequired) throw new Error('Serenity Kitchen is not waiting for storage recovery.');
       const previous = this.collectStorageSnapshot({ includeModules:true });
       try {
-        Object.keys(previous).forEach(key => localStorage.removeItem(key));
+        Object.keys(previous).forEach(key => this.storage.removeItem(key));
         this.recoveryRequired = false;
         this.freshInstallAllowed = false;
         this.migrateLegacy();
         if (!this.loadCurrentStorage()) throw new Error('The new browser kitchen could not be verified.');
         return true;
       } catch (error) {
-        Object.keys(this.collectStorageSnapshot({ includeModules:true })).forEach(key => localStorage.removeItem(key));
-        Object.entries(previous).forEach(([key, value]) => localStorage.setItem(key, value));
+        Object.keys(this.collectStorageSnapshot({ includeModules:true })).forEach(key => this.storage.removeItem(key));
+        Object.entries(previous).forEach(([key, value]) => this.storage.setItem(key, value));
         this.enterReadOnlyRecovery('Fresh setup failed, so the previous browser storage was kept.');
         throw error;
       }
@@ -448,8 +504,8 @@
         catch (error) { console.warn('The restored backup was verified, but a second local checkpoint could not be created.', error); }
         return true;
       } catch (error) {
-        Object.keys(this.collectStorageSnapshot({ includeModules:true })).forEach(key => localStorage.removeItem(key));
-        Object.entries(previous).forEach(([key, value]) => localStorage.setItem(key, value));
+        Object.keys(this.collectStorageSnapshot({ includeModules:true })).forEach(key => this.storage.removeItem(key));
+        Object.entries(previous).forEach(([key, value]) => this.storage.setItem(key, value));
         this.recoveryRequired = previousRecovery.required;
         this.recoveryReason = previousRecovery.reason;
         this.freshInstallAllowed = previousRecovery.fresh;
@@ -468,7 +524,7 @@
         if (profile.setupComplete === undefined) { profile.setupComplete = profile.migrationStatus !== 'migrated-from-v0.9'; changed = true; }
         if (profile.displayName === 'Primary Profile') { profile.displayName = 'My Profile'; changed = true; }
       });
-      if (changed) localStorage.setItem(DEVICE_KEY, JSON.stringify(this.device));
+      if (changed) this.storage.setItem(DEVICE_KEY, JSON.stringify(this.device));
     }
 
     normalizeProfileData(data) {
@@ -511,7 +567,7 @@
 
     migrateLegacy() {
       let legacy = null;
-      try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); } catch {}
+      try { legacy = JSON.parse(this.storage.getItem(LEGACY_KEY)); } catch {}
       const profileId = uuid();
       const createdAt = now();
       this.device = {
@@ -538,7 +594,7 @@
     }
 
     readProfile(profileId) {
-      try { return JSON.parse(localStorage.getItem(PROFILE_PREFIX + profileId)); } catch { return null; }
+      try { return JSON.parse(this.storage.getItem(PROFILE_PREFIX + profileId)); } catch { return null; }
     }
 
     persistAll() {
@@ -550,17 +606,17 @@
         [SHARED_KEY, JSON.stringify(this.shared)],
         [PROFILE_PREFIX + this.activeProfile.profileId, JSON.stringify(this.activeProfile)]
       ];
-      const previous = new Map(writes.map(([key]) => [key, localStorage.getItem(key)]));
+      const previous = new Map(writes.map(([key]) => [key, this.storage.getItem(key)]));
       try {
         writes.forEach(([key, value]) => this.writeAndVerify(key, value));
       } catch (error) {
         writes.forEach(([key]) => {
           const value = previous.get(key);
-          if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+          if (value === null) this.storage.removeItem(key); else this.storage.setItem(key, value);
         });
         throw new Error(`Save failed and was rolled back: ${error.message}`);
       }
-      this.mirrorToIndexedDB().catch(error => console.warn('IndexedDB mirror unavailable; local fallback remains active.', error));
+      if (!this.durable) this.mirrorToIndexedDB().catch(error => console.warn('IndexedDB mirror unavailable; local fallback remains active.', error));
     }
 
     loadActiveState() {
@@ -631,7 +687,7 @@
       const kind = options.kind || 'personal';
       const meta = { profileId, displayName:name, color:options.color || palette[this.device.profiles.length % palette.length], kind, avatarType:options.avatarType || (kind === 'household' ? 'emoji' : 'initials'), avatarValue:options.avatarValue ?? (kind === 'household' ? '🏠' : ''), setupComplete:true, createdAt, updatedAt:createdAt, migrationStatus:'local-only', lastUsedAt:createdAt };
       const data = this.defaultProfileData(profileId);
-      localStorage.setItem(PROFILE_PREFIX + profileId, JSON.stringify(data));
+      this.storage.setItem(PROFILE_PREFIX + profileId, JSON.stringify(data));
       this.device.profiles.push(meta); this.persistAll();
       return clone(meta);
     }
@@ -643,7 +699,7 @@
       const copy = this.createProfile(displayName || `${sourceMeta.displayName} Copy`, { color:sourceMeta.color, kind:'personal', avatarType:sourceMeta.avatarType, avatarValue:sourceMeta.avatarValue });
       const data = this.normalizeProfileData(clone(sourceData));
       data.profileId = copy.profileId; data.createdAt = now(); data.updatedAt = data.createdAt;
-      localStorage.setItem(PROFILE_PREFIX + copy.profileId, JSON.stringify(data));
+      this.storage.setItem(PROFILE_PREFIX + copy.profileId, JSON.stringify(data));
       this.persistAll();
       return copy;
     }
@@ -681,14 +737,14 @@
       if (!this.device.profiles.some(p => p.profileId === profileId)) throw new Error('Profile not found.');
       this.device.activeProfileId = profileId;
       this.markProfileUsed(profileId);
-      localStorage.setItem(DEVICE_KEY, JSON.stringify(this.device));
+      this.storage.setItem(DEVICE_KEY, JSON.stringify(this.device));
     }
 
     deleteProfile(profileId) {
       if (this.device.profiles.length <= 1) throw new Error('Serenity Kitchen must keep at least one profile.');
       if (profileId === this.device.activeProfileId) throw new Error('Switch to another profile before deleting this one.');
       this.device.profiles = this.device.profiles.filter(p => p.profileId !== profileId);
-      localStorage.removeItem(PROFILE_PREFIX + profileId); this.persistAll();
+      this.storage.removeItem(PROFILE_PREFIX + profileId); this.persistAll();
     }
 
     exportProfile(profileId = this.device.activeProfileId) {
@@ -712,7 +768,7 @@
         existing.updatedAt = now();
         incomingData.profileId = existing.profileId;
         incomingData.updatedAt = now();
-        localStorage.setItem(PROFILE_PREFIX + existing.profileId, JSON.stringify(incomingData));
+        this.storage.setItem(PROFILE_PREFIX + existing.profileId, JSON.stringify(incomingData));
         if (wasActive) this.activeProfile = incomingData;
         this.persistAll();
         return clone(existing);
@@ -721,7 +777,7 @@
       const meta = this.createProfile(existing ? `${importedName} Imported` : importedName, { color:payload.profile.color, kind:payload.profile.kind || 'personal', avatarType:payload.profile.avatarType, avatarValue:payload.profile.avatarValue });
       incomingData.profileId = meta.profileId;
       incomingData.createdAt = now(); incomingData.updatedAt = incomingData.createdAt;
-      localStorage.setItem(PROFILE_PREFIX + meta.profileId, JSON.stringify(incomingData));
+      this.storage.setItem(PROFILE_PREFIX + meta.profileId, JSON.stringify(incomingData));
       this.persistAll();
       return meta;
     }
@@ -810,7 +866,7 @@
           readStore('appMeta', 'device'), readStore('appMeta', 'shared'), readStore('profiles'), readStore('profileData'), readStore('modules'), readStore('recoverySnapshots')
         ]);
         let boundProfileId = '';
-        try { boundProfileId = JSON.parse(localStorage.getItem('serenityKitchen.sync.v1') || '{}').profileId || ''; } catch {}
+        try { boundProfileId = JSON.parse(this.storage.getItem('serenityKitchen.sync.v1') || '{}').profileId || ''; } catch {}
         const dataById = new Map((profileData || []).filter(item => item?.profileId).map(item => [item.profileId, item]));
         const metaById = new Map((profileMetas || []).filter(item => item?.profileId).map(item => [item.profileId, item]));
         const preferredId = [boundProfileId, mirroredDevice?.activeProfileId].find(id => id && dataById.has(id));
