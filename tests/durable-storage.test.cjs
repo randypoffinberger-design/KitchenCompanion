@@ -77,3 +77,16 @@ test('unchanged polling cannot consume history after the snapshot interval',asyn
  db.storage.setItem(key,'{"shoppingList":[{"id":"milk","name":"Milk"}]}');await db.flush();
  assert.equal((await db.history()).length,2);db.close();
 });
+
+test('routine sync metadata saves reuse the fingerprint of unchanged kitchen data',async()=>{
+ let profileParses=0;
+ const context={window:{},queueMicrotask,console,Date,JSON:{stringify:JSON.stringify,parse:text=>{if(text.includes('large-recipe-payload'))profileParses++;return JSON.parse(text);}}};
+ vm.runInNewContext(source,context);
+ const Store=context.window.SKDurableStorage,idb=new IDBFactory();
+ const original=JSON.stringify({shoppingList:[],notes:'large-recipe-payload'.repeat(10000)});
+ const db=await Store.open(legacy({[key]:original}),idb);db.storage.onchange=null;
+ const before=profileParses;
+ for(let i=0;i<5;i++){db.storage.setItem(pending,JSON.stringify({cursor:i}));await db.flush();}
+ assert.equal(profileParses,before,'background sync must not reparse the full unchanged kitchen');
+ assert.equal(db.storage.getItem(key),original);db.close();
+});

@@ -71,6 +71,9 @@ button { color: inherit; }
 .home-trademark { position:absolute; z-index:2; left:74.6%; top:30.35%; color:#fff; font-family:Arial,sans-serif; font-size:clamp(6px,1.15vw,10px); font-weight:500; line-height:1; pointer-events:none; user-select:none; }
 .home-hotspot { position:absolute; z-index:2; border:0; border-radius:8%; background:transparent; cursor:pointer; touch-action:manipulation; }
 .home-hotspot:focus-visible { outline:4px solid #56d5d0; outline-offset:-4px; }
+.home-menu { left:4.5%; top:3%; width:11%; height:6%; min-width:44px; min-height:44px; }
+.local-save-status { flex:0 0 auto; margin:0; padding:10px 12px; color:var(--muted); font-size:.76rem; line-height:1.4; }
+.local-save-status:empty { display:none; }
 .home-recipes { left:4.7%; top:55.8%; width:39.5%; height:19.3%; }
 .home-shopping { left:47.2%; top:55.8%; width:39.6%; height:19.3%; }
 .home-pantry { left:4.7%; top:75.9%; width:39.5%; height:19%; }
@@ -82,7 +85,7 @@ body.home-view .scrim.show { display:block; position:fixed; inset:62px 0 0; z-in
 body.home-view .app-shell { display:block; }
 body.home-view .topbar { position:fixed; inset:0 0 auto; z-index:50; border:0; background:transparent; backdrop-filter:none; pointer-events:none; }
 body.home-view .topbar .brand-wrap, body.home-view .topbar .top-actions { visibility:hidden; }
-body.home-view #menuBtn { display:block; position:absolute; left:max(4.5%, calc((100vw - 864px) / 2 + 4.5%)); top:min(5.8vw,50px); width:min(9vw,78px); min-width:42px; height:auto; aspect-ratio:1; opacity:0; pointer-events:auto; }
+body.home-view #menuBtn { display:none; }
 body.home-view #menuBtn:focus-visible { opacity:.35; outline:3px solid #56d5d0; }
 body.home-view .main { padding:0; }
 .list-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
