@@ -11,8 +11,10 @@
   }
   save(){this.client.storage.setItem(this.key,JSON.stringify(this.data));}
   model(){return window.SKSharedModel;}
+  conflictedKeys(){return new Set(this.data.conflicts.flatMap(conflict=>conflict.changes.map(op=>this.model().identifier([op.collection,op.id]))));}
   stage(snapshot){
    const d=this.load(),rows=this.model().flatten(snapshot),stable=this.model().stable;
+   const conflicted=this.conflictedKeys();
    for(const [key,row] of Object.entries(rows)){
     if(stable(d.observed[key])===stable(row))continue;
     const prior=d.pending[key];
@@ -20,7 +22,7 @@
    }
    for(const key of Object.keys(d.observed))if(!rows[key]){
     const old=d.observed[key],remote=d.remote[key];
-    if(!remote&&!d.pending[key])continue;
+    if(!remote&&!d.pending[key]&&!conflicted.has(key))continue;
     // A put may already be in flight. Keep the removal intent until its
     // acknowledgement or downloaded history proves whether the item exists.
     d.pending[key]={collection:old.collection,id:old.id,operation:'remove',payload:old,mutationId:uuid(),baseVersion:d.pending[key]?.baseVersion??remote?.version??0};
@@ -54,7 +56,11 @@
     const next=Number(page.cursor||cursor);if(page.hasMore&&next<=cursor)throw new Error('Item history did not advance.');cursor=next;
    }while(page.hasMore);
    if(generation!==c.changeGeneration){this.save();return false;}
+   const conflicted=this.conflictedKeys();
    for(const [key,op] of Object.entries(d.pending)){
+    // A newer edit must continue to overlay the parked local conflict, even
+    // when the household already has this edit's result (such as a removal).
+    if(conflicted.has(key))continue;
     const remote=d.remote[key];
     if(op.operation==='remove'&&!remote){delete d.pending[key];continue;}
     if(remote&&(op.operation==='remove'?remote.deleted:!remote.deleted&&this.model().stable(remote.payload)===this.model().stable(op.payload)))delete d.pending[key];
