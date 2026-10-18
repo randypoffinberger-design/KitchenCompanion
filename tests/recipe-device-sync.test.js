@@ -37,6 +37,7 @@ function device(backend,{user='A',values=new Map(),recipes=[]}={}) {
   const context={window:{},URL,console,crypto,
     localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value)},
     setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){}};
+  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../item-sync.js'),'utf8'),context);
   vm.runInNewContext(source,context);
   const client=new context.window.SKHouseholdSync({profileId:'local-profile',onRemoteState:(data)=>{
     applies++;
@@ -133,7 +134,7 @@ test('recipe history beyond 1,000 events reaches the latest version',async()=>{
 test('account switching during a request cannot apply its response to the new account',async()=>{
   const backend=server(),a=device(backend,{recipes:[recipe()]});let release;
   a.client.request=()=>new Promise(resolve=>release=resolve);
-  const pending=a.sync();a.client.config.user={id:'B'};a.client.sessionEpoch++;
+  const pending=a.sync();while(!release)await new Promise(resolve=>setImmediate(resolve));a.client.config.user={id:'B'};a.client.sessionEpoch++;
   release({events:[],cursor:0});await assert.rejects(pending,/changed/);assert.equal(a.applies,0);assert.equal(backend.writes,0);
 });
 
@@ -187,4 +188,22 @@ test('profile-account binding persists through logout and reload',async()=>{
 test('duplicate local identities stop recipe reconciliation without losing either local copy',async()=>{
   const backend=server(),a=device(backend,{recipes:[recipe('First'),recipe('Second')]});
   await assert.rejects(a.sync(),/same identity/);assert.equal(a.local.length,2);assert.equal(backend.writes,0);
+});
+
+test('independent recipe fields merge without hiding either household owner',async()=>{
+ const backend=server(),a=device(backend,{recipes:[{id:'soup',name:'Soup',description:'Original'}]}),b=device(backend);
+ await a.sync();await b.sync();
+ a.local=[{id:'soup',name:'New name',description:'Original'}];await a.sync();
+ b.local=[{id:'soup',name:'Soup',description:'Offline description'}];await b.sync();await a.sync();
+ assert.equal(a.local[0].name,'New name');assert.equal(a.local[0].description,'Offline description');
+ assert.equal(a.local.length,1);assert.equal(b.client.recipeSync.data.conflictNotice,undefined);
+});
+
+test('a newer recipe edit after a lost acknowledgement replays the original mutation first',async()=>{
+ const backend=server(),a=device(backend,{recipes:[recipe('Original')]});await a.sync();
+ const request=a.client.request;let lose=true;
+ a.client.request=async(route,options)=>{const result=await request(route,options);if(options?.method==='POST'&&lose){lose=false;throw new Error('Lost acknowledgement');}return result;};
+ a.local=[recipe('First edit')];await assert.rejects(a.sync(),/Lost acknowledgement/);
+ a.local=[recipe('Second edit')];await a.sync();await a.sync();
+ assert.equal(a.local.length,1);assert.equal(a.local[0].name,'Second edit');assert.equal(a.client.recipeSync.data.conflictNotice,undefined);
 });

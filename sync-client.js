@@ -40,7 +40,8 @@
         const id = recipeId(recipe);
         if (stable(data.observed[id]) === stable(recipe)) continue;
         const previous = data.pending[id];
-        data.pending[id] = { id, mutationId:uuid(), baseVersion:previous ? previous.baseVersion : data.versions[id] || null, payload:clone(recipe) };
+        const basePayload=previous?.basePayload||data.owners[this.client.recipeOwnerId()]?.personalRecipes?.find(item=>recipeId(item)===id);
+        data.pending[id] = { id, mutationId:uuid(), baseVersion:previous ? previous.baseVersion : data.versions[id] || null, payload:clone(recipe),...(basePayload?{basePayload:clone(basePayload)}:{}) };
         data.observed[id] = clone(recipe);
       }
       // Missing IDs are never deletions. Device visibility stays in profile storage.
@@ -49,6 +50,7 @@
     async sync(recipes) {
       const c = this.client, context = c.context();
       this.stage(recipes);
+      await c.beforeSync();c.assertContext(context);
       const data = this.data, generation = c.changeGeneration;
       const owners = clone(data.owners), versions = { ...data.versions };
       let cursor = data.cursor, page;
@@ -70,9 +72,18 @@
       const remote = new Map((own.personalRecipes || []).map(recipe => [recipeId(recipe), recipe]));
       // First-contact recipes with identical contents need no upload or conflict copy.
       for (const [id, pending] of Object.entries(data.pending)) {
+        if(data.inflight?.[id])continue;
         if (stable(remote.get(id)) === stable(pending.payload)) delete data.pending[id];
+        else if(pending.basePayload&&remote.has(id)&&versions[id]!==pending.baseVersion){
+          const merged=window.SKItemSync?.merge(pending.basePayload,pending.payload,remote.get(id));
+          if(merged?.ok)data.pending[id]={...pending,payload:merged.value,basePayload:clone(remote.get(id)),baseVersion:versions[id],mutationId:uuid()};
+        }
       }
-      for (const operation of Object.values({ ...data.pending })) {
+      this.save();await c.beforeSync();
+      data.inflight ||= {};
+      const queue=[...Object.values(data.inflight),...Object.values(data.pending).filter(op=>!data.inflight[op.id])];
+      for (const operation of queue) {
+        data.inflight[operation.id]=clone(operation);this.save();await c.beforeSync();c.assertContext(context);
         let result;
         try { result = await c.request(route, { method:'POST', body:JSON.stringify({ changes:[operation] }) }); }
         catch (error) { if (error.status === 409 && error.body?.conflicts) result = error.body; else throw error; }
@@ -82,7 +93,7 @@
         if (applied) {
           remote.set(operation.id, operation.payload); versions[operation.id] = applied.version;
           if (pending?.mutationId === operation.mutationId) delete data.pending[operation.id];
-          else if (pending) pending.baseVersion = applied.version;
+          else if (pending) {pending.baseVersion = applied.version;pending.basePayload=clone(operation.payload);queue.push(clone(pending));}
         }
         const conflict = result.conflicts?.find(item => item.mutationId === operation.mutationId);
         if (conflict && pending) {
@@ -97,7 +108,9 @@
           data.conflictNotice = true;
         }
         if (!applied && !conflict) throw new Error('The server did not acknowledge the recipe. Its pending change has been kept.');
+        delete data.inflight[operation.id];
         this.save();
+        await c.beforeSync();
       }
       if (generation !== c.changeGeneration) return false;
       own.personalRecipes = [...remote.values()];
@@ -115,6 +128,7 @@
       const previous = clone(data);
       Object.assign(data, { owners, versions, cursor, applied:true, observed:Object.fromEntries(localOwn.map(recipe => [recipeId(recipe), clone(recipe)])) });
       try { this.save(); } catch (error) { this.data = previous; throw error; }
+      await c.beforeSync();
       return Object.keys(data.pending).length === 0;
     }
   }
@@ -176,7 +190,8 @@
     hasPending() {
       const pending = this.config.pendingProfiles[this.bindingKey()];
       const itemData = this.itemSync?.load();
-      return !!(itemData && (Object.keys(itemData.pending).length || itemData.conflicts.length)) || !!this.config.pendingScopes[this.scopeKey()] || !!(pending && (!pending.owner || pending.owner === this.config.user?.id) && (!pending.household || pending.household === this.config.activeHouseholdId));
+      const recipePending=Object.keys(this.recipeSync?.load().pending||{}).length;
+      return !!recipePending || !!(itemData && (Object.keys(itemData.pending).length || itemData.conflicts.length)) || !!this.config.pendingScopes[this.scopeKey()] || !!(pending && (!pending.owner || pending.owner === this.config.user?.id) && (!pending.household || pending.household === this.config.activeHouseholdId));
     }
     context() { return this.sessionEpoch + ':' + this.scopeKey() + ':' + this.config.token; }
     assertContext(context) { if (context !== this.context()) throw Object.assign(new Error('Account or household changed. The old sync response was ignored.'), { staleContext:true }); }
