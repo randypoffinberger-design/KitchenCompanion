@@ -73,3 +73,38 @@ test('legacy duplicate IDs and missing history IDs normalize without dropping re
  assert.deepEqual(model.normalize(normalized),normalized);
  assert.equal(source.pantry.pantryItems[0].id,'duplicate');
 });
+
+test('moving a conflicted purchase to Pantry cannot resurrect it from the parked conflict',async()=>{
+ const s=server(),a=device(s),b=device(s);
+ a.state['shopping-list'].shoppingList=[{id:'milk',name:'Milk'}];await a.run();await b.run();
+ a.state['shopping-list'].shoppingList=[];await a.run();
+ b.state['shopping-list'].shoppingList[0].checked=true;await b.run();
+ assert.equal(b.sync.data.conflicts.length,1);
+ b.state['shopping-list'].shoppingList=[];
+ b.state.pantry.pantryItems=[{id:'pantry-milk',name:'Milk',quantity:1}];
+ await b.run();await b.run();
+ assert.equal(b.state['shopping-list'].shoppingList.length,0);
+ assert.equal(b.state.pantry.pantryItems[0].quantity,1);
+ const reopened=device(s,b.storage);reopened.state=copy(b.state);await reopened.run();
+ assert.equal(reopened.state['shopping-list'].shoppingList.length,0);
+ assert.equal(reopened.state.pantry.pantryItems[0].quantity,1);
+ assert.equal(reopened.sync.data.conflicts.length,1,'both conflict versions remain preserved');
+ await reopened.sync.resolve(reopened.sync.data.conflicts[0].id,'local',reopened.provider);
+ await reopened.run();await a.run();await reopened.run();
+ assert.equal(a.state['shopping-list'].shoppingList.length,0);
+ assert.equal(a.state.pantry.pantryItems[0].quantity,1);
+ assert.equal(a.state.pantry.pantryItems.length,1);
+});
+
+test('removing a local-only item in a rejected batch keeps its newer removal intent',async()=>{
+ const s=server(),a=device(s),b=device(s);
+ a.state['shopping-list'].shoppingList=[{id:'shared',name:'Shared'}];await a.run();await b.run();
+ a.state['shopping-list'].shoppingList[0].name='New household version';await a.run();
+ b.state['shopping-list'].shoppingList[0].name='Local version';
+ b.state['shopping-list'].shoppingList.push({id:'new-purchase',name:'Creamer',checked:true});await b.run();
+ assert.equal(b.sync.data.conflicts.length,1);
+ b.state['shopping-list'].shoppingList=b.state['shopping-list'].shoppingList.filter(item=>item.id!=='new-purchase');
+ b.state.pantry.pantryItems=[{id:'pantry-creamer',name:'Creamer',quantity:1}];await b.run();
+ assert.equal(b.state['shopping-list'].shoppingList.some(item=>item.id==='new-purchase'),false);
+ assert.equal(b.state.pantry.pantryItems[0].name,'Creamer');
+});

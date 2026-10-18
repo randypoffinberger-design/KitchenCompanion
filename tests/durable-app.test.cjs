@@ -33,11 +33,21 @@ test('installed-app startup uses durable storage and a signed-out form edit surv
   assert.equal(submitted.defaultPrevented,true);
   await waitFor(()=>w.document.querySelector('#localSaveStatus')?.textContent.includes('Saved on this device'));
   assert.deepEqual(errors,[]);
-  const loaded=await w.KCProfileStore.open();
-  assert.equal(loaded.loadActiveState().shoppingList[0].name,'Strawberry cream cheese');
-  const config=JSON.parse(loaded.storage.getItem('serenityKitchen.sync.v1'));
-  assert.equal(Object.keys(config.pendingProfiles).length,1);
   assert.equal(w.localStorage.getItem('kitchenCompanion.profile.v1.'+old.activeProfile.profileId),original);
-  assert.deepEqual(errors,[]);loaded.durable.close();
+  assert.deepEqual(errors,[]);
+  w.document.querySelector('[data-home-view="shopping"]').click();
+  const purchase=w.document.querySelector('.purchase-check');assert.ok(purchase);
+  purchase.checked=true;purchase.dispatchEvent(new w.Event('change',{bubbles:true}));
+  w.document.querySelector('#movePurchasedToPantryBtn').click();
+  assert.deepEqual(errors,[]);
+  await waitFor(()=>w.document.querySelector('#localSaveStatus')?.textContent.includes('Saved on this device'));
+  assert.deepEqual(errors,[]);
+  const moved=await w.KCProfileStore.open();
+  const config=JSON.parse(moved.storage.getItem('serenityKitchen.sync.v1'));
+  assert.equal(Object.keys(config.pendingProfiles).length,1);
+  assert.equal(moved.loadActiveState().shoppingList.length,0);
+  assert.equal(moved.loadActiveState().pantryItems[0].name,'Strawberry cream cheese');
+  assert.equal(moved.loadActiveState().pantryItems[0].quantity,1);
+  moved.durable.close();
  }finally{w.close();}
 });
