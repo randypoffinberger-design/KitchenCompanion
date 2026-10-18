@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.22.2';
+  const ENGINE_VERSION = '0.23.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1196,7 +1196,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.22.2', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.23.0', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -3126,7 +3126,7 @@ Other devices and household members keep their copies. You can restore it from S
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.22.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.23.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -4236,9 +4236,11 @@ Other devices and household members keep their copies. You can restore it from S
   }
 
   function upsertPantryItem(source) {
-    const incoming=normalizePantryItem(preparePantrySource(source));
+    const prepared=preparePantrySource(source);
+    if(source.purchaseLotId)prepared.lots=[{id:source.purchaseLotId,quantity:prepared.quantity,unit:prepared.unit,purchasedAt:source.purchasedAt,store:source.store,source:source.source,createdAt:source.purchaseCreatedAt}];
+    const incoming=normalizePantryItem(prepared);
     let item=state.pantryItems.find(entry=>shoppingNameKey(entry.normalizedName||entry.name)===incoming.normalizedName && normalizePantryUnit(entry.unit)===incoming.unit);
-    if(item){item.lots=[...(item.lots||[]),...(incoming.lots||[])];item.quantity=pantryLotTotal(item);item.group=incoming.group;item.estimated=!!(item.estimated||incoming.estimated);item.conversionProfile=item.conversionProfile||incoming.conversionProfile;item.updatedAt=new Date().toISOString();}
+    if(item){const existing=new Map((item.lots||[]).map(lot=>[lot.id,lot]));for(const lot of incoming.lots||[]){const prior=existing.get(lot.id);if(prior&&(prior.quantity!==lot.quantity||prior.unit!==lot.unit))throw new Error('This purchase was already recorded with a different remaining amount. Review Pantry before moving it again.');}item.lots=[...(item.lots||[]),...(incoming.lots||[]).filter(lot=>!existing.has(lot.id))];item.quantity=pantryLotTotal(item);item.group=incoming.group;item.estimated=!!(item.estimated||incoming.estimated);item.conversionProfile=item.conversionProfile||incoming.conversionProfile;item.updatedAt=new Date().toISOString();}
     else {item=incoming;state.pantryItems.push(item);}
     checkPantryRestock(item);
     return item;
@@ -4253,10 +4255,11 @@ Other devices and household members keep their copies. You can restore it from S
   function movePurchasedToPantry() {
     const purchased=state.shoppingList.filter(item=>item.checked);
     if(!purchased.length)return showShoppingActionStatus('Check purchased items first, then move them to Pantry.');
-    purchased.forEach(item=>{
+    const previous={shoppingList:JSON.parse(JSON.stringify(state.shoppingList)),pantryItems:JSON.parse(JSON.stringify(state.pantryItems))};
+    try{purchased.forEach(item=>{
       const entries=item.entries?.length?item.entries:[{quantity:'1 item'}];
-      entries.forEach(entry=>{const amount=parsePantryAmount(entry.quantity);upsertPantryItem({name:item.name,quantity:amount.quantity,unit:amount.unit,group:item.group,purchasedAt:pantryToday(),store:item.store&&item.store!=='Unassigned'?item.store:'',source:'Shopping list purchase'});});
-    });
+      entries.forEach((entry,index)=>{const amount=parsePantryAmount(entry.quantity);upsertPantryItem({id:`purchase-${item.id}`,purchaseLotId:`purchase-${item.id}-${entry.id||index}`,purchaseCreatedAt:entry.createdAt||item.createdAt||'1970-01-01T00:00:00.000Z',name:item.name,quantity:amount.quantity,unit:amount.unit,group:item.group,purchasedAt:pantryToday(),store:item.store&&item.store!=='Unassigned'?item.store:'',source:'Shopping list purchase'});});
+    });}catch(error){Object.assign(state,previous);showShoppingActionStatus(error.message);return;}
     state.shoppingList=state.shoppingList.filter(item=>!item.checked);
     saveState();renderShoppingList();renderCounts();showShoppingActionStatus(`${purchased.length} purchased item${purchased.length===1?'':'s'} moved to Pantry.`);
   }
@@ -5387,6 +5390,8 @@ Other devices and household members keep their copies. You can restore it from S
 
   function renderItemConflicts() {
     const container=document.querySelector('#itemSyncConflicts');if(!container)return;container.replaceChildren();
+    const archived=householdSync.itemSync?.load().archivedConflicts||[];
+    if(archived.length){const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent='Export preserved sync alternatives';button.addEventListener('click',()=>deliverFile('SK-Preserved-Sync-Alternatives.json',JSON.stringify({format:'serenity-kitchen-saved-versions',archivedConflicts:archived},null,2)));container.append(button);}
     for(const conflict of householdSync.itemSync?.load().conflicts||[]){
       const card=document.createElement('div'),label=document.createElement('p');
       label.textContent=`${conflict.conflicts.length} items need review. All ${conflict.changes.length} related changes are paused together; both versions are saved.`;card.append(label);const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Review item differences';details.append(summary);card.append(details);
