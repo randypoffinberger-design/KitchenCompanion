@@ -1,8 +1,8 @@
-(() => {
+(async () => {
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.21.48';
+  const ENGINE_VERSION = '0.22.0';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -93,7 +93,8 @@
     urgent: { name:'Urgent alarm', pattern:[[980,.16,.07],[720,.16,.07],[980,.16,.07],[720,.16,.48]] }
   });
 
-  const profileStore = new KCProfileStore();
+  const profileStore = await KCProfileStore.open();
+  if (profileStore.durable) profileStore.durable.onError = showDurableSaveError;
   const state = profileStore.loadActiveState();
   const LIST_EXPANSION_MODES = new Set(['collapsed','stores-open','expanded']);
   state.favorites ||= []; state.recipeNotes ||= {}; state.hiddenRecipes ||= []; state.householdRecipes = state.householdRecipes && typeof state.householdRecipes === 'object' && !Array.isArray(state.householdRecipes) ? state.householdRecipes : {}; state.settings ||= {}; state.settings.accentColor ||= '#7b3f00'; state.settings.wakeLockMode ||= 'recipes-and-timers'; state.settings.alarmVolume ??= 0.85; state.settings.alarmSoundEnabled ??= true; state.settings.alarmTone = ALARM_TONES[state.settings.alarmTone] ? state.settings.alarmTone : 'bell'; state.settings.guidedSpeechEnabled ??= true; state.settings.guidedVoiceURI ||= ''; state.settings.guidedSpeechRate = Number(state.settings.guidedSpeechRate) || 0.95; state.settings.guidedSpeechPitch = Number(state.settings.guidedSpeechPitch) || 1; state.customCategories ||= []; state.timers ||= []; if (!state.guidedCookingProgress || typeof state.guidedCookingProgress !== 'object' || Array.isArray(state.guidedCookingProgress)) state.guidedCookingProgress = {}; state.shoppingList ||= []; state.regularItems ||= []; state.pantryItems ||= []; state.stores ||= ['Unassigned','Costco','Walmart']; state.moduleSources ||= {}; state.backupMeta ||= {}; state.learnedStorePreferences ||= {}; state.learnedShoppingGroups ||= {}; state.learnedAisles ||= {}; state.manualCrossLinks ||= []; state.mealPlans = state.mealPlans && typeof state.mealPlans === 'object' && !Array.isArray(state.mealPlans) ? state.mealPlans : {}; state.mealPlannerPreferences = state.mealPlannerPreferences && typeof state.mealPlannerPreferences === 'object' ? state.mealPlannerPreferences : { template:{}, recipes:{} }; state.mealPlannerPreferences.template ||= {}; state.mealPlannerPreferences.recipes ||= {}; state.mealPlanHistory = Array.isArray(state.mealPlanHistory) ? state.mealPlanHistory.slice(-400) : []; state.ratings = normalizeRatingMap(state.ratings);
@@ -155,17 +156,21 @@
   let householdSyncChangesEnabled = false;
   let cloudCreatingAccount = false;
   const householdSync = new SKHouseholdSync({
+    storage:profileStore.storage,
+    itemSync:true,
+    beforeSync:() => profileStore.flush(),
     profileId:profileStore.getActiveProfileMeta()?.profileId || '',
     onRemoteState:applyHouseholdSnapshot,
     confirmProfileBinding:user => {
-      const count = state.modules.find(module => module.moduleId === 'my-recipes')?.recipes?.length || 0;
-      return !count || confirm(`This local profile contains ${count} personal recipes. Do they belong to ${user.displayName || user.email}?
+      const count = (state.modules.find(module => module.moduleId === 'my-recipes')?.recipes?.length || 0) + state.shoppingList.length + state.pantryItems.length;
+      return !count || confirm(`This local profile contains ${count} saved items. Do they belong to ${user.displayName || user.email}?
 
 Continue to share them as this account's recipes. Cancel and choose a separate local profile if they belong to someone else.`);
     },
     onStatus:status => { renderCloudAccount(); setCloudStatus(status.message, status.kind); }
   });
 
+  if (profileStore.durable) profileStore.durable.onSaved = renderLocalSaveStatus;
   const startupIssues = [];
   function startupStep(label, action) {
     try { return action(); }
@@ -191,10 +196,10 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     if (profileStore.needsStorageRecovery?.()) {
       showStorageRecoveryScreen();
       profileStore.recoverFromIndexedDB().then(recovered => {
-        if (recovered) location.reload();
+        if (recovered) reloadAfterDurableSave();
         else if (navigator.onLine && profileStore.canInitializeFreshStorage?.()) {
           profileStore.initializeFreshStorage();
-          location.reload();
+          reloadAfterDurableSave();
         }
         else updateStorageRecoveryScreen('The recovery mirror was not available. Reconnect to the internet and tap Retry. No blank profile has been saved.');
       }).catch(error => updateStorageRecoveryScreen(`Automatic recovery could not finish: ${error.message}. Reconnect to the internet and tap Retry. No blank profile has been saved.`));
@@ -206,6 +211,10 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     startupStep('update service', registerServiceWorker);
     startupStep('built-in module', () => { if (!state.modules.length) state.modules.push(builtInModule); });
     const migrated = startupStep('data migration', migrateState);
+    startupStep('legacy item identities', () => {
+      const normalized=window.SKSharedModel.normalize(buildHouseholdSnapshot());
+      for(const [collection,fields] of Object.entries({'shopping-list':['shoppingList','regularItems'],pantry:['pantryItems'],'meal-plans':['mealPlanHistory']}))for(const field of fields)state[field]=normalized[collection][field]||[];
+    });
     startupStep('personal recipe module', ensurePersonalModule);
     startupStep(migrated ? 'save migrated data' : 'startup save', saveState);
     startupStep('appearance', applySettings);
@@ -234,7 +243,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     blocker.setAttribute('role', 'alert');
     blocker.innerHTML = `<div class="storage-recovery-card"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z"/><path d="M9 12l2 2 4-5"/></svg><h1>Your saved kitchen is protected</h1><p id="storageRecoveryMessage">${escapeHtml(profileStore.storageRecoveryMessage?.() || 'Saved profile data is temporarily unavailable.')} Serenity Kitchen stopped before creating or overwriting a blank profile.</p><div class="storage-recovery-actions"><button type="button" class="button" id="storageRecoveryRetry">Retry recovery</button><button type="button" class="button secondary" id="storageRecoveryRestore">Restore exported backup</button><button type="button" class="button secondary" id="storageRecoveryFresh">Start fresh in this browser</button></div><input id="storageRecoveryFile" type="file" accept=".skbackup,.json,application/json" hidden><small>Safari and an installed Home Screen app can have separate saved data. Restore a verified backup here, or start fresh only when this is a new browser copy. These choices do not read data from another app installation.</small></div>`;
     document.body.replaceChildren(blocker);
-    blocker.querySelector('#storageRecoveryRetry').addEventListener('click', () => location.reload());
+    blocker.querySelector('#storageRecoveryRetry').addEventListener('click', () => reloadAfterDurableSave());
     const fileInput = blocker.querySelector('#storageRecoveryFile');
     blocker.querySelector('#storageRecoveryRestore').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', async event => {
@@ -249,7 +258,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
         if (!confirm(`Restore ${profileName} with ${personal?.recipes?.length || 0} personal recipes into this browser copy?`)) return;
         updateStorageRecoveryScreen('Restoring and verifying the exported backup…');
         profileStore.restoreExternalBackup(payload);
-        location.reload();
+        reloadAfterDurableSave();
       } catch (error) { updateStorageRecoveryScreen(`The backup was not restored: ${error.message}`); }
     });
     blocker.querySelector('#storageRecoveryFresh').addEventListener('click', () => {
@@ -257,7 +266,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
       try {
         updateStorageRecoveryScreen('Creating and verifying a new browser kitchen…');
         profileStore.initializeFreshBrowserStorage();
-        location.reload();
+        reloadAfterDurableSave();
       } catch (error) { updateStorageRecoveryScreen(`Fresh setup did not finish: ${error.message}`); }
     });
   }
@@ -269,7 +278,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
 
   function loadState() {
     try {
-      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const parsed = JSON.parse(profileStore.storage.getItem(STORAGE_KEY));
       if (parsed && Array.isArray(parsed.modules)) return parsed;
     } catch (error) { console.warn('Unable to load saved state', error); }
     return { modules: [], favorites: [], recipeNotes: {}, hiddenRecipes: [], customCategories: [], timers: [], shoppingList: [], regularItems: [], pantryItems: [], stores: ['Unassigned','Costco','Walmart'], moduleSources: {}, manualCrossLinks: [], mealPlans:{}, mealPlannerPreferences:{template:{},recipes:{}}, mealPlanHistory:[], settings: { darkMode: false, metricHelpers: false, accentColor: '#7b3f00', wakeLockMode: 'recipes-and-timers', alarmVolume: 0.85, alarmSoundEnabled: true, alarmTone: 'bell' } };
@@ -297,6 +306,8 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     pruneUnusedMealPlans();
     profileStore.saveCombinedState(state);
     if (householdSyncChangesEnabled && !applyingRemoteSync) householdSync?.markDirty();
+    renderLocalSaveStatus();
+    return profileStore.flush?.().catch(showDurableSaveError);
   }
 
   function normalizeRatingRecord(entry) {
@@ -572,11 +583,12 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     document.querySelector('#manualCrossLinkSearch')?.addEventListener('input', renderManualCrossLinkResults);
     document.querySelector('#manualCrossLinkType')?.addEventListener('change', renderManualCrossLinkResults);
     document.querySelector('#cancelManualCrossLink')?.addEventListener('click', () => document.querySelector('#manualCrossLinkDialog')?.close());
-    els.createSafetyBackupBtn?.addEventListener('click', () => {
+    els.createSafetyBackupBtn?.addEventListener('click', async () => {
       const button = els.createSafetyBackupBtn;
       const originalText = button.textContent;
       try {
         const backup = profileStore.createSafetyBackup('manual-checkpoint', { force:true });
+        await profileStore.flush('manual-checkpoint', true);
         if (!backup) throw new Error('No app data was available to save.');
         renderSafeguards();
         button.textContent = 'Checkpoint created';
@@ -794,7 +806,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
         if (profile.profileId === activeId) return;
         saveState();
         profileStore.switchProfile(profile.profileId);
-        location.reload();
+        reloadAfterDurableSave();
       });
       els.profileQuickMenu.appendChild(button);
     });
@@ -869,7 +881,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
       const actions = row.querySelector('.profile-row-actions');
       if (profile.profileId !== activeId) {
         const switchBtn=document.createElement('button'); switchBtn.type='button'; switchBtn.className='button'; switchBtn.textContent='Use profile';
-        switchBtn.addEventListener('click',()=>{ saveState(); profileStore.switchProfile(profile.profileId); location.reload(); }); actions.appendChild(switchBtn);
+        switchBtn.addEventListener('click',()=>{ saveState(); profileStore.switchProfile(profile.profileId); reloadAfterDurableSave(); }); actions.appendChild(switchBtn);
       }
       const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='button secondary'; exportBtn.textContent='Export profile'; exportBtn.addEventListener('click',()=>exportProfile(profile)); actions.appendChild(exportBtn);
       const more=document.createElement('div');
@@ -1183,14 +1195,14 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.21.48', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.22.0', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!sessionStorage.getItem('kc-reloaded')) {
         sessionStorage.setItem('kc-reloaded','1');
-        location.reload();
+        reloadAfterDurableSave();
       }
     });
   }
@@ -1253,7 +1265,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     const info = profileStore.getDiagnostics();
     const recoveryMessage = info.recoveredAt ? ` • Recovered from ${new Date(info.recoveredAt).toLocaleString()}` : '';
     const storageMb = (info.storageBytes / 1024 / 1024).toFixed(2);
-    els.safeguardStatus.textContent = `Storage schema ${info.storageSchemaVersion} • ${info.validBackupCount}/${info.backupCount} checkpoints healthy • ${info.manualBackupCount} manual • ${info.automaticBackupCount} automatic • ${info.fullBackupCount} full-module recovery point • About ${storageMb} MB used • Last checkpoint ${info.lastBackupAt ? new Date(info.lastBackupAt).toLocaleString() : 'not yet created'}${recoveryMessage}.`;
+    els.safeguardStatus.textContent = `Storage schema ${info.storageSchemaVersion} • ${info.validBackupCount}/${info.backupCount} checkpoints readable • ${info.manualBackupCount} manual • ${info.automaticBackupCount} automatic • ${info.fullBackupCount} full-module recovery point • About ${storageMb} MB used • Last checkpoint ${info.lastBackupAt ? new Date(info.lastBackupAt).toLocaleString() : 'not yet created'}${recoveryMessage}.`;
     if (!els.safetyBackupList) return;
     els.safetyBackupList.innerHTML = '';
     const reasonLabels = {
@@ -1264,19 +1276,22 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
       'before-recipe-delete':'Before recipe deletion', 'before-bulk-delete':'Before bulk deletion',
       'before-shopping-list-import':'Before shopping-list import'
     };
-    profileStore.compactSafetyBackups().forEach(backup => {
+    const exportHistory=document.createElement('button'); exportHistory.type='button'; exportHistory.className='button secondary'; exportHistory.textContent='Export all recovery history';
+    exportHistory.addEventListener('click',async()=>{try{const points=await profileStore.recoveryPoints();await deliverFile('SK-Recovery-History.json',JSON.stringify({format:'serenity-kitchen-recovery-history',exportedAt:new Date().toISOString(),points},null,2));}catch(error){alert(error.message);}});
+    els.safetyBackupList.append(exportHistory);
+    const browserHistory=document.createElement('button'); browserHistory.type='button'; browserHistory.className='button secondary'; browserHistory.textContent='Browse all saved recovery copies';
+    browserHistory.addEventListener('click',()=>browseRecoveryPoints());els.safetyBackupList.append(browserHistory);
+    profileStore.getSafetyBackups().forEach(backup => {
       const row = document.createElement('div'); row.className = 'safety-backup-row';
       const label = document.createElement('span');
       const type = backup.kind === 'manual' ? 'Manual' : 'Automatic';
       const scope = backup.snapshotMode === 'full' ? 'Full module recovery' : 'Compact';
       label.textContent = `${type}: ${reasonLabels[backup.reason] || backup.reason} • ${scope} • ${new Date(backup.createdAt).toLocaleString()}`;
-      const button = document.createElement('button'); button.type='button'; button.className='button secondary'; button.textContent='Restore';
-      button.addEventListener('click', () => {
-        if (!confirm(`Restore checkpoint from ${new Date(backup.createdAt).toLocaleString()}? A fresh checkpoint will be created first.`)) return;
-        try { profileStore.restoreSafetyBackup(backup.id); location.reload(); }
-        catch (error) { alert(`Checkpoint was not restored: ${error.message}`); }
-      });
-      row.append(label, button); els.safetyBackupList.append(row);
+      const review = document.createElement('button'); review.type='button'; review.className='button secondary'; review.textContent='Review items';
+      review.addEventListener('click',()=>openItemRecovery(backup));
+      const exportButton = document.createElement('button'); exportButton.type='button'; exportButton.className='button secondary'; exportButton.textContent='Export copy';
+      exportButton.addEventListener('click',()=>deliverFile(`SK-Recovery-${backup.createdAt.slice(0,10)}.json`,JSON.stringify({format:'serenity-kitchen-recovery',point:backup},null,2)));
+      row.append(label, review, exportButton); els.safetyBackupList.append(row);
     });
   }
 
@@ -1289,9 +1304,9 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
       ['Notes storage valid', state.recipeNotes && typeof state.recipeNotes === 'object' && !Array.isArray(state.recipeNotes)],
       ['Shopping list storage valid', Array.isArray(state.shoppingList)],
       ['Personal recipes available', Array.isArray(profileStore.activeProfile?.personalRecipes)],
-      ['All retained checkpoints healthy', storageInfo.backupCount === storageInfo.validBackupCount],
+      ['All retained checkpoints readable', storageInfo.backupCount === storageInfo.validBackupCount],
       ['Service workers supported', 'serviceWorker' in navigator],
-      ['Local storage writable', (() => { try { localStorage.setItem('kc-diagnostic-test','1'); localStorage.removeItem('kc-diagnostic-test'); return true; } catch { return false; } })()]
+      ['Local storage writable', (() => { try { profileStore.storage.setItem('kc-diagnostic-test','1'); profileStore.storage.removeItem('kc-diagnostic-test'); return true; } catch { return false; } })()]
     ];
     const passed = checks.filter(([, ok]) => ok).length;
     els.diagnosticsOutput.hidden = false;
@@ -3110,7 +3125,7 @@ Other devices and household members keep their copies. You can restore it from S
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.21.48');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.22.0');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -5236,7 +5251,7 @@ Other devices and household members keep their copies. You can restore it from S
     result.favorites=[...new Set([...(result.favorites||[]),...(incoming.favorites||[])])]; result.recipeNotes={...(incoming.recipeNotes||{}),...(result.recipeNotes||{})}; result.ratings=normalizeRatingMap({...(incoming.ratings||{}),...(result.ratings||{})}); result.customCategories=[...new Set([...(result.customCategories||[]),...(incoming.customCategories||[])])]; result.shoppingList=[...(result.shoppingList||[]),...(incoming.shoppingList||[])]; result.regularItems=consolidateRegularItems([...(result.regularItems||[]),...(incoming.regularItems||[])]); result.pantryItems=[...(result.pantryItems||[]),...(incoming.pantryItems||[])]; result.stores=[...new Set([...(result.stores||[]),...(incoming.stores||[])])]; result.settings={...(incoming.settings||{}),...(result.settings||{})}; result.learnedStorePreferences={...(incoming.learnedStorePreferences||{}),...(result.learnedStorePreferences||{})}; result.learnedShoppingGroups={...(incoming.learnedShoppingGroups||{}),...(result.learnedShoppingGroups||{})}; result.learnedAisles={...(incoming.learnedAisles||{}),...(result.learnedAisles||{})}; result.mealPlans={...(incoming.mealPlans||{}),...(result.mealPlans||{})}; result.mealPlannerPreferences={template:{...(incoming.mealPlannerPreferences?.template||{}),...(result.mealPlannerPreferences?.template||{})},recipes:{...(incoming.mealPlannerPreferences?.recipes||{}),...(result.mealPlannerPreferences?.recipes||{})}}; result.mealPlanHistory=[...(incoming.mealPlanHistory||[]),...(result.mealPlanHistory||[])].slice(-400); const manualLinks=new Map([...(incoming.manualCrossLinks||[]),...(result.manualCrossLinks||[])].map(link=>[`${link.sourceKey}|${link.targetKey}`,link])); result.manualCrossLinks=[...manualLinks.values()]; return result;
   }
 
-  function restoreSelectedBackup(event) {
+  async function restoreSelectedBackup(event) {
     event.preventDefault(); if(!pendingBackup)return; const mode=new FormData(els.restoreBackupForm).get('restoreMode');
     const previousState = JSON.parse(JSON.stringify(state));
     const previousProfileMeta = profileStore.getActiveProfileMeta();
@@ -5246,13 +5261,13 @@ Other devices and household members keep their copies. You can restore it from S
       // helpful when space permits, but restore must not fail merely because an
       // iPhone cannot hold a second complete copy of the same recipe library.
       profileStore.createSafetyBackup('before-full-backup-restore', { force:true });
-      localStorage.removeItem(`${STORAGE_KEY}.rollback`);
+      profileStore.storage.removeItem(`${STORAGE_KEY}.rollback`);
       const restored=mode==='replace'?JSON.parse(JSON.stringify(pendingBackup.state)):mergeBackupState(state,pendingBackup.state);
       Object.keys(state).forEach(key => delete state[key]); Object.assign(state, restored);
       if (mode === 'replace' && pendingBackup.activeProfile) profileStore.applyActiveProfileMeta(pendingBackup.activeProfile);
-      saveState();
+      await saveState(); await profileStore.flush('external-backup-restore', true);
       pendingBackup=null; els.restoreBackupDialog.close();
-      alert('Backup restored and verified. Serenity Kitchen will reload now.'); location.reload();
+      alert('Backup restored and verified. Serenity Kitchen will reload now.'); reloadAfterDurableSave();
     } catch(error) {
       Object.keys(state).forEach(key => delete state[key]); Object.assign(state, previousState);
       try { profileStore.applyActiveProfileMeta(previousProfileMeta); } catch {}
@@ -5275,7 +5290,16 @@ Other devices and household members keep their copies. You can restore it from S
 
   function applyHouseholdSnapshot(snapshot, options = {}) {
     if (!snapshot || typeof snapshot !== 'object') return;
-    profileStore.createSafetyBackup(options.initial ? 'before-household-download' : 'before-household-sync', { force:true });
+    if (profileStore.durable && !options.protected) {
+      const generation=householdSync.changeGeneration,context=householdSync.context();
+      return profileStore.flush('before-incoming-sync',false,true).then(()=>{
+        householdSync.assertContext(context);
+        if(generation!==householdSync.changeGeneration)throw new Error('New local edits were saved while syncing. The incoming copy will be retried.');
+        return applyHouseholdSnapshot(snapshot,{...options,protected:true});
+      });
+    }
+    const protection = profileStore.createSafetyBackup(options.initial ? 'before-household-download' : 'before-household-sync', { force:true, required:true });
+    if (!protection) throw new Error('Sync paused because a verified safety checkpoint could not be created. Existing local data was kept.');
     profileStore.createAutomaticRecoverySnapshot(options.initial ? 'before-household-download' : 'before-household-sync').catch(error => console.warn('The automatic recovery snapshot could not be created.', error));
     const previousState = JSON.parse(JSON.stringify(state));
     applyingRemoteSync = true;
@@ -5311,13 +5335,85 @@ Other devices and household members keep their copies. You can restore it from S
       if (currentView === 'shopping') renderShoppingList();
       if (currentView === 'pantry') renderPantry();
       if (currentView === 'meal-planner') renderMealPlanner();
+      return profileStore.flush?.('incoming-sync');
     } catch (error) { Object.keys(state).forEach(key => delete state[key]); Object.assign(state, previousState); throw error; } finally { applyingRemoteSync = false; }
+  }
+
+  function renderLocalSaveStatus() {
+    let status=document.querySelector('#localSaveStatus');
+    if(!status){status=document.createElement('p');status.id='localSaveStatus';status.className='setting-help';status.setAttribute('role','status');document.body.prepend(status);}
+    const durable=profileStore.durable;
+    if(durable?.lastError){status.textContent='Changes have not been saved. Export a backup before closing SK.';return;}
+    const pending=householdSync.hasPending(),saved=!durable||durable.savedGeneration===durable.storage.generation;
+    status.textContent=!saved?'Saving on this device…':pending?'Saved on this device · Waiting to sync':householdSync.isReady()?'Saved on this device and household':'Saved on this device';
+    if(saved)document.querySelector('#durableSaveNotice')?.remove();
+  }
+
+  async function browseRecoveryPoints() {
+    try {
+      const points=await profileStore.recoveryPoints();
+      const deleted=Object.fromEntries(Object.entries(householdSync.itemSync?.load().remote||{}).filter(([,item])=>item.deleted).map(([key,item])=>[key,item.payload]));
+      if(Object.keys(deleted).length)points.unshift(profileStore.sharedRecoveryPoint(window.SKSharedModel.inflate(deleted),'Removed household items'));
+      const dialog=document.createElement('dialog'),body=document.createElement('div');body.className='dialog-card';
+      const title=document.createElement('h2');title.textContent='Saved recovery copies';body.append(title);
+      for(const point of points){const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent=`${new Date(point.createdAt).toLocaleString()} · ${point.source || point.reason}`;button.addEventListener('click',()=>{dialog.close();dialog.remove();openItemRecovery(point);});body.append(button);}
+      const close=document.createElement('button');close.type='button';close.textContent='Close';close.className='button secondary';close.addEventListener('click',()=>{dialog.close();dialog.remove();});body.append(close);dialog.append(body);document.body.append(dialog);dialog.showModal();
+    }catch(error){alert(`Recovery copies could not be read: ${error.message}`);}
+  }
+
+  function openItemRecovery(point) {
+    const dialog=document.createElement('dialog'),body=document.createElement('div');body.className='dialog-card';
+    const title=document.createElement('h2');title.textContent='Recover selected items';body.append(title);
+    const description=document.createElement('p');description.textContent=`Saved ${new Date(point.createdAt).toLocaleString()}. Review this copy before choosing items. Current items are kept; a different saved version is added as a recovered copy.`;body.append(description);
+    const select=document.createElement('select');select.setAttribute('aria-label','Collection to recover');
+    for(const [value,label] of [['shopping','Shopping list'],['pantry','Pantry'],['recipes','My Recipes']]){const option=document.createElement('option');option.value=value;option.textContent=label;select.append(option);}body.append(select);
+    const list=document.createElement('div');list.style.maxHeight='45vh';list.style.overflow='auto';body.append(list);
+    let candidates=[];
+    const render=()=>{list.replaceChildren();try{candidates=profileStore.recoveryItems(point,select.value);for(const item of candidates){const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.value=item.id;const existing=select.value==='shopping'?state.shoppingList:select.value==='pantry'?state.pantryItems:ensurePersonalModule().recipes;check.checked=!existing.some(current=>current.id===item.id);label.append(check,document.createTextNode(item.name||item.id));list.append(label);}}catch(error){list.textContent=error.message;candidates=[];}};
+    select.addEventListener('change',render);render();
+    const apply=document.createElement('button');apply.type='button';apply.className='button';apply.textContent='Recover selected items';
+    apply.addEventListener('click',async()=>{const ids=[...list.querySelectorAll('input:checked')].map(input=>input.value);if(!ids.length)return;if(!confirm(`Recover ${ids.length} selected items into the active profile? Current items will be kept.`))return;apply.disabled=true;try{
+      requireSafetyCheckpoint('before-selective-recovery');
+      if(select.value==='shopping')state.shoppingList=profileStore.mergeRecoveredItems(state.shoppingList,candidates,ids);
+      else if(select.value==='pantry')state.pantryItems=profileStore.mergeRecoveredItems(state.pantryItems,candidates,ids);
+      else ensurePersonalModule().recipes=profileStore.mergeRecoveredItems(ensurePersonalModule().recipes,candidates,ids);
+      await saveState();await profileStore.flush('selective-recovery',true);refreshAll({save:false});dialog.close();dialog.remove();
+    }catch(error){alert(`Recovery did not finish: ${error.message}`);}finally{apply.disabled=false;}});body.append(apply);
+    const close=document.createElement('button');close.type='button';close.className='button secondary';close.textContent='Cancel';close.addEventListener('click',()=>{dialog.close();dialog.remove();});body.append(close);dialog.append(body);document.body.append(dialog);dialog.showModal();
+  }
+
+  function renderItemConflicts() {
+    const container=document.querySelector('#itemSyncConflicts');if(!container)return;container.replaceChildren();
+    for(const conflict of householdSync.itemSync?.load().conflicts||[]){
+      const card=document.createElement('div'),label=document.createElement('p');
+      label.textContent=`${conflict.changes.length} local changes need review. A newer household version is also saved.`;card.append(label);
+      const describe=(row,removed)=>{if(removed)return 'Removed';if(!row)return 'Not present';const value=row.value;if(typeof value!=='object'||value===null)return String(value);return [value.name||'Saved entry',value.quantity==null?'':`Quantity ${value.quantity}`,value.checked?'Purchased':'',value.store||''].filter(Boolean).join(' · ');};
+      for(const op of conflict.changes){const text=document.createElement('p'),key=window.SKSharedModel.identifier([op.collection,op.id]),remote=householdSync.itemSync.data.remote[key];const effective=householdSync.itemSync.data.pending[key]||op;text.textContent=`${({'shopping-list':'Shopping',pantry:'Pantry','meal-plans':'Meal plan'})[op.collection]} — Local: ${describe(effective.payload,effective.operation==='remove')} — Household: ${describe(remote?.payload,remote?.deleted)}`;card.append(text);}
+      const exportButton=document.createElement('button');exportButton.type='button';exportButton.className='button secondary';exportButton.textContent='Export both versions';exportButton.addEventListener('click',()=>deliverFile('SK-Saved-Versions.json',JSON.stringify({format:'serenity-kitchen-saved-versions',conflict,localPending:householdSync.itemSync.data.pending,household:householdSync.itemSync.data.remote},null,2)));card.append(exportButton);
+      for(const [choice,text] of [['local','Use these local changes'],['shared','Use the household version']]){const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent=text;button.addEventListener('click',async()=>{if(!confirm(`${text}? The alternate version remains in saved recovery history.`))return;try{await profileStore.flush('before-conflict-choice',true);await householdSync.itemSync.resolve(conflict.id,choice,buildHouseholdSnapshot);renderCloudAccount();householdSync.start(buildHouseholdSnapshot);}catch(error){showCloudError(error);}});card.append(button);}container.append(card);
+    }
+  }
+
+  function showDurableSaveError(error) {
+    let notice = document.querySelector('#durableSaveNotice');
+    if (!notice) {
+      notice = document.createElement('div'); notice.id = 'durableSaveNotice';
+      notice.className = 'startup-recovery-notice'; notice.setAttribute('role','alert');
+      document.body.prepend(notice);
+    }
+    notice.textContent = `Changes have not been saved. Keep SK open and export a full backup before closing it. ${error.message}`;
+    householdSync?.stop();
+  }
+
+  function reloadAfterDurableSave() {
+    return profileStore.flush('before-reload').then(() => location.reload()).catch(showDurableSaveError);
   }
 
   function cloudElement(id) { return document.querySelector(`#${id}`); }
   function setCloudStatus(message = '', kind = '') { const status=cloudElement('cloudDialogStatus'); if(status){status.textContent=message;status.dataset.kind=kind||'';} }
 
   function renderCloudAccount() {
+    renderItemConflicts();
     const summary=householdSync.summary(), title=cloudElement('cloudAccountTitle'), brief=cloudElement('cloudAccountStatus'), signedOut=cloudElement('cloudSignedOutPanel'), signedIn=cloudElement('cloudSignedInPanel');
     if(!title||!brief)return;
     cloudElement('cloudServerUrl').value=summary.serverUrl; signedOut.hidden=summary.signedIn; signedIn.hidden=!summary.signedIn;
@@ -5341,7 +5437,7 @@ Other devices and household members keep their copies. You can restore it from S
   async function createCloudHousehold(){const name=prompt('Household name:','Poffinberger Household');if(!name)return;setCloudStatus('Creating household…','working');try{await householdSync.createHousehold(name);renderCloudAccount();setCloudStatus('Household created. Choose which copy should become the first shared copy.','success');}catch(error){showCloudError(error);}}
   async function joinCloudHousehold(){const code=prompt('Enter the Serenity Kitchen household invitation code:');if(!code)return;setCloudStatus('Joining household…','working');try{await householdSync.joinHousehold(code);renderCloudAccount();setCloudStatus('Household joined. Download the household copy to begin.','success');}catch(error){showCloudError(error);}}
   async function createCloudInvite(){setCloudStatus('Creating invitation…','working');try{const invite=await householdSync.createInvite('adult');try{await navigator.clipboard.writeText(invite.code);setCloudStatus(`Invitation code copied. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}catch{prompt('Copy this one-time household invitation code:',invite.code);setCloudStatus(`Invitation created. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}}catch(error){showCloudError(error);}}
-  async function initializeCloudHousehold(mode){const warning=mode==='upload'?'Use this device as the first shared household copy? Existing household data cannot be replaced.':'Download the household copy to this profile? A local safety checkpoint will be created first.';if(!confirm(warning))return;setCloudStatus(mode==='upload'?'Uploading the first household copy…':'Downloading household data…','working');try{await householdSync.initialize(mode,buildHouseholdSnapshot());householdSync.start(buildHouseholdSnapshot);renderCloudAccount();}catch(error){showCloudError(error);}}
+  async function initializeCloudHousehold(mode){const warning='Connect this local profile to the household? Local additions will be kept and different versions will be saved for review.';if(!confirm(warning))return;setCloudStatus('Connecting and preserving local changes…','working');try{await householdSync.initialize(mode,buildHouseholdSnapshot());householdSync.start(buildHouseholdSnapshot);renderCloudAccount();}catch(error){showCloudError(error);}}
   function showCloudError(error){setCloudStatus(error?.message||'The household request failed.','error');renderCloudAccount();}
 
   function escapeHtml(value) {
@@ -5352,5 +5448,11 @@ Other devices and household members keep their copies. You can restore it from S
   // Start only after every const and helper has finished initialization.
   init();
   SKPasswordUI.init({sync:householdSync,renderAccount:renderCloudAccount,openAccount:openCloudAccount,resetServer:"https://api.serenityvalleyworks.com/sk"});
-})();
+})().catch(error => {
+  console.error('Saved kitchen could not be opened.', error);
+  const notice = document.createElement('div'); notice.className='startup-recovery-notice';
+  notice.setAttribute('role','alert');
+  notice.textContent='SK could not open its saved data. Existing data has not been replaced. Close other SK windows and reopen this app. Do not clear website data.';
+  document.body.prepend(notice);
+});
 

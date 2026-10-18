@@ -20,13 +20,13 @@
       const c = this.client;
       const key = `serenityKitchen.recipeSync.v1:${c.serverUrl()}:${c.config.user?.id}:${c.config.activeHouseholdId}:${c.profileId}`;
       if (key !== this.storageKey) {
-        const raw = localStorage.getItem(key);
+        const raw = c.storage.getItem(key);
         this.data = raw ? JSON.parse(raw) : { cursor:0, owners:{}, versions:{}, observed:{}, pending:{} };
         this.storageKey = key;
       }
       return this.data;
     }
-    save() { localStorage.setItem(this.storageKey, JSON.stringify(this.data)); }
+    save() { this.client.storage.setItem(this.storageKey, JSON.stringify(this.data)); }
     stage(recipes) {
       const data = this.load();
       const identities = new Set();
@@ -109,7 +109,7 @@
       // An unchanged poll must not repeatedly save the profile or consume its
       // rolling safety checkpoints.
       if (!data.applied || stable(owners) !== stable(data.owners) || stable(localOwn) !== stable(recipes)) {
-        c.onRemoteState({ recipes:{ ownerRecords } }, { recipeReconciled:true });
+        await c.onRemoteState({ recipes:{ ownerRecords } }, { recipeReconciled:true });
       }
       // Only consume history after the profile write succeeded.
       const previous = clone(data);
@@ -121,6 +121,8 @@
 
   class SKHouseholdSync {
     constructor(options = {}) {
+      this.storage = options.storage || localStorage;
+      this.beforeSync = options.beforeSync || (() => Promise.resolve());
       this.onRemoteState = options.onRemoteState || (() => {});
       this.confirmProfileBinding = options.confirmProfileBinding || (() => true);
       this.onStatus = options.onStatus || (() => {});
@@ -133,10 +135,12 @@
       this.config = this.load();
       this.sessionEpoch = 0;
       this.recipeSync = new RecipeSync(this);
+      this.itemSync = options.itemSync ? new window.SKItemSync(this) : null;
       if (this.config.user?.id && this.config.profileId) {
         this.config.profileAccounts[this.bindingKey(this.config.profileId)] ||= this.config.user.id;
       }
-      this.dirty = !!this.config.pendingScopes[this.scopeKey()];
+      if (this.config.activeHouseholdId && this.config.initializedHouseholds[this.initializationKey()]) this.config.profileHouseholds[this.bindingKey()] ||= this.config.activeHouseholdId;
+      this.dirty = this.hasPending();
       if (LEGACY_SERVERS.has(String(this.config.serverUrl || '').replace(/\/+$/, ''))) {
         this.config.serverUrl = DEFAULT_SERVER;
         this.save();
@@ -154,24 +158,29 @@
       return {
         serverUrl: DEFAULT_SERVER,
         token: '', expiresAt: '', user: null, households: [], activeHouseholdId: '',
-        profileAccounts:{}, pendingScopes:{}, profileId: '', initializedHouseholds: {}, cursors: {}, revisions: {}, recipeOwnershipVersion:0, recipeOwnershipMigrationComplete:false, lastSyncAt: '', lastError: ''
+        profileAccounts:{}, profileHouseholds:{}, pendingScopes:{}, pendingProfiles:{}, profileId: '', initializedHouseholds: {}, cursors: {}, revisions: {}, recipeOwnershipVersion:0, recipeOwnershipMigrationComplete:false, lastSyncAt: '', lastError: ''
       };
     }
 
     load() {
-      try { return { ...this.defaults(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') }; }
+      try { return { ...this.defaults(), ...JSON.parse(this.storage.getItem(STORAGE_KEY) || '{}') }; }
       catch { return this.defaults(); }
     }
 
-    save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.config)); }
+    save() { this.storage.setItem(STORAGE_KEY, JSON.stringify(this.config)); }
     serverUrl() { return String(this.config.serverUrl || DEFAULT_SERVER).replace(/\/+$/, ''); }
     isSignedIn() { return !!this.config.token && Date.parse(this.config.expiresAt || 0) > Date.now(); }
     activeHousehold() { return this.config.households.find(item => item.id === this.config.activeHouseholdId) || null; }
     bindingKey(profileId = this.profileId) { return this.serverUrl() + ':' + profileId; }
     scopeKey() { return this.serverUrl() + ':' + this.config.user?.id + ':' + this.config.activeHouseholdId + ':' + this.profileId; }
+    hasPending() {
+      const pending = this.config.pendingProfiles[this.bindingKey()];
+      const itemData = this.itemSync?.load();
+      return !!(itemData && (Object.keys(itemData.pending).length || itemData.conflicts.length)) || !!this.config.pendingScopes[this.scopeKey()] || !!(pending && (!pending.owner || pending.owner === this.config.user?.id) && (!pending.household || pending.household === this.config.activeHouseholdId));
+    }
     context() { return this.sessionEpoch + ':' + this.scopeKey() + ':' + this.config.token; }
     assertContext(context) { if (context !== this.context()) throw Object.assign(new Error('Account or household changed. The old sync response was ignored.'), { staleContext:true }); }
-    isProfileBound() { return (!this.config.profileId || this.config.profileId === this.profileId) && (!this.config.profileAccounts[this.bindingKey()] || this.config.profileAccounts[this.bindingKey()] === this.config.user?.id); }
+    isProfileBound() { return (!this.config.profileHouseholds[this.bindingKey()] || !this.config.activeHouseholdId || this.config.profileHouseholds[this.bindingKey()] === this.config.activeHouseholdId) && (!this.config.profileId || this.config.profileId === this.profileId) && (!this.config.profileAccounts[this.bindingKey()] || this.config.profileAccounts[this.bindingKey()] === this.config.user?.id); }
     initializationKey() { return `${this.config.activeHouseholdId}:${this.profileId}`; }
     isReady() { return this.isSignedIn() && !!this.activeHousehold() && this.isProfileBound() && !!this.config.initializedHouseholds[this.initializationKey()]; }
 
@@ -179,7 +188,7 @@
       return {
         serverUrl:this.serverUrl(), signedIn:this.isSignedIn(), user:clone(this.config.user), households:clone(this.config.households),
         activeHousehold:clone(this.activeHousehold()), profileBound:this.isProfileBound(), initialized:!!this.config.initializedHouseholds[this.initializationKey()],
-        lastSyncAt:this.config.lastSyncAt, lastError:this.config.lastError
+        lastSyncAt:this.config.lastSyncAt, lastError:this.config.lastError, itemConflicts:this.itemSync?.load().conflicts || []
       };
     }
 
@@ -243,31 +252,35 @@
       this.config.profileAccounts[this.bindingKey()] = result.user.id;
       this.config.token = result.token; this.config.expiresAt = result.expiresAt; this.config.user = result.user;
       this.config.profileId = this.profileId; this.config.lastError = ''; this.save();
-      await this.refreshAccount(); this.dirty = !!this.config.pendingScopes[this.scopeKey()]; return this.summary();
+      await this.refreshAccount(); this.dirty = this.hasPending(); return this.summary();
     }
 
     async refreshAccount() {
       const result = await this.request('/api/v1/me', { method:'GET' });
       this.config.user = result.user; this.config.households = result.households || [];
-      if (!this.config.households.some(item => item.id === this.config.activeHouseholdId)) this.config.activeHouseholdId = this.config.households[0]?.id || '';
+      const boundHousehold=this.config.profileHouseholds[this.bindingKey()];
+      if(boundHousehold)this.config.activeHouseholdId=this.config.households.some(item=>item.id===boundHousehold)?boundHousehold:'';
+      else if (!this.config.households.some(item => item.id === this.config.activeHouseholdId)) this.config.activeHouseholdId = this.config.households[0]?.id || '';
       this.save(); return this.summary();
     }
 
     async logout() {
       const token = this.config.token, serverUrl = this.config.serverUrl;
-      const { profileAccounts, pendingScopes, initializedHouseholds, cursors, revisions } = this.config;
+      const { profileAccounts, profileHouseholds, pendingScopes, pendingProfiles, initializedHouseholds, cursors, revisions } = this.config;
       this.stop(); this.sessionEpoch += 1;
-      this.config = { ...this.defaults(), serverUrl, profileAccounts, pendingScopes, initializedHouseholds, cursors, revisions };
+      this.config = { ...this.defaults(), serverUrl, profileAccounts, profileHouseholds, pendingScopes, pendingProfiles, initializedHouseholds, cursors, revisions };
       this.dirty = false; this.save(); this.emit('Signed out.', 'idle');
       try { if (token) await this.request('/api/v1/auth/logout', { method:'POST', headers:{ authorization:'Bearer '+token }, body:'{}' }); } catch {}
     }
 
     async createHousehold(name) {
+      if(this.config.profileHouseholds[this.bindingKey()])throw new Error('Use a separate local profile to create another household. This profile keeps its existing household data.');
       const result = await this.request('/api/v1/households', { method:'POST', body:JSON.stringify({ name }) });
       await this.refreshAccount(); this.config.activeHouseholdId = result.household.id; this.save(); return result.household;
     }
 
     async joinHousehold(code) {
+      if(this.config.profileHouseholds[this.bindingKey()])throw new Error('Use a separate local profile to join another household. This profile keeps its existing household data.');
       const result = await this.request('/api/v1/households/join', { method:'POST', body:JSON.stringify({ code:String(code || '').trim() }) });
       await this.refreshAccount(); this.config.activeHouseholdId = result.household.id; this.config.profileId = this.profileId; this.save(); return result.household;
     }
@@ -279,10 +292,12 @@
     }
 
     selectHousehold(id) {
+      const bound=this.config.profileHouseholds[this.bindingKey()];
+      if(bound && bound!==id)throw new Error('This local profile belongs to another household. Create or select a separate local profile for this household.');
       if (!this.config.households.some(item => item.id === id)) throw new Error('Household not found.');
       this.stop(); this.sessionEpoch += 1;
       this.config.activeHouseholdId = id; this.config.profileId = this.profileId;
-      this.dirty = !!this.config.pendingScopes[this.scopeKey()]; this.save();
+      this.dirty = this.hasPending(); this.save();
     }
 
     key(collection, recordId = '') { return `${this.config.activeHouseholdId}:${collection}${recordId ? `:${recordId}` : ''}`; }
@@ -312,11 +327,12 @@
           method:'POST', body:JSON.stringify({ changes:[{ id:recordId, mutationId:uuid(), baseRevision, payload }] })
         });
       } catch (error) {
-        const current = error.status === 409 ? error.body?.conflicts?.find(item => item.id === recordId)?.current : null;
-        if (!current) throw error;
-        result = await this.request(`/api/v1/households/${id}/sync/${collection}`, {
-          method:'POST', body:JSON.stringify({ changes:[{ id:recordId, mutationId:uuid(), baseRevision:Number(current.revision || 0), payload }] })
-        });
+        if (error.status === 409) {
+          error.message = 'Sync conflict: another device changed this household. Local changes are still waiting to sync. Export them before resolving the conflict.';
+        }
+        // A newer revision is not permission to replace the newer contents.
+        // syncNow retains the pending local scope when this request fails.
+        throw error;
       }
       this.assertContext(context);
       const applied = result.applied?.[0];
@@ -356,6 +372,14 @@
       if (!this.isProfileBound()) throw new Error('This profile belongs to another account.');
       const context = this.context();
       this.config.profileId = this.profileId;
+      if (this.itemSync) {
+        this.localSnapshotProvider ||= () => localSnapshot;
+        await this.itemSync.sync(this.localSnapshotProvider);
+        this.config.initializedHouseholds[this.initializationKey()] = true;
+        this.config.profileHouseholds[this.bindingKey()] = this.config.activeHouseholdId;
+        this.save(); await this.beforeSync(); this.start();
+        return;
+      }
       const remote = await this.remoteSnapshot();
       this.assertContext(context);
       if (mode === 'upload') {
@@ -363,19 +387,30 @@
         for (const collection of COLLECTIONS) await this.pushCollection(collection, localSnapshot[collection], 0);
       } else if (mode === 'download') {
         if (!remote.hasData) throw new Error('This household does not contain any shared data yet. Upload this device instead.');
-        this.onRemoteState(remote.snapshot, { initial:true });
+        await this.onRemoteState(remote.snapshot, { initial:true });
       } else throw new Error('Choose whether to upload or download the first household copy.');
       this.assertContext(context);
       Object.assign(this.config.cursors, remote.cursors || {}); Object.assign(this.config.revisions, remote.revisions || {});
       this.config.initializedHouseholds[this.initializationKey()] = true;
+      this.config.profileHouseholds[this.bindingKey()] = this.config.activeHouseholdId;
       this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save(); this.start();
       this.emit('Household sync is active.', 'success');
     }
 
     markDirty() {
+      this.changeGeneration += 1;
+      const bound = this.config.profileAccounts[this.bindingKey()];
+      this.config.pendingProfiles[this.bindingKey()] = {
+        owner:bound || this.config.user?.id || '',
+        household:this.config.activeHouseholdId || this.config.pendingProfiles[this.bindingKey()]?.household || '',
+        generation:this.changeGeneration
+      };
+      if (this.isProfileBound() && this.config.user && this.activeHousehold()) this.config.pendingScopes[this.scopeKey()] = true;
+      this.dirty = this.isProfileBound() && !!this.config.initializedHouseholds[this.initializationKey()] && this.hasPending();
+      this.save();
+      // Saving local changes never depends on an authenticated session.
+      if (this.itemSync && this.localSnapshotProvider) this.itemSync.stage(this.localSnapshotProvider());
       if (!this.isReady()) return;
-      this.dirty = true; this.changeGeneration += 1;
-      this.config.pendingScopes[this.scopeKey()] = true; this.save();
       if (this.localSnapshotProvider) this.recipeSync.stage(this.localSnapshotProvider().recipes?.personalRecipes || []);
       clearTimeout(this.pushTimer);
       if (this.syncing) return;
@@ -408,7 +443,7 @@
       // events only after they have actually been applied and saved locally.
       this.assertContext(context);
       if (this.dirty || generation !== this.changeGeneration) return {};
-      if (Object.keys(updates).length) this.onRemoteState(updates, { initial:false });
+      if (Object.keys(updates).length) await this.onRemoteState(updates, { initial:false });
       this.config.cursors = cursors; this.config.revisions = revisions;
       return updates;
     }
@@ -419,7 +454,23 @@
       this.syncing = true; this.emit('Syncing household…', 'working');
       let completed = false, failure = null;
       try {
+        await this.beforeSync(); this.assertContext(context);
+        this.dirty ||= this.hasPending();
         const provider = localSnapshotProvider || this.localSnapshotProvider;
+        if (this.itemSync && provider) {
+          const synced = await this.itemSync.sync(provider); this.assertContext(context);
+          if (synced) {
+            this.dirty = false;
+            delete this.config.pendingScopes[this.scopeKey()];
+            delete this.config.pendingProfiles[this.bindingKey()];
+          }
+          await this.recipeSync.sync(provider().recipes?.personalRecipes || []); this.assertContext(context);
+          completed = synced;
+          this.config.lastSyncAt = new Date().toISOString(); this.config.lastError = ''; this.save(); await this.beforeSync();
+          const conflicts = this.itemSync.data.conflicts.length;
+          this.emit(conflicts ? 'Local and household changes need review. Both versions are saved.' : synced ? 'Saved to household.' : 'Local changes are saved and waiting to sync.', conflicts ? 'warning' : 'success');
+          return;
+        }
         if (this.dirty && provider) {
           const generation = this.changeGeneration, snapshot = provider();
           for (const collection of COLLECTIONS.filter(name => name !== 'recipes')) {
@@ -428,7 +479,7 @@
             this.assertContext(context);
           }
           if (!failure && generation === this.changeGeneration) {
-            this.dirty = false; delete this.config.pendingScopes[this.scopeKey()]; this.save();
+            this.dirty = false; delete this.config.pendingScopes[this.scopeKey()]; delete this.config.pendingProfiles[this.bindingKey()]; this.save();
           }
         }
         // Recipe problems cannot prevent pantry, shopping, or meal-plan updates.
@@ -455,8 +506,8 @@
 
     start(localSnapshotProvider) {
       this.stop();
-      if (!this.isReady()) return;
       this.localSnapshotProvider = localSnapshotProvider || this.localSnapshotProvider;
+      if (!this.isReady()) return;
       const run = () => this.syncNow(this.localSnapshotProvider).catch(error => this.fail(error));
       this.timer = setInterval(run, 5000); run();
     }

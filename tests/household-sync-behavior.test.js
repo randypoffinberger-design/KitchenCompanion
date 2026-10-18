@@ -40,7 +40,7 @@ test('ownership migration keeps local personal recipes and separates other membe
   const personal = {recipes:[{id:'sheree-local',name:'Local recipe'}]}, state={householdRecipes:{}};
   const app = loadFunctions(['applyHouseholdSnapshot'], {
     state,applyingRemoteSync:false,currentView:'home',
-    profileStore:{createSafetyBackup(){},createAutomaticRecoverySnapshot:()=>Promise.resolve(),saveCombinedState(){}},
+    profileStore:{createSafetyBackup(){return {id:'verified-fixture'};},createAutomaticRecoverySnapshot:()=>Promise.resolve(),saveCombinedState(){}},
     householdSync:{summary:()=>({user:{id:'sheree'}})},ensurePersonalModule:()=>personal,
     migrateState(){},refreshAll(){},console
   });
