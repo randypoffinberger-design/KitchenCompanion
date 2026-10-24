@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="Serenity Kitchen">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="kc-url-import-endpoint" content="">
-  <link rel="manifest" href="app.webmanifest?v=0.23.1">
-  <link rel="apple-touch-icon" href="icon-180.png?v=0.23.1">
+  <link rel="manifest" href="app.webmanifest?v=0.23.2">
+  <link rel="apple-touch-icon" href="icon-180.png?v=0.23.2">
   <title>Serenity Kitchen™</title>
-  <link rel="stylesheet" href="styles.css?v=0.23.1">
+  <link rel="stylesheet" href="styles.css?v=0.23.2">
 </head>
 <body>
   <div class="app-shell">
@@ -59,7 +59,7 @@
       <div id="categoryList" class="category-list"></div>
       </div>
       <p id="localSaveStatus" class="local-save-status" role="status"></p>
-      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.23.1</strong></div>
+      <div class="sidebar-version" aria-label="Current app version">Serenity Kitchen™ <strong>v0.23.2</strong></div>
     </aside>
 
     <div id="scrim" class="scrim"></div>
@@ -254,7 +254,7 @@
   <dialog id="userManualDialog" class="user-manual-dialog">
     <div class="dialog-card user-manual-card">
       <div class="manual-sticky-header">
-        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.23.1</span></small></div>
+        <div><h2>Serenity Kitchen™ manual</h2><small>For app version <span id="manualVersionLabel">0.23.2</span></small></div>
         <button type="button" id="closeUserManual" class="icon-btn" aria-label="Close user manual"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="manual-search-wrap">
@@ -317,7 +317,7 @@
         </details>
         <details class="manual-section" data-manual-section>
           <summary>Troubleshooting</summary>
-          <div><p>If an update seems missing, open the hamburger menu and confirm the version at the bottom. Then use Check for app update in Settings and reopen the installed app.</p><p>If household data stops updating, check your internet connection, open Account and household, and use Sync now. Do not choose a first-copy option again unless the app specifically requires it.</p></div>
+          <div><p>If an update seems missing, open the hamburger menu and confirm the version at the bottom. Then use Check for app update in Settings and reopen the installed app.</p><p>If household data stops updating, check your internet connection, open Account and household, and use Sync now. If a profile has not been connected yet, choose Connect safely once and keep SK open while it compares the saved items.</p></div>
         </details>
       </div>
     </div>
@@ -329,7 +329,7 @@
       <div class="settings-sections">
         <details class="settings-section" open>
           <summary>App and updates</summary>
-          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.23.1</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
+          <div class="settings-section-content"><div class="version-card"><strong>Serenity Kitchen™</strong><span>by Serenity Valley Works</span><small>Serenity Kitchen™ and the SK design are trademarks of Serenity Valley Works.</small><span>Engine version <b id="engineVersionLabel">0.23.2</b></span><span>Module format 1.x</span><button type="button" id="forceUpdateBtn" class="button secondary">Check for app update</button></div></div>
         </details>
         <details class="settings-section" open>
           <summary>Account and household sharing</summary>
@@ -430,9 +430,8 @@
         <div class="cloud-household-actions"><button type="button" id="cloudCreateHouseholdBtn" class="button secondary">Create household</button><button type="button" id="cloudJoinHouseholdBtn" class="button secondary">Join with code</button><button type="button" id="cloudInviteBtn" class="button secondary">Invite household member</button></div>
         <div id="cloudFirstSync" class="cloud-first-sync" hidden>
           <strong>Connect this profile to the household</strong>
-          <p>Local additions are kept. Different versions are saved for review; this device cannot replace the household with an older list.</p>
-          <button type="button" id="cloudUploadFirstBtn" class="button">Connect and keep local additions</button>
-          <button type="button" id="cloudDownloadFirstBtn" class="button secondary">Connect and review shared items</button>
+          <p>Your phone and household items will be compared safely. Local additions are kept, and different versions are saved for review.</p>
+          <button type="button" id="cloudUploadFirstBtn" class="button">Connect safely</button>
         </div>
         <button type="button" id="cloudSyncNowBtn" class="button" hidden>Sync now</button>
       </div>
@@ -863,18 +862,18 @@
     </article>
   </template>
 
-  <script src="kitchen-engine.js?v=0.23.1"></script>
-  <script src="recipe-scaling.js?v=0.23.1"></script>
-  <script src="durable-storage.js?v=0.23.1"></script>
-  <script src="profile-storage.js?v=0.23.1"></script>
-  <script src="url-recipe-import.js?v=0.23.1"></script>
-  <script src="meal-planner.js?v=0.23.1"></script>
-  <script src="shared-model.js?v=0.23.1"></script>
-  <script src="item-sync.js?v=0.23.1"></script>
-  <script src="sync-client.js?v=0.23.1"></script>
-  <script src="password-ui.js?v=0.23.1"></script>
-  <script src="app.js?v=0.23.1"></script>
-  <script src="ocr-service.js?v=0.23.1"></script>
+  <script src="kitchen-engine.js?v=0.23.2"></script>
+  <script src="recipe-scaling.js?v=0.23.2"></script>
+  <script src="durable-storage.js?v=0.23.2"></script>
+  <script src="profile-storage.js?v=0.23.2"></script>
+  <script src="url-recipe-import.js?v=0.23.2"></script>
+  <script src="meal-planner.js?v=0.23.2"></script>
+  <script src="shared-model.js?v=0.23.2"></script>
+  <script src="item-sync.js?v=0.23.2"></script>
+  <script src="sync-client.js?v=0.23.2"></script>
+  <script src="password-ui.js?v=0.23.2"></script>
+  <script src="app.js?v=0.23.2"></script>
+  <script src="ocr-service.js?v=0.23.2"></script>
 </body>
 </html>
 

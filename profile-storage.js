@@ -13,7 +13,7 @@
   const INDEXED_DB_SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000;
   const MAX_MANUAL_BACKUPS = 10;
   const STARTUP_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const APP_VERSION = '0.23.1';
+  const APP_VERSION = '0.23.2';
   const STORAGE_SCHEMA_VERSION = 2;
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -660,6 +660,36 @@
         this.activeProfile[key] = clone(state[key] ?? this.activeProfile[key]);
       }
       this.persistAll();
+    }
+
+    saveHouseholdState(state, collections = []) {
+      if (this.recoveryRequired) throw new Error('Saved data is unavailable. Serenity Kitchen is in read-only recovery mode and will not create or overwrite a blank profile.');
+      const included = new Set(collections);
+      const next = { ...this.activeProfile, updatedAt:now() };
+      if (included.has('shopping-list')) {
+        for (const key of ['shoppingList','regularItems','stores','learnedStorePreferences','learnedShoppingGroups','learnedAisles']) next[key] = clone(state[key] ?? this.activeProfile[key]);
+      }
+      if (included.has('pantry')) next.pantryItems = clone(state.pantryItems || []);
+      if (included.has('shopping-list') || included.has('pantry')) {
+        next.favorites = clone(state.favorites ?? this.activeProfile.favorites ?? []);
+        next.settings = clone(state.settings ?? this.activeProfile.settings ?? {});
+      }
+      if (included.has('recipes')) {
+        next.personalRecipes = clone((state.modules || []).find(module => module.moduleId === 'my-recipes')?.recipes || []);
+        next.householdRecipes = clone(state.householdRecipes || {});
+      }
+      if (included.has('meal-plans')) {
+        for (const key of ['mealPlans','mealPlannerPreferences','mealPlanHistory']) next[key] = clone(state[key] ?? this.activeProfile[key]);
+      }
+      const key = PROFILE_PREFIX + next.profileId;
+      const previous = this.storage.getItem(key);
+      try { this.writeAndVerify(key, JSON.stringify(next)); }
+      catch (error) {
+        if (previous === null) this.storage.removeItem(key); else this.storage.setItem(key, previous);
+        throw new Error(`Save failed and was rolled back: ${error.message}`);
+      }
+      this.activeProfile = next;
+      if (!this.durable) this.mirrorToIndexedDB().catch(error => console.warn('IndexedDB mirror unavailable; local fallback remains active.', error));
     }
 
     getActiveProfileMeta() { return clone(this.device.profiles.find(p => p.profileId === this.device.activeProfileId)); }
