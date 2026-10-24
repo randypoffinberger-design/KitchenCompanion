@@ -99,7 +99,25 @@
       const message = String(error?.message || '');
       return error?.name === 'InvalidStateError' || /database connection is closing|connection (?:is )?clos(?:ed|ing)/i.test(message) || (this.connectionStale && error?.name === 'AbortError');
     }
+    serverError(error) {
+      const message = String(error?.message || '');
+      return error?.name === 'UnknownError' && /internal error.*indexed database server|connection to indexed database server lost/i.test(message);
+    }
+    unavailableError(error) {
+      if (error?.reloadRequired) return error;
+      const unavailable = new Error("The iPhone saved-data service stopped. Existing saved data was not cleared. Export a backup if you have unsaved changes, then reload SK.");
+      unavailable.name = 'IndexedDBServerError'; unavailable.reloadRequired = true; unavailable.cause = error;
+      return unavailable;
+    }
+    stopForReload(error) {
+      this.connectionStale = true;
+      try { this.db?.close(); } catch {}
+      this.lastError = this.unavailableError(error);
+      this.reloadRequired = true;
+      return this.lastError;
+    }
     reconnect() {
+      if (this.reloadRequired) return Promise.reject(this.lastError);
       if (this.closed) return Promise.reject(new Error('Saved kitchen connection closed. Export your changes and reopen SK.'));
       if (this.reconnecting) return this.reconnecting;
       this.connectionStale = true;
@@ -109,15 +127,18 @@
           if (this.closed) { db.close(); throw new Error('Saved kitchen connection closed. Export your changes and reopen SK.'); }
           return this.attach(db);
         })
+        .catch(error => { throw this.serverError(error) ? this.stopForReload(error) : error; })
         .finally(() => { this.reconnecting = null; });
       return this.reconnecting;
     }
     async withConnection(operation, retry = true) {
+      if (this.reloadRequired) throw this.lastError;
       if (this.closed) throw new Error('Saved kitchen connection closed. Export your changes and reopen SK.');
       if (this.connectionStale) await this.reconnect();
       const db = this.db;
       try { return await operation(db); }
       catch (error) {
+        if (this.serverError(error)) throw this.stopForReload(error);
         if (!retry || !this.connectionError(error)) throw error;
         await this.reconnect();
         return this.withConnection(operation, false);
@@ -153,6 +174,7 @@
       return hash(text);
     }
     flush(reason = 'save', pin = false, forceHistory = false) {
+      if (this.reloadRequired) return Promise.reject(this.lastError);
       if (this.closed) return Promise.reject(new Error('Saved kitchen connection closed. Export your changes and reopen SK.'));
       const generation = this.storage.generation;
       if (generation === this.queuedGeneration && !pin && !forceHistory) return this.queue;
@@ -180,14 +202,26 @@
               const due = forceHistory || !current?.historyAt || fingerprint!==current.historyFingerprint && Date.now() - current.historyAt >= 15 * 60 * 1000;
               next.historyAt = pin || due ? Date.now() : current.historyAt;
               next.historyFingerprint=pin||due?fingerprint:current.historyFingerprint;
-              tx.objectStore('current').put(next);
-              if(this.pendingLegacy)tx.objectStore('history').put({...next,id:`legacy:${createdAt}:${committedRevision}`,entries:this.pendingLegacy,reason:'older-version-changes',pinned:true});
-              if (pin || due) {
-                const store = tx.objectStore('history');
-                store.put({...next, id:`${createdAt}:${committedRevision}`, reason, pinned:pin});
-                const all = store.getAll();
-                all.onsuccess = () => {const keep=historyToKeep(all.result);all.result.filter(item=>!keep.has(item.id)).forEach(item=>store.delete(item.id));};
+              const history = tx.objectStore('history'), additions=[];
+              if(this.pendingLegacy){
+                const id=`legacy:${createdAt}:${committedRevision}`;
+                history.put({...next,id,entries:this.pendingLegacy,reason:'older-version-changes',pinned:true});
+                additions.push({id,createdAt,revision:committedRevision,reason:'older-version-changes',pinned:true});
               }
+              if (pin || due) {
+                const id=`${createdAt}:${committedRevision}`;
+                history.put({...next,id,reason,pinned:pin});
+                additions.push({id,createdAt,revision:committedRevision,reason,pinned:pin});
+              }
+              // Keep a small index beside the active record. Older history
+              // without index metadata remains untouched; loading every full
+              // recipe snapshot with getAll() can crash iPhone's IDB service.
+              const indexed = Array.isArray(current?.historyIndex) ? current.historyIndex.filter(item=>item?.id&&item?.createdAt) : [];
+              const byId = new Map([...indexed,...additions].map(item=>[item.id,item]));
+              const historyIndex=[...byId.values()],keep=historyToKeep(historyIndex);
+              historyIndex.filter(item=>!keep.has(item.id)).forEach(item=>history.delete(item.id));
+              next.historyIndex=historyIndex.filter(item=>keep.has(item.id));
+              tx.objectStore('current').put(next);
             };
             tx.oncomplete = () => resolve(committedRevision);
             tx.onabort = () => reject(failure || tx.error || new Error('The kitchen could not be saved. Keep it open and export your changes.'));

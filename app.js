@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.23.2';
+  const ENGINE_VERSION = '0.23.3';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -1200,7 +1200,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.23.2', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.23.3', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -3141,7 +3141,7 @@ Other devices and household members keep their copies. You can restore it from S
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.23.2');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.23.3');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -5447,12 +5447,19 @@ Other devices and household members keep their copies. You can restore it from S
     }
     notice.replaceChildren();
     const copy = document.createElement('div');
-    const title = document.createElement('strong'); title.textContent = 'Changes have not been saved.';
-    const details = document.createElement('span'); details.textContent = ` Keep SK open and export a full backup before closing it. ${error?.message || ''}`;
+    const reloadRequired = !!error?.reloadRequired || /internal error.*indexed database server|connection to indexed database server lost/i.test(error?.message || '');
+    const title = document.createElement('strong'); title.textContent = reloadRequired ? 'iPhone storage needs a restart.' : 'Changes have not been saved.';
+    const details = document.createElement('span'); details.textContent = reloadRequired
+      ? ' SK stopped saving and syncing without clearing stored data. If you just made changes, export a full backup first. Then reload SK.'
+      : ` Keep SK open and export a full backup before closing it. ${error?.message || ''}`;
     copy.append(title, details);
+    if (reloadRequired) {
+      const reload = document.createElement('button'); reload.type = 'button'; reload.textContent = 'Reload SK'; reload.setAttribute('aria-label','Reload Serenity Kitchen');
+      reload.addEventListener('click', () => location.reload()); notice.append(copy, reload);
+    } else notice.append(copy);
     const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.textContent = 'Dismiss'; dismiss.setAttribute('aria-label','Dismiss save warning');
     dismiss.addEventListener('click', () => { dismissedDurableError = signature; notice.remove(); });
-    notice.append(copy, dismiss);
+    notice.append(dismiss);
     householdSync?.stop();
   }
 
