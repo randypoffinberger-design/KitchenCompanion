@@ -572,6 +572,9 @@ body.menu-open { overflow: hidden; touch-action: none; }
 
 .startup-recovery-notice{position:fixed;z-index:10000;left:max(.75rem,env(safe-area-inset-left));right:max(.75rem,env(safe-area-inset-right));top:max(.75rem,env(safe-area-inset-top));display:grid;grid-template-columns:1fr auto;gap:.25rem .75rem;padding:.85rem 1rem;border:2px solid #b45309;border-radius:1rem;background:#fff7ed;color:#7c2d12;box-shadow:0 .5rem 2rem #0005}
 .startup-recovery-notice strong,.startup-recovery-notice span{grid-column:1}.startup-recovery-notice span{font-size:.9rem;line-height:1.35}.startup-recovery-notice button{grid-column:2;grid-row:1/3;align-self:start;border:0;background:transparent;color:inherit;font-size:1.6rem;cursor:pointer}
+.durable-save-notice{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin:0 0 1rem;padding:.85rem 1rem;border:2px solid #b45309;border-radius:1rem;background:#fff7ed;color:#7c2d12;box-shadow:0 .35rem 1.25rem #0003}
+.durable-save-notice>div{min-width:0;line-height:1.4}.durable-save-notice strong{display:block}.durable-save-notice span{font-size:.9rem}.durable-save-notice button{flex:0 0 auto;border:1px solid currentColor;border-radius:.65rem;padding:.45rem .7rem;background:transparent;color:inherit;font-weight:800;cursor:pointer}
+body.home-view .durable-save-notice{margin:max(.75rem,env(safe-area-inset-top)) max(.75rem,env(safe-area-inset-right)) .75rem max(.75rem,env(safe-area-inset-left))}
 
 /* v0.16.26 guided cooking */
 .guided-cooking-dialog{width:min(960px,100vw);max-width:none;height:min(900px,100dvh);max-height:none;margin:auto;padding:0;border:0;border-radius:24px;background:var(--bg);color:var(--text);box-shadow:0 30px 90px #0008}
