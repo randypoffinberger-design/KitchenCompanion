@@ -15,7 +15,7 @@ function harness() {
   Object.assign(client.config, { token:'fixture-token', expiresAt:new Date(Date.now() + 60000).toISOString(),
     user:{ id:'user-1' }, households:[{ id:'house-1', role:'owner' }], activeHouseholdId:'house-1', profileId:'profile-1', recipeOwnershipMigrationComplete:true });
   client.ownershipMigrationPending = false; client.start = () => {};
-  return { client, applied, timers };
+  return { client, applied, timers, values };
 }
 const snapshot = { 'shopping-list':{ shoppingList:[{ id:'milk', name:'Milk' }] }, pantry:{ pantryItems:[] },
   recipes:{ personalRecipes:[{ id:'r1', name:'Soup' }] }, 'meal-plans':{ mealPlans:{} } };
@@ -130,4 +130,38 @@ test('network failure retains queued changes without a rapid retry loop', async 
   await assert.rejects(client.syncNow(() => snapshot), /Offline/);
   assert.equal(client.dirty, true); assert.equal(client.syncing, false);
   assert.ok([...timers.values()].every(timer => timer.delay >= 5000));
+});
+
+test('recipe observation uses a compact fingerprint while retaining the pending recipe', () => {
+  const { client } = harness();
+  const recipe = { id:'large', name:'Large recipe', notes:'photo-data'.repeat(10000) };
+  client.recipeSync.stage([recipe]);
+  assert.match(client.recipeSync.data.observed.large, /^fp1:/);
+  assert.ok(client.recipeSync.data.observed.large.length < 80);
+  assert.equal(client.recipeSync.data.pending.large.payload.notes, recipe.notes);
+});
+
+test('first household connection is single-flight when tapped twice', async () => {
+  let calls = 0, release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const values = new Map(), context = { window:{}, URL, console,
+    localStorage:{ getItem:key => values.get(key) || null, setItem:(key, value) => values.set(key, value) },
+    fetch:async () => { throw new Error('Unexpected network request'); },
+    setTimeout:() => 1, clearTimeout(){}, setInterval:() => 1, clearInterval(){} };
+  context.window.SKItemSync = class {
+    constructor(){ this.data={pending:{},conflicts:[]}; }
+    load(){ return this.data; }
+    async sync(){ calls++; await gate; return true; }
+    stage(){}
+  };
+  vm.runInNewContext(source, context);
+  const client = new context.window.SKHouseholdSync({ profileId:'profile-1', itemSync:true });
+  Object.assign(client.config, { token:'fixture-token', expiresAt:new Date(Date.now() + 60000).toISOString(),
+    user:{ id:'user-1' }, households:[{ id:'house-1', role:'owner' }], activeHouseholdId:'house-1', profileId:'profile-1', recipeOwnershipMigrationComplete:true });
+  client.ownershipMigrationPending = false; client.start = () => {};
+  const first = client.initialize('merge', snapshot), second = client.initialize('merge', snapshot);
+  await Promise.resolve();
+  assert.equal(calls, 1);
+  release(); await Promise.all([first, second]);
+  assert.equal(client.isReady(), true);
 });

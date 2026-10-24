@@ -12,6 +12,11 @@
   const stable = value => JSON.stringify(value, function (key, item) {
     return item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.keys(item).sort().map(name => [name, item[name]])) : item;
   });
+  const recipeFingerprint = value => {
+    const text = stable(value); let a = 2166136261, b = 5381;
+    for (const char of text || '') { const code=char.charCodeAt(0); a=Math.imul(a^code,16777619); b=Math.imul(b,33)^code; }
+    return `fp1:${(text || '').length}:${(a>>>0).toString(16)}:${(b>>>0).toString(16)}`;
+  };
   const recipeId = recipe => String(recipe?.id || recipe?.name || '').trim();
 
   class RecipeSync {
@@ -38,11 +43,12 @@
       }
       for (const recipe of recipes || []) {
         const id = recipeId(recipe);
-        if (stable(data.observed[id]) === stable(recipe)) continue;
+        const observed = data.observed[id], fingerprint = recipeFingerprint(recipe);
+        if ((typeof observed === 'string' && observed.startsWith('fp1:') ? observed : recipeFingerprint(observed)) === fingerprint) continue;
         const previous = data.pending[id];
         const basePayload=previous?.basePayload||data.owners[this.client.recipeOwnerId()]?.personalRecipes?.find(item=>recipeId(item)===id);
         data.pending[id] = { id, mutationId:uuid(), baseVersion:previous ? previous.baseVersion : data.versions[id] || null, payload:clone(recipe),...(basePayload?{basePayload:clone(basePayload)}:{}) };
-        data.observed[id] = clone(recipe);
+        data.observed[id] = fingerprint;
       }
       // Missing IDs are never deletions. Device visibility stays in profile storage.
       this.save();
@@ -126,7 +132,7 @@
       }
       // Only consume history after the profile write succeeded.
       const previous = clone(data);
-      Object.assign(data, { owners, versions, cursor, applied:true, observed:Object.fromEntries(localOwn.map(recipe => [recipeId(recipe), clone(recipe)])) });
+      Object.assign(data, { owners, versions, cursor, applied:true, observed:Object.fromEntries(localOwn.map(recipe => [recipeId(recipe), recipeFingerprint(recipe)])) });
       try { this.save(); } catch (error) { this.data = previous; throw error; }
       await c.beforeSync();
       return Object.keys(data.pending).length === 0;
@@ -383,11 +389,20 @@
     }
 
     async initialize(mode, localSnapshot) {
+      if (this.initializing) return this.initializing;
+      const run = this.initializeOnce(mode, localSnapshot);
+      this.initializing = run;
+      try { return await run; }
+      finally { if (this.initializing === run) this.initializing = null; }
+    }
+
+    async initializeOnce(mode, localSnapshot) {
       if (!this.isSignedIn() || !this.activeHousehold()) throw new Error('Sign in and choose a household first.');
       if (!this.isProfileBound()) throw new Error('This profile belongs to another account.');
       const context = this.context();
       this.config.profileId = this.profileId;
       if (this.itemSync) {
+        if (!['merge','upload','download'].includes(mode)) throw new Error('Choose the safe household connection.');
         this.localSnapshotProvider ||= () => localSnapshot;
         await this.itemSync.sync(this.localSnapshotProvider);
         this.config.initializedHouseholds[this.initializationKey()] = true;

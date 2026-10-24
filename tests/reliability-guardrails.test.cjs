@@ -48,6 +48,21 @@ test('a quota-blocked restore leaves its selected checkpoint and live list untou
   assert.equal(h.values.get(backupKey), original);
 });
 
+test('household-only persistence leaves recipes, other profile data and shared modules intact', () => {
+  const h = storeHarness(), profileKey='kitchenCompanion.profile.v1.p', sharedKey='kitchenCompanion.shared.v1';
+  const profile={profileId:'p',personalRecipes:[{id:'recipe',name:'Keep me'}],shoppingList:[{id:'old',name:'Old'}],pantryItems:[{id:'rice'}],settings:{darkMode:true}};
+  const shared=JSON.stringify({modules:[{moduleId:'large-library',recipes:[{id:'public'}]}]});
+  h.values.set(profileKey,JSON.stringify(profile));h.values.set(sharedKey,shared);
+  h.store._storage=h.localStorage;h.store.durable={};h.store.recoveryRequired=false;h.store.activeProfile=copy(profile);
+  h.store.saveHouseholdState({shoppingList:[{id:'milk',name:'Milk'}],regularItems:[],stores:['Unassigned'],learnedStorePreferences:{},learnedShoppingGroups:{},learnedAisles:{}},['shopping-list']);
+  const saved=JSON.parse(h.values.get(profileKey));
+  assert.equal(saved.shoppingList[0].name,'Milk');
+  assert.equal(saved.personalRecipes[0].name,'Keep me');
+  assert.equal(saved.pantryItems[0].id,'rice');
+  assert.equal(saved.settings.darkMode,true);
+  assert.equal(h.values.get(sharedKey),shared);
+});
+
 function syncHarness() {
   const values = new Map(), applied = [], timers = [];
   const context = {window:{}, URL, console,
@@ -108,6 +123,29 @@ test('required checkpoint failure propagates before any incoming profile save', 
   assert.throws(() => app.applyHouseholdSnapshot({'shopping-list':{shoppingList:[]}}),/quota/i);
   assert.equal(state.shoppingList[0].name,'Local milk');
   assert.equal(saves,0);
+});
+
+test('durable incoming sync reuses saved history without duplicating full module recovery copies', async () => {
+  const installed = {moduleId:'large-library',recipes:[{id:'library',notes:'large-module'.repeat(10000)}]};
+  const personal = {moduleId:'my-recipes',recipes:[{id:'mine',name:'Local recipe'}]};
+  const state = {modules:[installed,personal],householdRecipes:{},favorites:[],settings:{},shoppingList:[],regularItems:[],pantryItems:[]};
+  let quickBackups = 0, oldSnapshots = 0, savedCollections;
+  const profileStore = {
+    durable:{}, flush:async()=>{},
+    createSafetyBackup(){quickBackups++;throw new Error('redundant checkpoint');},
+    createAutomaticRecoverySnapshot(){oldSnapshots++;return Promise.resolve();},
+    saveHouseholdState(current,collections){savedCollections=collections;assert.equal(current.modules[0],installed);}
+  };
+  const householdSync={changeGeneration:0,context:()=> 'same',assertContext(){},summary:()=>({user:{id:'me'}})};
+  const app = loadFunctions(['applyHouseholdSnapshot'],{
+    state,applyingRemoteSync:false,currentView:'home',console,profileStore,householdSync,
+    ensurePersonalModule:()=>state.modules.find(module=>module.moduleId==='my-recipes'),refreshAll(){}
+  });
+  await app.applyHouseholdSnapshot({recipes:{ownerRecords:[{ownerUserId:'me',personalRecipes:[{id:'mine',name:'Household recipe'}]}]}},{recipeReconciled:true});
+  assert.equal(quickBackups,0);assert.equal(oldSnapshots,0);
+  assert.deepEqual([...savedCollections],['recipes']);
+  assert.equal(state.modules[0],installed,'unrelated installed modules are not cloned during recipe sync');
+  assert.equal(state.modules[1].recipes[0].name,'Household recipe');
 });
 
 test('expired-session edits are queued and uploaded before a reconnect download', async () => {

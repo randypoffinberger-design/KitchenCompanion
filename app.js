@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.23.1';
+  const ENGINE_VERSION = '0.23.2';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -156,6 +156,7 @@
   let applyingRemoteSync = false;
   let householdSyncChangesEnabled = false;
   let cloudCreatingAccount = false;
+  let cloudInitializing = false;
   const householdSync = new SKHouseholdSync({
     storage:profileStore.storage,
     itemSync:true,
@@ -399,8 +400,10 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
     document.querySelector('#cloudCreateHouseholdBtn')?.addEventListener('click', createCloudHousehold);
     document.querySelector('#cloudJoinHouseholdBtn')?.addEventListener('click', joinCloudHousehold);
     document.querySelector('#cloudInviteBtn')?.addEventListener('click', createCloudInvite);
-    document.querySelector('#cloudUploadFirstBtn')?.addEventListener('click', () => initializeCloudHousehold('upload'));
-    document.querySelector('#cloudDownloadFirstBtn')?.addEventListener('click', () => initializeCloudHousehold('download'));
+    document.querySelector('#cloudUploadFirstBtn')?.addEventListener('click', initializeCloudHousehold);
+    // A cached older page can briefly retain the former second button while
+    // the new scripts activate. Route it through the same guarded operation.
+    document.querySelector('#cloudDownloadFirstBtn')?.addEventListener('click', initializeCloudHousehold);
     document.querySelector('#cloudSyncNowBtn')?.addEventListener('click', () => householdSync.syncNow(buildHouseholdSnapshot).catch(showCloudError));
     els.repairOfflineOcrBtn?.addEventListener('click', repairOfflineOcr);
     els.reportProblemBtn?.addEventListener('click', () => openFeedbackDialog('bug'));
@@ -1197,7 +1200,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.23.1', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.23.2', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -3138,7 +3141,7 @@ Other devices and household members keep their copies. You can restore it from S
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.23.1');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.23.2');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -5295,12 +5298,12 @@ Other devices and household members keep their copies. You can restore it from S
     const personal = state.modules.find(module => module.moduleId === 'my-recipes');
     return {
       'shopping-list': {
-        shoppingList:JSON.parse(JSON.stringify(state.shoppingList || [])), regularItems:JSON.parse(JSON.stringify(state.regularItems || [])), stores:JSON.parse(JSON.stringify(state.stores || [])),
-        learnedStorePreferences:JSON.parse(JSON.stringify(state.learnedStorePreferences || {})), learnedShoppingGroups:JSON.parse(JSON.stringify(state.learnedShoppingGroups || {})), learnedAisles:JSON.parse(JSON.stringify(state.learnedAisles || {}))
+        shoppingList:state.shoppingList || [], regularItems:state.regularItems || [], stores:state.stores || [],
+        learnedStorePreferences:state.learnedStorePreferences || {}, learnedShoppingGroups:state.learnedShoppingGroups || {}, learnedAisles:state.learnedAisles || {}
       },
-      pantry:{ pantryItems:JSON.parse(JSON.stringify(state.pantryItems || [])) },
-      recipes:{ ownerUserId:householdSync.summary().user?.id || '', ownerDisplayName:householdSync.summary().user?.displayName || 'Household member', personalRecipes:JSON.parse(JSON.stringify(personal?.recipes || [])) },
-      'meal-plans':{ mealPlans:JSON.parse(JSON.stringify(state.mealPlans || {})), mealPlannerPreferences:JSON.parse(JSON.stringify(state.mealPlannerPreferences || {template:{},recipes:{}})), mealPlanHistory:JSON.parse(JSON.stringify(state.mealPlanHistory || [])) }
+      pantry:{ pantryItems:state.pantryItems || [] },
+      recipes:{ ownerUserId:householdSync.summary().user?.id || '', ownerDisplayName:householdSync.summary().user?.displayName || 'Household member', personalRecipes:personal?.recipes || [] },
+      'meal-plans':{ mealPlans:state.mealPlans || {}, mealPlannerPreferences:state.mealPlannerPreferences || {template:{},recipes:{}}, mealPlanHistory:state.mealPlanHistory || [] }
     };
   }
 
@@ -5311,13 +5314,24 @@ Other devices and household members keep their copies. You can restore it from S
       return profileStore.flush('before-incoming-sync',false,true).then(()=>{
         householdSync.assertContext(context);
         if(generation!==householdSync.changeGeneration)throw new Error('New local edits were saved while syncing. The incoming copy will be retried.');
-        return applyHouseholdSnapshot(snapshot,{...options,protected:true});
+        return applyHouseholdSnapshot(snapshot,{...options,protected:true,durableCheckpoint:true});
       });
     }
-    const protection = profileStore.createSafetyBackup(options.initial ? 'before-household-download' : 'before-household-sync', { force:true, required:true });
-    if (!protection) throw new Error('Sync paused because a verified safety checkpoint could not be created. Existing local data was kept.');
-    profileStore.createAutomaticRecoverySnapshot(options.initial ? 'before-household-download' : 'before-household-sync').catch(error => console.warn('The automatic recovery snapshot could not be created.', error));
-    const previousState = JSON.parse(JSON.stringify(state));
+    if (!options.durableCheckpoint) {
+      const protection = profileStore.createSafetyBackup(options.initial ? 'before-household-download' : 'before-household-sync', { force:true, required:true });
+      if (!protection) throw new Error('Sync paused because a verified safety checkpoint could not be created. Existing local data was kept.');
+      profileStore.createAutomaticRecoverySnapshot(options.initial ? 'before-household-download' : 'before-household-sync').catch(error => console.warn('The automatic recovery snapshot could not be created.', error));
+    }
+    const rollbackKeys = new Set();
+    if (snapshot['shopping-list'] || snapshot.pantry) ['shoppingList','regularItems','stores','learnedStorePreferences','learnedShoppingGroups','learnedAisles','pantryItems','favorites','settings'].forEach(key => rollbackKeys.add(key));
+    if (snapshot.recipes) rollbackKeys.add('householdRecipes');
+    if (snapshot['meal-plans']) ['mealPlans','mealPlannerPreferences','mealPlanHistory'].forEach(key => rollbackKeys.add(key));
+    const previousState = Object.fromEntries([...rollbackKeys].filter(key => key in state).map(key => [key,JSON.parse(JSON.stringify(state[key]))]));
+    const missingKeys = new Set([...rollbackKeys].filter(key => !(key in state)));
+    const previousModules = state.modules;
+    state.modules = (state.modules || []).map(module => module.moduleId === 'starter-kitchen' || snapshot.recipes && module.moduleId === 'my-recipes'
+      ? { ...module, ...(module.moduleId === 'my-recipes' ? { recipes:JSON.parse(JSON.stringify(module.recipes || [])) } : {}) }
+      : module);
     applyingRemoteSync = true;
     try {
       const shopping = snapshot['shopping-list'];
@@ -5347,12 +5361,19 @@ Other devices and household members keep their copies. You can restore it from S
       }
       const meals = snapshot['meal-plans'];
       if (meals) ['mealPlans','mealPlannerPreferences','mealPlanHistory'].forEach(key => { if (meals[key] !== undefined) state[key] = JSON.parse(JSON.stringify(meals[key])); });
-      migrateState(); profileStore.saveCombinedState(state); refreshAll({ save:false });
+      if (shopping || snapshot.pantry) migrateState();
+      if (profileStore.saveHouseholdState) profileStore.saveHouseholdState(state, Object.keys(snapshot));
+      else profileStore.saveCombinedState(state);
+      refreshAll({ save:false });
       if (currentView === 'shopping') renderShoppingList();
       if (currentView === 'pantry') renderPantry();
       if (currentView === 'meal-planner') renderMealPlanner();
       return profileStore.flush?.('incoming-sync');
-    } catch (error) { Object.keys(state).forEach(key => delete state[key]); Object.assign(state, previousState); throw error; } finally { applyingRemoteSync = false; }
+    } catch (error) {
+      for (const key of rollbackKeys) { if (missingKeys.has(key)) delete state[key]; else state[key] = previousState[key]; }
+      state.modules = previousModules;
+      throw error;
+    } finally { applyingRemoteSync = false; }
   }
 
   function renderLocalSaveStatus() {
@@ -5452,8 +5473,9 @@ Other devices and household members keep their copies. You can restore it from S
     const select=cloudElement('cloudHouseholdSelect'); select.innerHTML='<option value="">No household selected</option>';
     summary.households.forEach(household=>{const option=document.createElement('option');option.value=household.id;option.textContent=`${household.name} (${household.role})`;select.append(option);}); select.value=summary.activeHousehold?.id||'';
     const ready=summary.initialized&&summary.profileBound; cloudElement('cloudFirstSync').hidden=!summary.activeHousehold||ready; cloudElement('cloudSyncNowBtn').hidden=!ready; cloudElement('cloudInviteBtn').hidden=!summary.activeHousehold||!['owner','adult'].includes(summary.activeHousehold.role);
+    cloudElement('cloudUploadFirstBtn').disabled=cloudInitializing;
     if(!summary.profileBound){title.textContent=summary.user?.displayName||'Signed in';brief.textContent='This account is connected to another local profile. Select a household here to connect this profile.';}
-    else if(summary.activeHousehold){title.textContent=summary.activeHousehold.name;brief.textContent=ready?`Live household sharing active${summary.lastSyncAt?` • Last sync ${new Date(summary.lastSyncAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:''}`:'Choose the first household copy to begin syncing.';}
+    else if(summary.activeHousehold){title.textContent=summary.activeHousehold.name;brief.textContent=ready?`Live household sharing active${summary.lastSyncAt?` • Last sync ${new Date(summary.lastSyncAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:''}`:'Connect this profile safely to begin syncing.';}
     else{title.textContent=summary.user?.displayName||'Signed in';brief.textContent='Create a household or join one with an invitation code.';}
   }
 
@@ -5464,10 +5486,18 @@ Other devices and household members keep their copies. You can restore it from S
   async function submitCloudAccount(event){event.preventDefault();setCloudStatus(cloudCreatingAccount?'Creating account…':'Signing in…','working');try{householdSync.setServerUrl(cloudElement('cloudServerUrl').value);const credentials={email:cloudElement('cloudEmail').value,password:cloudElement('cloudPassword').value,displayName:cloudElement('cloudDisplayName').value};if(cloudCreatingAccount)await householdSync.register(credentials);else await householdSync.login(credentials);cloudElement('cloudPassword').value='';householdSync.start(buildHouseholdSnapshot);renderCloudAccount();setCloudStatus('Signed in successfully.','success');}catch(error){showCloudError(error);}}
   async function logoutCloudAccount(){await householdSync.logout();renderCloudAccount();setCloudStatus('Signed out.','success');}
   function selectCloudHousehold(){const id=cloudElement('cloudHouseholdSelect').value;if(!id)return;try{householdSync.selectHousehold(id);householdSync.start(buildHouseholdSnapshot);renderCloudAccount();setCloudStatus(householdSync.isReady()?'Household selected and syncing.':'Household selected. Choose the first copy to sync.','success');}catch(error){showCloudError(error);}}
-  async function createCloudHousehold(){const name=prompt('Household name:','Poffinberger Household');if(!name)return;setCloudStatus('Creating household…','working');try{await householdSync.createHousehold(name);renderCloudAccount();setCloudStatus('Household created. Choose which copy should become the first shared copy.','success');}catch(error){showCloudError(error);}}
-  async function joinCloudHousehold(){const code=prompt('Enter the Serenity Kitchen household invitation code:');if(!code)return;setCloudStatus('Joining household…','working');try{await householdSync.joinHousehold(code);renderCloudAccount();setCloudStatus('Household joined. Download the household copy to begin.','success');}catch(error){showCloudError(error);}}
+  async function createCloudHousehold(){const name=prompt('Household name:','Poffinberger Household');if(!name)return;setCloudStatus('Creating household…','working');try{await householdSync.createHousehold(name);renderCloudAccount();setCloudStatus('Household created. Choose Connect safely to compare and keep saved items.','success');}catch(error){showCloudError(error);}}
+  async function joinCloudHousehold(){const code=prompt('Enter the Serenity Kitchen household invitation code:');if(!code)return;setCloudStatus('Joining household…','working');try{await householdSync.joinHousehold(code);renderCloudAccount();setCloudStatus('Household joined. Choose Connect safely to compare and keep saved items.','success');}catch(error){showCloudError(error);}}
   async function createCloudInvite(){setCloudStatus('Creating invitation…','working');try{const invite=await householdSync.createInvite('adult');try{await navigator.clipboard.writeText(invite.code);setCloudStatus(`Invitation code copied. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}catch{prompt('Copy this one-time household invitation code:',invite.code);setCloudStatus(`Invitation created. It expires ${new Date(invite.expiresAt).toLocaleString()}.`,'success');}}catch(error){showCloudError(error);}}
-  async function initializeCloudHousehold(mode){const warning='Connect this local profile to the household? Local additions will be kept and different versions will be saved for review.';if(!confirm(warning))return;setCloudStatus('Connecting and preserving local changes…','working');try{await householdSync.initialize(mode,buildHouseholdSnapshot());householdSync.start(buildHouseholdSnapshot);renderCloudAccount();}catch(error){showCloudError(error);}}
+  async function initializeCloudHousehold(){
+    if(cloudInitializing)return;
+    const warning='Connect this local profile to the household? Local additions will be kept and different versions will be saved for review.';
+    if(!confirm(warning))return;
+    cloudInitializing=true;renderCloudAccount();setCloudStatus('Connecting safely. Keep SK open while your saved items are compared…','working');
+    try{await householdSync.initialize('merge',buildHouseholdSnapshot());householdSync.start(buildHouseholdSnapshot);setCloudStatus('Household sync is active.','success');}
+    catch(error){showCloudError(error);}
+    finally{cloudInitializing=false;renderCloudAccount();}
+  }
   function showCloudError(error){setCloudStatus(error?.message||'The household request failed.','error');renderCloudAccount();}
 
   function escapeHtml(value) {
