@@ -27,18 +27,30 @@
   }
 
   class SKDurableStorage {
-    static async open(legacy, indexedDB) {
-      const db = await new Promise((resolve, reject) => {
-        const request = indexedDB.open('serenity-kitchen-durable', 1);
+    static connect(indexedDB, initialize = false) {
+      return new Promise((resolve, reject) => {
+        const request = initialize ? indexedDB.open('serenity-kitchen-durable', 1) : indexedDB.open('serenity-kitchen-durable');
         request.onupgradeneeded = () => {
-          request.result.createObjectStore('current', {keyPath:'id'});
-          request.result.createObjectStore('history', {keyPath:'id'});
+          const db = request.result;
+          if (!db.objectStoreNames.contains('current')) db.createObjectStore('current', {keyPath:'id'});
+          if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', {keyPath:'id'});
         };
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('current') || !db.objectStoreNames.contains('history')) {
+            db.close();
+            reject(new Error('The saved kitchen format needs recovery. No data was replaced.'));
+            return;
+          }
+          resolve(db);
+        };
         request.onerror = () => reject(request.error);
         request.onblocked = () => reject(new Error('Close other SK windows before opening the saved kitchen.'));
       });
-      const backend = new SKDurableStorage(db);
+    }
+    static async open(legacy, indexedDB) {
+      const db = await SKDurableStorage.connect(indexedDB, true);
+      const backend = new SKDurableStorage(db, indexedDB);
       const current = await backend.readCurrent();
       const legacyEntries = {};
       for (let i=0;i<legacy.length;i++){const key=legacy.key(i);if(owned(key))legacyEntries[key]=legacy.getItem(key);}
@@ -46,7 +58,7 @@
       backend.legacyFingerprint=legacyFingerprint;
       if (current) {
         if (current.schema !== 1 || !current.entries || typeof current.revision !== 'number') {
-          db.close(); throw new Error('The saved kitchen format needs recovery. No data was replaced.');
+          backend.close(); throw new Error('The saved kitchen format needs recovery. No data was replaced.');
         }
         backend.revision = current.revision;
         backend.storage = new KitchenMemoryStorage(current.entries);
@@ -61,15 +73,61 @@
         await backend.flush('migration-original', true);
       }
       backend.storage.onchange = () => backend.schedule();
-      db.onversionchange = () => { backend.closed = true; db.close(); };
       return backend;
     }
-    constructor(db) { this.db = db; this.revision = 0; this.savedGeneration = -1; this.queue = Promise.resolve(); this.queuedGeneration = -1; }
+    constructor(db, indexedDB) {
+      this.indexedDB = indexedDB;
+      this.revision = 0;
+      this.savedGeneration = -1;
+      this.queue = Promise.resolve();
+      this.queuedGeneration = -1;
+      this.closed = false;
+      this.attach(db);
+    }
+    attach(db) {
+      this.db = db;
+      this.connectionStale = false;
+      db.onversionchange = () => {
+        if (this.db !== db || this.closed) return;
+        this.connectionStale = true;
+        db.close();
+      };
+      db.onclose = () => { if (this.db === db && !this.closed) this.connectionStale = true; };
+      return db;
+    }
+    connectionError(error) {
+      const message = String(error?.message || '');
+      return error?.name === 'InvalidStateError' || /database connection is closing|connection (?:is )?clos(?:ed|ing)/i.test(message) || (this.connectionStale && error?.name === 'AbortError');
+    }
+    reconnect() {
+      if (this.closed) return Promise.reject(new Error('Saved kitchen connection closed. Export your changes and reopen SK.'));
+      if (this.reconnecting) return this.reconnecting;
+      this.connectionStale = true;
+      try { this.db?.close(); } catch {}
+      this.reconnecting = SKDurableStorage.connect(this.indexedDB)
+        .then(db => {
+          if (this.closed) { db.close(); throw new Error('Saved kitchen connection closed. Export your changes and reopen SK.'); }
+          return this.attach(db);
+        })
+        .finally(() => { this.reconnecting = null; });
+      return this.reconnecting;
+    }
+    async withConnection(operation, retry = true) {
+      if (this.closed) throw new Error('Saved kitchen connection closed. Export your changes and reopen SK.');
+      if (this.connectionStale) await this.reconnect();
+      const db = this.db;
+      try { return await operation(db); }
+      catch (error) {
+        if (!retry || !this.connectionError(error)) throw error;
+        await this.reconnect();
+        return this.withConnection(operation, false);
+      }
+    }
     readCurrent() {
-      return new Promise((resolve, reject) => {
-        const request = this.db.transaction('current', 'readonly').objectStore('current').get('active');
+      return this.withConnection(db => new Promise((resolve, reject) => {
+        const request = db.transaction('current', 'readonly').objectStore('current').get('active');
         request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
-      });
+      }));
     }
     schedule() {
       if (this.scheduled) return;
@@ -101,41 +159,51 @@
       const entries = this.storage.snapshot();
       this.queuedGeneration = generation;
       const write = async () => {
-       const fingerprint=await this.semanticFingerprint(entries);
-       return new Promise((resolve, reject) => {
-        const tx = this.db.transaction(['current','history'], 'readwrite');
-        let failure, nextRevision;
-        const request = tx.objectStore('current').get('active');
-        request.onsuccess = () => {
-          const current = request.result;
-          if (Number(current?.revision || 0) !== this.revision) {
-            failure = new Error('Another SK window saved newer data. Your unsaved changes are still visible. Export them, then reopen SK.');
-            tx.abort(); return;
-          }
-          nextRevision = this.revision + 1;
-          const createdAt = new Date().toISOString();
-          const next = {id:'active', schema:1, revision:nextRevision, createdAt, entries, fingerprint,legacyFingerprint:this.legacyFingerprint};
-          // Store meaningful restore points independently of the active record.
-          const due = forceHistory || !current?.historyAt || fingerprint!==current.historyFingerprint && Date.now() - current.historyAt >= 15 * 60 * 1000;
-          next.historyAt = pin || due ? Date.now() : current.historyAt;
-          next.historyFingerprint=pin||due?fingerprint:current.historyFingerprint;
-          tx.objectStore('current').put(next);
-          if(this.pendingLegacy)tx.objectStore('history').put({...next,id:`legacy:${createdAt}:${nextRevision}`,entries:this.pendingLegacy,reason:'older-version-changes',pinned:true});
-          if (pin || due) {
-            const store = tx.objectStore('history');
-            store.put({...next, id:`${createdAt}:${nextRevision}`, reason, pinned:pin});
-            const all = store.getAll();
-            all.onsuccess = () => {const keep=historyToKeep(all.result);all.result.filter(item=>!keep.has(item.id)).forEach(item=>store.delete(item.id));};
-          }
-        };
-        tx.oncomplete = () => { this.revision = nextRevision; this.savedGeneration = generation; this.pendingLegacy=null; this.lastError = null; try{this.onSaved?.();}catch(error){console.warn('Save status display failed.',error);} resolve(nextRevision); };
-        tx.onabort = () => {
+        const fingerprint=await this.semanticFingerprint(entries);
+        try {
+          const nextRevision = await this.withConnection(db => new Promise((resolve, reject) => {
+            let tx;
+            try { tx = db.transaction(['current','history'], 'readwrite'); }
+            catch (error) { reject(error); return; }
+            let failure, committedRevision;
+            const request = tx.objectStore('current').get('active');
+            request.onsuccess = () => {
+              const current = request.result;
+              if (Number(current?.revision || 0) !== this.revision) {
+                failure = new Error('Another SK window saved newer data. Your unsaved changes are still visible. Export them, then reopen SK.');
+                tx.abort(); return;
+              }
+              committedRevision = this.revision + 1;
+              const createdAt = new Date().toISOString();
+              const next = {id:'active', schema:1, revision:committedRevision, createdAt, entries, fingerprint,legacyFingerprint:this.legacyFingerprint};
+              // Store meaningful restore points independently of the active record.
+              const due = forceHistory || !current?.historyAt || fingerprint!==current.historyFingerprint && Date.now() - current.historyAt >= 15 * 60 * 1000;
+              next.historyAt = pin || due ? Date.now() : current.historyAt;
+              next.historyFingerprint=pin||due?fingerprint:current.historyFingerprint;
+              tx.objectStore('current').put(next);
+              if(this.pendingLegacy)tx.objectStore('history').put({...next,id:`legacy:${createdAt}:${committedRevision}`,entries:this.pendingLegacy,reason:'older-version-changes',pinned:true});
+              if (pin || due) {
+                const store = tx.objectStore('history');
+                store.put({...next, id:`${createdAt}:${committedRevision}`, reason, pinned:pin});
+                const all = store.getAll();
+                all.onsuccess = () => {const keep=historyToKeep(all.result);all.result.filter(item=>!keep.has(item.id)).forEach(item=>store.delete(item.id));};
+              }
+            };
+            tx.oncomplete = () => resolve(committedRevision);
+            tx.onabort = () => reject(failure || tx.error || new Error('The kitchen could not be saved. Keep it open and export your changes.'));
+            tx.onerror = () => {};
+          }));
+          this.revision = nextRevision;
+          this.savedGeneration = generation;
+          this.pendingLegacy=null;
+          this.lastError = null;
+          try{this.onSaved?.();}catch(error){console.warn('Save status display failed.',error);}
+          return nextRevision;
+        } catch (error) {
           this.queuedGeneration = -1;
-          this.lastError = failure || tx.error || new Error('The kitchen could not be saved. Keep it open and export your changes.');
-          reject(this.lastError);
-        };
-        tx.onerror = () => {};
-      });
+          this.lastError = error;
+          throw error;
+        }
       };
       // Failed saves do not prevent a later explicit retry. Each transaction
       // stores a frozen full view, including pending sync operations.
@@ -143,12 +211,12 @@
       return this.queue;
     }
     history() {
-      return new Promise((resolve,reject) => {
-        const request=this.db.transaction('history','readonly').objectStore('history').getAll();
+      return this.withConnection(db => new Promise((resolve,reject) => {
+        const request=db.transaction('history','readonly').objectStore('history').getAll();
         request.onsuccess=()=>resolve(clone(request.result)); request.onerror=()=>reject(request.error);
-      });
+      }));
     }
-    close() { this.closed = true; this.db.close(); }
+    close() { this.closed = true; this.connectionStale = true; this.db?.close(); }
   }
   window.SKDurableStorage = SKDurableStorage;
   window.KitchenMemoryStorage = KitchenMemoryStorage;

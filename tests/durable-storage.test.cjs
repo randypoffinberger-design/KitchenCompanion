@@ -57,6 +57,27 @@ test('automatic saves coalesce state and sync markers from the same event turn',
  const current=await db.readCurrent();
  assert.equal(current.entries[key],'edited');assert.equal(current.entries[pending],'pending');db.close();
 });
+test('an iPhone-style closing connection is reopened without losing the pending save',async()=>{
+ const Store=api(),idb=new IDBFactory(),db=await Store.open(legacy({[key]:'original',[pending]:'original-pending'}),idb);
+ db.storage.onchange=null;
+ db.db.close();
+ db.storage.setItem(key,'edited after resume');
+ db.storage.setItem(pending,'pending after resume');
+ await db.flush();
+ const reopened=await Store.open(legacy({[key]:'original',[pending]:'original-pending'}),idb);
+ const current=await reopened.readCurrent();
+ assert.equal(current.entries[key],'edited after resume');
+ assert.equal(current.entries[pending],'pending after resume');
+ assert.ok(current.revision>1);reopened.close();db.close();
+});
+test('a version-change close reconnects after the upgrade and keeps revision protection',async()=>{
+ const Store=api(),idb=new IDBFactory(),db=await Store.open(legacy({[key]:'original'}),idb);db.storage.onchange=null;
+ const upgraded=await new Promise((resolve,reject)=>{const request=idb.open('serenity-kitchen-durable',2);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+ upgraded.close();
+ db.storage.setItem(key,'saved after version change');
+ await db.flush();
+ assert.equal((await db.readCurrent()).entries[key],'saved after version change');db.close();
+});
 test('older cached app edits are preserved as a separate copy after migration',async()=>{
  const Store=api(),idb=new IDBFactory(),old=legacy({[key]:'{"shoppingList":[{"id":"one","name":"Original"}]}'});
  const first=await Store.open(old,idb);first.storage.onchange=null;

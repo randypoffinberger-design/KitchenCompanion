@@ -14,6 +14,8 @@ test('installed-app startup uses durable storage and a signed-out form edit surv
  w.Audio=class{load(){}pause(){}play(){return Promise.resolve();}addEventListener(){}};
  w.alert=message=>{throw new Error(message);};w.confirm=()=>false;w.fetch=async()=>{throw new Error('Offline fixture');};
  for(const file of ['kitchen-engine.js','recipe-scaling.js','profile-storage.js','url-recipe-import.js','meal-planner.js','durable-storage.js','shared-model.js','item-sync.js','sync-client.js','password-ui.js'])w.eval(read(file));
+ const attach=w.SKDurableStorage.prototype.attach;
+ w.SKDurableStorage.prototype.attach=function(db){w.__activeDurable=this;return attach.call(this,db);};
  const old=new w.KCProfileStore();old.initializeFreshBrowserStorage();const original=w.localStorage.getItem('kitchenCompanion.profile.v1.'+old.activeProfile.profileId);
  Object.defineProperty(w,'indexedDB',{value:new IDBFactory()});
  try{
@@ -26,6 +28,7 @@ test('installed-app startup uses durable storage and a signed-out form edit surv
   assert.equal(w.document.querySelector('#homeMenuBtn').getAttribute('aria-expanded'),'true');
   w.document.querySelector('#scrim').click();
   assert.equal(w.document.querySelector('#sidebar').classList.contains('open'),false);
+  w.__activeDurable.db.close();
   w.document.querySelector('#addShoppingItemBtn').click();
   w.document.querySelector('#shoppingItemName').value='Strawberry cream cheese';
   const submitted=new w.Event('submit',{bubbles:true,cancelable:true});
@@ -42,12 +45,25 @@ test('installed-app startup uses durable storage and a signed-out form edit surv
   assert.deepEqual(errors,[]);
   await waitFor(()=>w.document.querySelector('#localSaveStatus')?.textContent.includes('Saved on this device'));
   assert.deepEqual(errors,[]);
+  w.__activeDurable.db.close();
+  w.document.querySelector('#menuCreateRecipe').click();
+  w.document.querySelector('#manualRecipeBtn').click();
+  w.document.querySelector('#editName').value='iPhone reconnect recipe';
+  w.document.querySelector('#editIngredients').value='1 cup flour';
+  w.document.querySelector('#editInstructions').value='Mix and save.';
+  const recipeSubmitted=new w.Event('submit',{bubbles:true,cancelable:true});
+  w.document.querySelector('#recipeEditorForm').dispatchEvent(recipeSubmitted);
+  assert.equal(recipeSubmitted.defaultPrevented,true);
+  await waitFor(()=>!w.document.querySelector('#recipeEditorDialog').open);
+  assert.equal(w.document.querySelector('#durableSaveNotice'),null);
+  assert.deepEqual(errors,[]);
   const moved=await w.KCProfileStore.open();
   const config=JSON.parse(moved.storage.getItem('serenityKitchen.sync.v1'));
   assert.equal(Object.keys(config.pendingProfiles).length,1);
   assert.equal(moved.loadActiveState().shoppingList.length,0);
   assert.equal(moved.loadActiveState().pantryItems[0].name,'Strawberry cream cheese');
   assert.equal(moved.loadActiveState().pantryItems[0].quantity,1);
+  assert.equal(moved.loadActiveState().modules.find(module=>module.moduleId==='my-recipes').recipes[0].name,'iPhone reconnect recipe');
   moved.durable.close();
  }finally{w.close();}
 });

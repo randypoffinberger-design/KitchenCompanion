@@ -2,7 +2,7 @@
   'use strict';
 
   const STORAGE_KEY = 'recipeEngineState.v1';
-  const ENGINE_VERSION = '0.23.0';
+  const ENGINE_VERSION = '0.23.1';
   const engine = new KitchenCompanionEngine();
   const MODULE_CATALOG_URL = './catalog.json';
   const OFFLINE_OCR_CACHE = 'kitchen-companion-ocr-tesseract-7.0.0-best-int';
@@ -93,6 +93,7 @@
     urgent: { name:'Urgent alarm', pattern:[[980,.16,.07],[720,.16,.07],[980,.16,.07],[720,.16,.48]] }
   });
 
+  let dismissedDurableError = '';
   const profileStore = await KCProfileStore.open();
   if (profileStore.durable) profileStore.durable.onError = showDurableSaveError;
   const state = profileStore.loadActiveState();
@@ -1196,7 +1197,7 @@ Continue to share them as this account's recipes. Cancel and choose a separate l
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./service-worker.js?v=0.23.0', { updateViaCache:'none' }).then(reg => {
+    navigator.serviceWorker.register('./service-worker.js?v=0.23.1', { updateViaCache:'none' }).then(reg => {
       reg.update();
       return navigator.serviceWorker.ready;
     }).then(() => refreshOfflineOcrStatus()).catch(console.warn);
@@ -2915,8 +2916,10 @@ Other devices and household members keep their copies. You can restore it from S
 
   function formatIngredientForEditor(i) { return [i.displayQuantity ?? i.quantity ?? '', i.unit || '', i.item || ''].filter(x => x !== '').join(' '); }
 
-  function saveRecipeFromEditor(event) {
+  async function saveRecipeFromEditor(event) {
     event.preventDefault();
+    const submit = event.submitter || els.recipeEditorForm.querySelector('[type="submit"]');
+    if (submit) submit.disabled = true;
     const personal = ensurePersonalModule();
     const sourceKey = document.querySelector('#editRecipeKey').value;
     const source = sourceKey ? getAllRecipes({enabledOnly:false, includeOverridden:true}).find(r => r.key === sourceKey) : null;
@@ -2939,7 +2942,16 @@ Other devices and household members keep their copies. You can restore it from S
     const index = personal.recipes.findIndex(r => r.id === id);
     if (index >= 0) personal.recipes[index] = recipe; else personal.recipes.push(recipe);
     selectedRecipeKey = `my-recipes:${id}`;
-    closeRecipeEditor(); refreshAll(); showDetail();
+    document.querySelector('#editRecipeKey').value = selectedRecipeKey;
+    try {
+      saveState();
+      await profileStore.flush?.('recipe-save');
+      closeRecipeEditor(); refreshAll({save:false}); showDetail();
+    } catch (error) {
+      showDurableSaveError(error);
+    } finally {
+      if (submit) submit.disabled = false;
+    }
   }
 
   function allCategoryNames() {
@@ -3126,7 +3138,7 @@ Other devices and household members keep their copies. You can restore it from S
   function formatClock(ms) { const total=Math.ceil(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), s=total%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
 
   function initBellAudio() {
-    bellAudio = new Audio('./alarm-bell.wav?v=0.23.0');
+    bellAudio = new Audio('./alarm-bell.wav?v=0.23.1');
     bellAudio.loop = true;
     bellAudio.preload = 'auto';
     bellAudio.volume = Number(state.settings.alarmVolume ?? 0.85);
@@ -5352,7 +5364,7 @@ Other devices and household members keep their copies. You can restore it from S
     const conflicts=householdSync.itemSync?.load().conflicts?.length;
     const message=!saved?'Saving on this device…':conflicts?'Saved on this device · Sync needs review':pending?'Saved on this device · Waiting to sync':householdSync.isReady()?'Saved on this device and household':'Saved on this device';
     if(status.textContent!==message)status.textContent=message;
-    if(saved)document.querySelector('#durableSaveNotice')?.remove();
+    if(saved){document.querySelector('#durableSaveNotice')?.remove();dismissedDurableError='';}
   }
 
   async function browseRecoveryPoints() {
@@ -5403,13 +5415,23 @@ Other devices and household members keep their copies. You can restore it from S
   }
 
   function showDurableSaveError(error) {
+    const signature = `${error?.name || 'Error'}:${error?.message || 'Unknown save error'}`;
+    if (dismissedDurableError === signature) return;
     let notice = document.querySelector('#durableSaveNotice');
     if (!notice) {
       notice = document.createElement('div'); notice.id = 'durableSaveNotice';
-      notice.className = 'startup-recovery-notice'; notice.setAttribute('role','alert');
-      document.body.prepend(notice);
+      notice.className = 'durable-save-notice'; notice.setAttribute('role','alert');
+      const main = document.querySelector('.main');
+      if (main) main.prepend(notice); else document.body.prepend(notice);
     }
-    notice.textContent = `Changes have not been saved. Keep SK open and export a full backup before closing it. ${error.message}`;
+    notice.replaceChildren();
+    const copy = document.createElement('div');
+    const title = document.createElement('strong'); title.textContent = 'Changes have not been saved.';
+    const details = document.createElement('span'); details.textContent = ` Keep SK open and export a full backup before closing it. ${error?.message || ''}`;
+    copy.append(title, details);
+    const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.textContent = 'Dismiss'; dismiss.setAttribute('aria-label','Dismiss save warning');
+    dismiss.addEventListener('click', () => { dismissedDurableError = signature; notice.remove(); });
+    notice.append(copy, dismiss);
     householdSync?.stop();
   }
 
