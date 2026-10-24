@@ -31,3 +31,18 @@ test('save warning styling is non-fixed so the hamburger and backup remain reach
   assert.match(rule,/position:relative/);
   assert.doesNotMatch(rule,/position:fixed/);
 });
+
+test('iPhone IndexedDB server warning offers reload and remains dismissible',()=>{
+  const dom=new JSDOM('<body><header><button id="menuBtn">Menu</button></header><main class="main"><button id="backup">Backup</button></main></body>');
+  let reloads=0;
+  const context={document:dom.window.document,location:{reload(){reloads++;}},dismissedDurableError:'',householdSync:{stop(){}}};
+  const {showDurableSaveError}=loadFunctions(['showDurableSaveError'],context);
+  const error=Object.assign(new Error('An internal error was encountered in the Indexed Database server'),{name:'IndexedDBServerError',reloadRequired:true});
+  showDurableSaveError(error);
+  const notice=context.document.querySelector('#durableSaveNotice'),buttons=[...notice.querySelectorAll('button')];
+  assert.match(notice.textContent,/not clearing stored data|without clearing stored data/i);
+  assert.deepEqual(buttons.map(button=>button.textContent),['Reload SK','Dismiss']);
+  assert.equal(context.document.querySelector('#menuBtn').disabled,false);assert.equal(context.document.querySelector('#backup').disabled,false);
+  buttons[0].click();assert.equal(reloads,1);buttons[1].click();assert.equal(context.document.querySelector('#durableSaveNotice'),null);
+  dom.window.close();
+});

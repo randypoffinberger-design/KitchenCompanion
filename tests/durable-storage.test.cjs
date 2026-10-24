@@ -111,3 +111,24 @@ test('routine sync metadata saves reuse the fingerprint of unchanged kitchen dat
  assert.equal(profileParses,before,'background sync must not reparse the full unchanged kitchen');
  assert.equal(db.storage.getItem(key),original);db.close();
 });
+
+test('history retention never loads every full saved kitchen during a write',async()=>{
+ const Store=api(),idb=new IDBFactory(),db=await Store.open(legacy({[key]:'{"shoppingList":[]}'}),idb);db.storage.onchange=null;
+ const transaction=db.db.transaction.bind(db.db);
+ db.db.transaction=(...args)=>{const tx=transaction(...args),objectStore=tx.objectStore.bind(tx);tx.objectStore=name=>{const store=objectStore(name);if(name==='history')store.getAll=()=>{throw new Error('full history scan');};return store;};return tx;};
+ db.storage.setItem(key,'{"shoppingList":[{"id":"milk"}]}');
+ await db.flush('before-incoming-sync',false,true);
+ db.db.transaction=transaction;
+ assert.equal(JSON.parse((await db.readCurrent()).entries[key]).shoppingList[0].id,'milk');
+ assert.ok((await db.history()).length>=2);db.close();
+});
+
+test('an iPhone IndexedDB server failure stops retries and requests a safe reload',async()=>{
+ const Store=api(),idb=new IDBFactory(),db=await Store.open(legacy({[key]:'original'}),idb);db.storage.onchange=null;
+ let attempts=0;db.db.transaction=()=>{attempts++;throw Object.assign(new Error('An internal error was encountered in the Indexed Database server'),{name:'UnknownError'});};
+ db.storage.setItem(key,'still visible in memory');
+ const error=await db.flush().then(()=>null,error=>error);
+ assert.equal(error?.reloadRequired,true);assert.match(error.message,/not cleared|reload/i);assert.equal(attempts,1);
+ await assert.rejects(db.flush(),candidate=>candidate===error);assert.equal(attempts,1,'a broken WebKit database server must not be hammered with retries');
+ assert.equal(db.storage.getItem(key),'still visible in memory');db.close();
+});
